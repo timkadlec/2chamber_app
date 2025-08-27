@@ -6,18 +6,18 @@
 
         <div class="container-xl">
 
-            {% include "partials/_composition_filters.html" %}
 
+            <!-- Include the filters component-->
             <!-- Table Wrapper -->
             <div class="card shadow-sm mb-4">
                 <div class="table-responsive">
                     <table class="table align-middle mb-0">
                         <thead class="table-light text-uppercase small text-muted">
                         <tr>
-                            <th>Název skladby</th>
-                            <th class="d-none d-md-table-cell">Skladatel</th>
-                            <th class="d-none d-lg-table-cell">Durata</th>
+                            <th>Název souboru</th>
                             <th class="d-none d-sm-table-cell">Instrumentace</th>
+                            <th class="d-none d-sm-table-cell">Pedagog</th>
+                            <th class="d-none d-sm-table-cell">Členové</th>
                             <th class="text-end">Akce</th>
                         </tr>
                         </thead>
@@ -63,7 +63,8 @@
                                         <div class="modal-dialog">
                                             <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <h1 class="modal-title fs-5" id="deleteCompositionModal{{ composition.id }}Label">Smazat
+                                                    <h1 class="modal-title fs-5"
+                                                        id="deleteCompositionModal{{ composition.id }}Label">Smazat
                                                         skladbu</h1>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"
                                                             aria-label="Close"></button>

@@ -3,6 +3,23 @@ from collections import defaultdict
 from models import db
 
 
+class Semester(db.Model):
+    __tablename__ = 'semesters'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+
+    ensemble_links = db.relationship(
+        "EnsembleSemester",
+        back_populates="semester",
+        cascade="all, delete-orphan"
+    )
+
+    @property
+    def ensembles(self):
+        return [link.ensemble for link in self.ensemble_links]
+
 # ------------------------
 # Users, Roles, Permissions (GLOBAL USER SYSTEM)
 # ------------------------
@@ -47,7 +64,7 @@ class Instrument(db.Model):
     instrument_group = relationship('InstrumentGroup', back_populates='instruments')
 
     weight = db.Column(db.Integer, default=0)
-    
+
     @property
     def normalized_abbr(self):
         return self.abbreviation.lower()

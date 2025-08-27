@@ -1,0 +1,130 @@
+.ts-dropdown, .ts-dropdown .option {
+  background-color: #fff !important;
+  color: #212529;
+  border: 1px solid #ced4da;
+  z-index: 1000;
+}
+
+.ts-dropdown .option:hover,
+.ts-dropdown .option.active {
+  background-color: #e9ecef !important;
+  color: #212529 !important;
+}
+
+
+/* Font */
+body {
+  font-family: 'Poppins', 'Segoe UI', 'Helvetica Neue', sans-serif;
+  background-color: #f9fafb;
+  color: #2e2e2e;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5 {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+a {
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #084298;
+  text-decoration: underline;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+  border-color: #1e40af;
+}
+
+.btn-outline-secondary {
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+/* Card */
+.card {
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+}
+
+.card-header {
+  background-color: #f8fafc;
+  font-weight: 500;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+
+/* Global rounded buttons */
+.btn {
+  border-radius: 2rem; /* Pill-shaped */
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+/* Table */
+.table {
+  font-size: 0.95rem;
+}
+
+.table thead th {
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #f1f5f9;
+}
+
+/* Form inputs */
+.form-control {
+  border-radius: 0.375rem;
+  border-color: #d1d5db;
+}
+
+.form-control:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.25);
+}
+
+/* Select */
+.form-select {
+  border-radius: 0.375rem;
+  border-color: #d1d5db;
+}
+
+/* Flash messages */
+.alert {
+  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+}
+
+/* Modal */
+.modal-content {
+  border-radius: 0.5rem;
+}

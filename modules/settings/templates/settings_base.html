@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block content %}
+    <main class="py-4">
+        <div class="container-xl">
+            <h1 class="text-primary">Nastavení</h1>
+
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="#">Import studentů</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Akademické roky</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Předměty</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link disabled" aria-disabled="true">Disabled</a>
+                </li>
+            </ul>
+            <div class="row">
+                <div class="col">
+                    <!-- Update student details -->
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Aktualizace údajů studentů</h5>
+                        </div>
+
+                        <div class="card-body">
+                            <p>Pomocí následujícího importu aktualizujete údaje studentů v databázi. Všichni studenti,
+                                kteřá v poskytnutém seznamu nefigurují budou označeni jako neaktivní.</p>
+                            <div class="row g-4">
+                                <div class="input-group mb-3">
+                                    <select class="form-select" id="inputGroupSelect02">
+                                        <option selected>Choose...</option>
+                                        <option value="1">One</option>
+                                        <option value="2">Two</option>
+                                        <option value="3">Three</option>
+                                    </select>
+                                    <label class="input-group-text" for="inputGroupSelect02">Zvolte semestr</label>
+                                </div>
+
+                                <div class="input-group mb-3">
+                                    <input type="file" class="form-control" id="inputGroupFile02">
+                                    <label class="input-group-text" for="inputGroupFile02">Upload</label>
+                                </div>
+                            </div>
+                            <div class="row g-4">
+                                <button class="btn btn-success">Aktualizovat</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <!-- Update student details -->
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Zápis předmětu studentům.</h5>
+                        </div>
+
+                        <div class="card-body">
+                            <p>Zapsání předmětu studentovi lze pomocí xlsx souboru nebo manuálně. Je třeba zvolit
+                                semestr akademického roku, pro který chcete zápis provést.</p>
+                            <div class="row g-4">
+                                <div class="input-group mb-3">
+                                    <select class="form-select" id="inputGroupSelect02">
+                                        <option selected>Choose...</option>
+                                        <option value="1">One</option>
+                                        <option value="2">Two</option>
+                                        <option value="3">Three</option>
+                                    </select>
+                                    <label class="input-group-text" for="inputGroupSelect02">Zvolte semestr</label>
+                                </div>
+                                <span class="text-muted small">Import pomocí xlsx.</span>
+                                <div class="input-group mb-3">
+                                    <input type="file" class="form-control" id="inputGroupFile02">
+                                    <label class="input-group-text" for="inputGroupFile02">Upload</label>
+                                </div>
+                                <span class="text-muted small">Manuální zapsání konkrétnímu studentovi.</span>
+
+                            </div>
+                            <div class="row g-4">
+                                <button class="btn btn-info">Zapsat</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+{% endblock %}
+

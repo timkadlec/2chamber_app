@@ -1,0 +1,177 @@
+<!-- Sidebar Offcanvas -->
+{% block extra_styles %}
+    <style>
+        .submenu {
+            display: none !important;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            overflow: hidden;
+        }
+
+        .submenu.show {
+            display: block !important;
+        }
+
+
+        @keyframes fadeSlideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .submenu a.nav-link {
+            padding-left: 1.5rem !important;
+        }
+
+        .has-submenu {
+            position: relative;
+        }
+
+        .has-submenu:hover .top-submenu,
+        .has-submenu:focus-within .top-submenu {
+            display: block !important;
+            animation: fadeDown 0.2s ease-in-out forwards;
+        }
+
+        @keyframes fadeDown {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .top-submenu {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        .top-submenu li {
+            list-style: none;
+        }
+
+    </style>
+{% endblock %}
+
+<!-- Mobile side menu -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="sideMenu" aria-labelledby="sideMenuLabel">
+    <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title fw-semibold" id="sideMenuLabel">HAMU APP</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Zavřít"></button>
+    </div>
+
+    <div class="offcanvas-body d-flex flex-column justify-content-between py-3">
+        <nav class="nav flex-column mb-4">
+            {% import 'macros/nav_macros.html' as navmacros %}
+            {% for link in nav_links %}
+                {{ navmacros.nav_link(link, request.path) }}
+            {% endfor %}
+
+        </nav>
+
+        <!-- Notification Bell with Badge -->
+        <div class="d-flex align-items-center justify-content-between border-top pt-3">
+            <div class="position-relative">
+                <i class="fa-solid fa-bell text-secondary" style="font-size: 1.2rem;"></i>
+                {% if current_user.is_authenticated %}
+                    {% if current_user.unread_notifications_count > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger small">
+                    {{ current_user.unread_notifications_count }}
+                    <span class="visually-hidden">unread notifications</span>
+                </span>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <!-- Logged in user icon -->
+            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                 style="width: 32px; height: 32px;">
+                {% if current_user.is_authenticated %}
+                    {{ current_user.first_name[0] if current_user.first_name else '' }}{{ current_user.last_name[0] if current_user.last_name else '' }}
+                {% else %}
+                    H
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Navbar -->
+<nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm sticky-top">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold text-dark d-flex align-items-center gap-2" href="#">
+            <img src="{{ url_for('static', filename='/images/hamu_logo.png') }}" alt="Hamu Logo"
+                 style="max-height: 2rem">
+        </a>
+
+        <span class="d-none d-md-inline">Organizace Komorní Hry</span>
+
+
+        <!-- Mobile Toggle -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#sideMenu"
+                aria-controls="sideMenu" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Desktop Nav -->
+        <div class="collapse navbar-collapse justify-content-end">
+            <!-- AR Year selection -->
+            <div class="d-flex">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-outline-primary">AR</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle dropdown-toggle-split"
+                            data-bs-toggle="dropdown" aria-expanded="false" data-bs-reference="parent">
+                        <span class="visually-hidden">Toggle Dropdown</span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Action</a></li>
+                        <li><a class="dropdown-item" href="#">Another action</a></li>
+                        <li><a class="dropdown-item" href="#">Something else here</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="#">Separated link</a></li>
+                    </ul>
+                </div>
+            </div>
+            <ul class="navbar-nav mb-2 mb-lg-0">
+                {% for link in nav_links %}
+                    {% if link.children %}
+                        {{ navmacros.nav_dropdown(link, request.path) }}
+                    {% else %}
+                        {{ navmacros.nav_link(link, request.path) }}
+                    {% endif %}
+                {% endfor %}
+
+                {{ navmacros.profile_dropdown(current_user) }}
+
+            </ul>
+
+        </div>
+    </div>
+</nav>
+
+{% block extra_scripts %}
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const toggles = document.querySelectorAll(".submenu-toggle");
+            toggles.forEach(toggle => {
+                toggle.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    const submenu = this.nextElementSibling;
+                    submenu.classList.toggle("show");
+                });
+            });
+        });
+    </script>
+{% endblock %}

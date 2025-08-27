@@ -1,0 +1,102 @@
+{# macros/nav_macros.html #}
+{% macro nav_link(link, active_path) %}
+    <li class="nav-item">
+        <a class="nav-link {% if active_path == link.url %}fw-semibold text-primary{% else %}text-dark{% endif %}"
+           href="{{ link.url }}">
+            {{ link.name }}
+        </a>
+    </li>
+{% endmacro %}
+
+{% macro nav_dropdown(link, active_path) %}
+    <li class="nav-item position-relative has-submenu">
+        {% set active_group = false %}
+        {% for child in link.children %}
+            {% if active_path == child.url %}
+                {% set active_group = true %}
+            {% endif %}
+        {% endfor %}
+
+        <a class="nav-link {% if active_group %}fw-semibold text-primary{% else %}text-dark{% endif %}"
+           href="#">
+            {{ link.name }}
+        </a>
+
+        <ul class="top-submenu shadow-sm border position-absolute bg-white mt-2 py-2 px-2 rounded d-none">
+            {% for child in link.children %}
+                <li>
+                    <a href="{{ child.url }}"
+                       class="dropdown-item small {% if active_path == child.url %}fw-semibold text-primary{% endif %}">
+                        {{ child.name }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </li>
+{% endmacro %}
+
+{% macro profile_dropdown(current_user) %}
+    <li class="nav-item dropdown">
+        <a href="#" id="profileDropdown"
+           role="button"
+           data-bs-toggle="dropdown"
+           aria-expanded="false">
+            <div class="position-relative d-inline-block ms-1">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm"
+                     style="width: 36px; height: 36px;">
+                    {% if current_user.is_authenticated %}
+                        {{ current_user.first_name[0] if current_user.first_name else '' }}{{ current_user.last_name[0] if current_user.last_name else '' }}
+                    {% else %}
+                        H
+                    {% endif %}
+                </div>
+                {% if current_user.is_authenticated and current_user.unread_notifications_count > 0 %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger small">
+                        {{ current_user.unread_notifications_count }}
+                        <span class="visually-hidden">unread messages</span>
+                    </span>
+                {% endif %}
+            </div>
+        </a>
+        {% if current_user.is_authenticated %}
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="profileDropdown" style="min-width: 250px;">
+                <li class="px-3 py-2">
+                    <div class="fw-semibold">{{ current_user.first_name }} {{ current_user.last_name }}</div>
+                    <div class="text-muted small">{{ current_user.email }}</div>
+                    <div class="text-muted small">{{ current_user.role.name }}</div>
+                </li>
+
+                <li><hr class="dropdown-divider"></li>
+
+                <li class="px-3 py-2">
+                    <div class="fw-semibold mb-1">
+                        <i class="fa-solid fa-bell me-2"></i> Upozornění
+                    </div>
+                    {% if current_user.unread_notifications %}
+                        {% for notif in current_user.unread_notifications %}
+                            <div class="small mb-2 p-2 rounded bg-{{ notif.type }} d-flex justify-content-between align-items-center"
+                                 id="notif-{{ notif.id }}">
+                                <div>
+                                    <div>{{ notif.message }}</div>
+                                    <div class="text-muted small">{{ notif.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+                                </div>
+                                <button type="button"
+                                        class="btn btn-sm btn-light border text-secondary mark-as-read-btn"
+                                        data-id="{{ notif.id }}">
+                                    <i class="fa-solid fa-check"></i>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="small text-muted">Žádná upozornění</div>
+                    {% endif %}
+                </li>
+
+                <li><hr class="dropdown-divider"></li>
+
+                <li><a class="dropdown-item" href="#"><i class="fa-solid fa-user-gear me-2"></i> Profil</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="fa-solid fa-right-from-bracket me-2"></i> Odhlásit se</a></li>
+            </ul>
+        {% endif %}
+    </li>
+{% endmacro %}

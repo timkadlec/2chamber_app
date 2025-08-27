@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Hudební správa | Dashboard{% endblock %}</title>
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
+
+    <!-- Font Awesome (locally hosted) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/all.css') }}">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.css') }}">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+
+    <!-- Custom Fonts -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+
+    <!-- In your <head> -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/tom-select/tom-select.bootstrap5.css') }}">
+    <script src="{{ url_for('static', filename='vendor/tom-select/tom-select.complete.js') }}"></script>
+
+    <!-- Optional: Your custom menu logic (can likely be removed if using Bootstrap’s offcanvas) -->
+    <script defer src="{{ url_for('static', filename='js/menu.js') }}"></script>
+    {% block extra_styles %}{% endblock %}
+
+</head>
+<body>
+
+{% include 'partials/nav.html' %}
+{% include 'partials/flash_messages.html' %}
+
+<main class="container-fluid mt-4">
+    {% block content %}
+    {% endblock %}
+</main>
+
+{% block extra_scripts %}{% endblock %}
+<script>
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+        new bootstrap.Tooltip(el);
+    });
+</script>
+
+<!-- Bootstrap Bundle with Popper (must be at end of body) -->
+<script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.js') }}"></script>
+<!-- Fontawesome Bundle -->
+<script src="{{ url_for('static', filename='vendor/fontawesome/all.js') }}"></script>
+
+</body>
+</html>

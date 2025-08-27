@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "bootstrap": "^5.3.7",
+    "tom-select": "^2.4.3"
+  }
+}

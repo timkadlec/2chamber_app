@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block content %}
+    <main class="py-4">
+        <div class="container-xl">
+
+            <!-- Back link -->
+            <div class="mb-4">
+                {% if request.args.get('nav_type') == "from_composer" %}
+                    <a href="{{ url_for('library.composer_detail', composer_id=composition.composer.id) }}"
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i> Zpět na detail skladatele
+                    </a>
+                {% elif request.args.get("composer_id") %}
+                    <a href="{{ url_for('library.composer_detail', composer_id=request.args.get("composer_id")) }}"
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i> Zpět na detail skladatele
+                    </a>
+                {% elif request.args.get("nav_type") == "from_composition" and form.mode != "add" %}
+                    <a href="{{ url_for('library.composition_detail', composition_id=composition.id) }}"
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i> Zpět na detail skladby
+                    </a>
+
+                {% else %}
+                    <a href="{{ url_for('library.compositions') }}" class="btn btn-outline-secondary btn-sm">
+
+                        <i class="fas fa-arrow-left me-2"></i> Zpět na přehled skladeb
+                    </a>
+                {% endif %}
+
+            </div>
+
+            <!-- Composition Form Card -->
+            <div class="card shadow-sm rounded-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">{{ form.form_title }}</h5>
+                </div>
+
+                {% if form.mode == "add" %}
+                    <form method="POST" action="{{ url_for('library.composition_add') }}">
+                {% elif form.mode == "edit" %}
+                    <form method="POST"
+                          action="{{ url_for('library.composition_edit', composition_id=composition.id) }}">
+                {% endif %}
+                {{ form.csrf_token }}
+
+                <div class="card-body">
+                    <div class="row g-4">
+
+                        <!-- Left Column -->
+                        <div class="col-md-6">
+
+                            <div class="mb-3">
+                                <label for="name" class="form-label">{{ form.name.label }}</label>
+                                {{ form.name(class="form-control") }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="composer" class="form-label">{{ form.composer.label }}</label>
+                                {{ form.composer(class="form-select") }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="type" class="form-label">{{ form.type.label }}</label>
+                                {{ form.type(class="form-select") }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="year" class="form-label">{{ form.year.label }}</label>
+                                {{ form.year(class="form-control") }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="durata" class="form-label">{{ form.durata.label }}</label>
+                                <div class="input-group">
+                                    {{ form.durata(class="form-control") }}
+                                    <span class="input-group-text">minut</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="description" class="form-label">{{ form.description.label }}</label>
+                                {{ form.description(class="form-control", rows="3") }}
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.description.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Right Column -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="instrumentation" class="form-label">{{ form.instrumentation.label }}</label>
+                                {{ form.instrumentation(class="form-control", rows="8") }}
+                                {% if form.instrumentation.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.instrumentation.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="card-footer text-end">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                        <i class="fas fa-save me-2"></i>{{ form.submit.label }}
+                    </button>
+                </div>
+                </form>
+            </div>
+
+        </div>
+    </main>
+{% endblock %}

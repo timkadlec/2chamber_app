@@ -1,0 +1,31 @@
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+    {% for form, label, url in [
+        (string_form, 'Smyčce', 'save_or_update_string_instrumentation_line_command'),
+        (woodwind_form, 'Dřeva', 'save_or_update_woodwind_instrumentation_line_command'),
+        (brass_form, 'Žestě', 'save_or_update_brass_instrumentation_line_command'),
+        (percussion_form, 'Bicí', 'save_or_update_percussion_instrumentation_line_command'),
+        (extra_form, 'Extra', 'save_or_update_extra_instrumentation_line_command')
+    ] %}
+    <form method="POST" action="{{ url_for(url, project_id=project.id) }}" class="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 space-y-2">
+        {{ form.hidden_tag() }}
+
+        <label class="block text-xs uppercase text-gray-500">{{ label }}</label>
+        {{ form.instrumentation(class="w-full px-3 py-1 border border-gray-300 rounded-md text-sm") }}
+
+        <button type="submit" class="w-full bg-sky-500 hover:bg-sky-600 text-white px-3 py-1 rounded-md text-sm">
+            Uložit
+        </button>
+    </form>
+    {% endfor %}
+
+    <form method="POST" action="{{ url_for('save_or_update_instrumentation_comment', project_id=project.id) }}" class="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 space-y-2">
+        {{ comment_form.hidden_tag() }}
+
+        <label class="block text-xs uppercase text-gray-500">Poznámka</label>
+        {{ comment_form.comment(class="w-full px-3 py-1 border border-gray-300 rounded-md text-sm") }}
+
+        {{ comment_form.submit_comment(class="w-full bg-sky-500 hover:bg-sky-600 text-white px-3 py-1 rounded-md text-sm") }}
+    </form>
+
+</div>

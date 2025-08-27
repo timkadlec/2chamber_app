@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% block content %}
+    <!-- Hlavní obsah -->
+    <main>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-semibold text-gray-900">Nastavení</h1>
+            </div>
+        </div>
+    </main>
+
+    <!-- Detail skladby - modální okno -->
+    <div id="composition-detail-modal"
+         class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+                <h3 class="text-lg font-medium text-gray-900">Detail skladby</h3>
+                <button onclick="hideCompositionDetail()" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="px-6 py-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="text-xl font-semibold text-gray-900 mb-4">Malá noční hudba</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <span class="text-sm font-medium text-gray-500">Skladatel:</span>
+                                <span class="ml-2 text-sm text-gray-900">W. A. Mozart</span>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-gray-500">Rok:</span>
+                                <span class="ml-2 text-sm text-gray-900">1787</span>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-gray-500">Délka:</span>
+                                <span class="ml-2 text-sm text-gray-900">21 minut</span>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-gray-500">Projekt:</span>
+                                <span class="ml-2 text-sm text-gray-900">Mozartův večer</span>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-gray-500">Status:</span>
+                                <span class="ml-2 px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Aktivní</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            <h5 class="text-sm font-medium text-gray-700 mb-2">Popis</h5>
+                            <p class="text-sm text-gray-600">
+                                Malá noční hudba (Eine kleine Nachtmusik) je serenáda pro smyčcový orchestr složená
+                                Wolfgangem Amadeem Mozartem v roce 1787. Jedná se o jedno z nejznámějších Mozartových
+                                děl.
+                            </p>
+                        </div>
+
+                        <div class="mt-6">
+                            <h5 class="text-sm font-medium text-gray-700 mb-2">Poznámky</h5>
+                            <p class="text-sm text-gray-600">
+                                Připravit noty pro první housle. Zkontrolovat obsazení violoncell.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-700 mb-3">Požadované nástroje</h5>
+                        <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                                        <span class="text-sm text-gray-700">Housle I</span>
+                                    </div>
+                                    <span class="text-sm font-medium text-gray-900">4</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <span class="w-3 h-3 bg-blue-300 rounded-full mr-2"></span>
+                                        <span class="text-sm text-gray-700">Housle II</span>
+                                    </div>
+                                    <span class="text-sm font-medium text-gray-900">4</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                                        <span class="text-sm text-gray-700">Viola</span>
+                                    </div>
+                                    <span class="text-sm font-medium text-gray-900">2</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
+                                        <span class="text-sm text-gray-700">Violoncello</span>
+                                    </div>
+                                    <span class="text-sm font-medium text-gray-900">2</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <span class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
+                                        <span class="text-sm text-gray-700">Kontrabas</span>
+                                    </div>
+                                    <span class="text-sm font-medium text-gray-900">1</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h5 class="text-sm font-medium text-gray-700 mb-3">Přiřazení hráči</h5>
+                        <div class="space-y-3">
+                            <div class="bg-white border border-gray-200 rounded-lg p-3">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">Jan Novák</div>
+                                        <div class="text-xs text-gray-500">Housle I (Koncertní mistr)</div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button class="text-sky-600 hover:text-sky-900">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-red-600 hover:text-red-900">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white border border-gray-200 rounded-lg p-3">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">Marie Svobodová</div>
+                                        <div class="text-xs text-gray-500">Housle I</div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button class="text-sky-600 hover:text-sky-900">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-red-600 hover:text-red-900">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white border border-gray-200 rounded-lg p-3">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">Petr Černý</div>
+                                        <div class="text-xs text-gray-500">Viola</div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button class="text-sky-600 hover:text-sky-900">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-red-600 hover:text-red-900">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="mt-4 w-full bg-sky-50 text-sky-600 border border-sky-200 py-2 px-4 rounded-md text-sm font-medium hover:bg-sky-100 transition-colors flex items-center justify-center">
+                            <i class="fas fa-user-plus mr-2"></i> Přidat hráče
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <h5 class="text-sm font-medium text-gray-700 mb-3">Související události</h5>
+                    <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-300">
+                            <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col"
+                                    class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Název
+                                </th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Typ
+                                </th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                                    Datum
+                                </th>
+                                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                                    Místo
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 bg-white">
+                            <tr>
+                                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                    Zkouška orchestru
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                    <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Zkouška</span>
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">10. června 2023, 18:00
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">Zkušebna ZUŠ</td>
+                            </tr>
+                            <tr>
+                                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                    Mozartův večer
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                    <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Koncert</span>
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">15. června 2023, 19:00
+                                </td>
+                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">Městské divadlo</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+                <button class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3"
+                        onclick="hideCompositionDetail()">
+                    Zavřít
+                </button>
+                <button class="bg-sky-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-sky-700">
+                    Upravit
+                </button>
+            </div>
+        </div>
+    </div>
+{% endblock %}

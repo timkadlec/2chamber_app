@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+    <main class="py-4">
+        <div class="container-xl">
+
+            <!-- Back link -->
+            <div class="mb-4">
+                {% if request.args.get("nav_type") == "from_composer" and form.mode != "add" %}
+                    <a href="{{ url_for('library.composer_detail', composer_id=composer.id) }}"
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i> Zpět na detail skladatele
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('library.composers') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i> Zpět na přehled skladatelů
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- Composer Form Card -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ form.form_title }}</h5>
+                </div>
+
+                {% if form.mode == "add" %}
+                    <form method="POST" action="{{ url_for('library.composer_add') }}">
+                {% elif form.mode == "edit" %}
+                    <form method="POST" action="{{ url_for('library.composer_edit', composer_id=composer.id) }}">
+                {% endif %}
+                {{ form.csrf_token }}
+
+                <div class="card-body">
+                    <div class="row g-3">
+
+                        <!-- First Name -->
+                        <div class="col-md-6">
+                            <label for="first_name" class="form-label">{{ form.first_name.label }}</label>
+                            {{ form.first_name(class="form-control") }}
+                        </div>
+
+                        <!-- Last Name -->
+                        <div class="col-md-6">
+                            <label for="last_name" class="form-label">{{ form.last_name.label }}</label>
+                            {{ form.last_name(class="form-control") }}
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="card-footer text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>{{ form.submit.label }}
+                    </button>
+                </div>
+
+                </form>
+            </div>
+
+        </div>
+    </main>
+{% endblock %}

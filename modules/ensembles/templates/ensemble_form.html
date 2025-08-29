@@ -22,7 +22,7 @@
                     <form method="POST" action="{{ url_for('ensemble.ensemble_add') }}">
                 {% elif form.mode == "edit" %}
                     <form method="POST"
-                          action="{{ url_for('library.composition_edit', composition_id=composition.id) }}">
+                          action="{{ url_for('ensemble.ensemble_edit', ensemble_id=ensemble.id) }}">
                 {% endif %}
                 {{ form.csrf_token }}
 

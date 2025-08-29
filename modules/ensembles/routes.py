@@ -24,7 +24,7 @@ def all_ensembles():
 
 @ensemble_bp.route("/add", methods=["GET", "POST"])
 def ensemble_add():
-    form = EnsembleForm()
+    form = EnsembleForm(mode="add")
     if form.validate_on_submit():
         new_ensemble = Ensemble(
             name=form.name.data,
@@ -40,6 +40,20 @@ def ensemble_add():
         flash("Byl úspěšně přidán soubor.", "success")
         return redirect(url_for("ensemble.all_ensembles"))
     return render_template("ensemble_form.html", form=form)
+
+
+@ensemble_bp.route("/<int:ensemble_id>/edit", methods=["GET", "POST"])
+def ensemble_edit(ensemble_id):
+    form = EnsembleForm(mode="edit")
+    ensemble = Ensemble.query.filter_by(id=ensemble_id).first_or_404()
+    if request.method == "GET":
+        form.name.data = ensemble.name
+    if form.validate_on_submit():
+        ensemble.name = form.name
+        db.session.commit()
+        flash("Soubor byl úspěšně přidán aktualizován.", "success")
+        return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id, ))
+    return render_template("ensemble_form.html", form=form, ensemble=ensemble,)
 
 
 @ensemble_bp.route("/<int:ensemble_id>/detail", methods=["GET", "POST"])

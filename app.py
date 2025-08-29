@@ -11,6 +11,7 @@ from modules.auth import auth_bp
 from modules.settings import settings_bp
 from modules.students import students_bp
 from modules.ui import ui_bp
+from modules.ensembles import ensemble_bp
 from collections import defaultdict
 from utils.error_handlers import register_error_handlers
 from flask import session
@@ -37,6 +38,7 @@ def create_app():
     app.register_blueprint(settings_bp, url_prefix="/settings")
     app.register_blueprint(students_bp, url_prefix="/students")
     app.register_blueprint(ui_bp, url_prefix="/ui")
+    app.register_blueprint(ensemble_bp, url_prefix="/ensemble")
 
     with app.app_context():
         db.create_all()

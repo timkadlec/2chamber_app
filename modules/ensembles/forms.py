@@ -18,6 +18,24 @@ def composer_label(composer):
     return composer.full_name
 
 
+class EnsembleForm(FlaskForm):
+    name = StringField("Název", validators=[Optional()], render_kw={"placeholder": "Zadejte název souboru"})
+    submit = SubmitField()
+
+    def __init__(self, *args, **kwargs):
+        # Use "mode" to control the submit label
+        self.mode = kwargs.pop("mode", "add")
+        super().__init__(*args, **kwargs)
+
+        if self.mode == "add":
+            self.submit.label.text = "Vytvořit soubor"
+            self.form_title = "Přidat nový soubor"
+        elif self.mode == "edit":
+            self.submit.label.text = "Uložit změny"
+            self.form_title = "Úprava stávajícího souboru"
+
+
+
 class CompositionForm(FlaskForm):
     name = StringField("Název", validators=[DataRequired()], render_kw={"placeholder": "Zadejte název skladby"})
     type = SelectField("Typ kompozice", choices=[["chamber", "Komorní"], ["orchestral", "Orchestrální"]])

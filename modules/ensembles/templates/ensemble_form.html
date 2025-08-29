@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+    <main class="py-4">
+        <div class="container-xl">
+
+            <!-- Back link -->
+            <div class="mb-4">
+                <a href="{{ url_for('ensemble.all_ensembles') }}"
+                   class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i> Zpět na soubory
+                </a>
+
+            </div>
+
+            <!-- Composition Form Card -->
+            <div class="card shadow-sm rounded-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">{{ form.form_title }}</h5>
+                </div>
+
+                {% if form.mode == "add" %}
+                    <form method="POST" action="{{ url_for('ensemble.ensemble_add') }}">
+                {% elif form.mode == "edit" %}
+                    <form method="POST"
+                          action="{{ url_for('library.composition_edit', composition_id=composition.id) }}">
+                {% endif %}
+                {{ form.csrf_token }}
+
+                <div class="card-body">
+                    <div class="row g-4">
+
+                        <!-- Left Column -->
+                        <div class="col-md-6">
+
+                            <div class="mb-3">
+                                <label for="name" class="form-label">{{ form.name.label }}</label>
+                                {{ form.name(class="form-control") }}
+                            </div>
+                        </div>
+
+                        <!-- Right Column -->
+                        <div class="col-md-6">
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="card-footer text-end">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                        <i class="fas fa-save me-2"></i>{{ form.submit.label }}
+                    </button>
+                </div>
+                </form>
+            </div>
+
+        </div>
+    </main>
+{% endblock %}

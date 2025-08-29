@@ -7,11 +7,23 @@ class EnsembleSemester(db.Model):
     __tablename__ = 'ensemble_semesters'
     id = db.Column(db.Integer, primary_key=True)
 
-    ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id'), nullable=False)
-    semester_id = db.Column(db.Integer, db.ForeignKey('semesters.id'), nullable=False)
+    ensemble_id = db.Column(
+        db.Integer,
+        db.ForeignKey('ensembles.id', ondelete="CASCADE"),  # <-- add ondelete
+        nullable=False
+    )
+    semester_id = db.Column(
+        db.Integer,
+        db.ForeignKey('semesters.id', ondelete="CASCADE"),  # optional: also cascade if a Semester is removed
+        nullable=False
+    )
 
     ensemble = db.relationship("Ensemble", back_populates="semester_links")
     semester = db.relationship("Semester", back_populates="ensemble_links")
+
+    __table_args__ = (
+        db.UniqueConstraint('ensemble_id', 'semester_id', name='uq_ensemble_semester'),
+    )
 
 
 class Ensemble(db.Model):
@@ -23,7 +35,8 @@ class Ensemble(db.Model):
     semester_links = db.relationship(
         "EnsembleSemester",
         back_populates="ensemble",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        passive_deletes=True,  # <-- add this
     )
 
     instrumentation_entries = db.relationship(

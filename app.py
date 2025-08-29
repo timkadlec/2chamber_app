@@ -109,7 +109,7 @@ def create_app():
                  .order_by(AcademicYear.start_date.desc())
                  .all())
 
-        return dict(current_semester=current, academic_years=years)
+        return dict(current_semester=current, semester_id=current.id, academic_years=years)
 
     @login_manager.user_loader
     def load_user(user_id):

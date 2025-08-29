@@ -10,7 +10,20 @@
                 </a>
             </div>
 
-            <!-- Composer Detail Card -->
+            {% if current_semester.id not in ensemble.semester_ids %}
+                <div class="alert alert-warning" role="alert">
+                    <p>
+                        Současně prohlížený soubor není ve vámi nahlíženém období aktivní.
+                    </p>
+                    <p>
+                        Pokud jej chcete převést do dalšího semestru, použijte v oddělení Semestry příkaz Převést do
+                        dalšího semestru.
+                    </p>
+                </div>
+            {% endif %}
+
+
+            <!-- Ensemble Detail Card -->
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Detail souboru</h5>
@@ -38,6 +51,38 @@
           </p>
         </div>
         #}
+            </div>
+            <div class="card shadow-sm mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Semestry</h5>
+                    <a href="#"
+                       class="btn btn-sm btn-primary">
+                        <i class="fas fa-file-export me-1"></i> Převést do dalšího semestru
+                    </a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light text-uppercase small text-muted">
+                        <tr>
+                            <th>Akademický rok</th>
+                            <th class="d-none d-lg-table-cell">Semestr</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for semester in ensemble.semesters %}
+                            <tr>
+                                <td class="d-none d-md-table-cell">
+                                    {{ semester.academic_year.name }}
+                                </td>
+                                <td class="d-none d-lg-table-cell">
+                                    {{ semester.name }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 

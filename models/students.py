@@ -1,7 +1,6 @@
 from models import db
 
 
-# Association object (explicit model)
 class StudentInstrument(db.Model):
     __tablename__ = 'student_instrument'
 
@@ -32,5 +31,6 @@ class Student(db.Model):
         return f"{self.last_name} {self.first_name}"
 
     @property
-    def instruments(self):
-        return [si.instrument for si in self.student_instruments]
+    def main_instrument(self):
+        mi = self.student_instruments.filter_by(is_primary=True).first()
+        return mi.instrument if mi else None

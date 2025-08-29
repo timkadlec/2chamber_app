@@ -1,6 +1,7 @@
 from sqlalchemy.orm import relationship
 from models import db
 from models.core import Instrumentation, Semester
+from datetime import date
 
 
 class EnsembleSemester(db.Model):
@@ -39,6 +40,8 @@ class Ensemble(db.Model):
         passive_deletes=True,  # <-- add this
     )
 
+
+
     instrumentation_entries = db.relationship(
         "EnsembleInstrumentation",
         back_populates="ensemble",
@@ -49,7 +52,15 @@ class Ensemble(db.Model):
 
     @property
     def semesters(self):
-        return [link.semester for link in self.semester_links]
+        # avoids N+1 if you eager-load links+semester (see note below)
+        return sorted(
+            (link.semester for link in self.semester_links),
+            key=lambda s: s.start_date or date.min
+        )
+
+    @property
+    def semester_ids(self):
+        return [s.semester.id for s in self.semester_links]
 
 
 class EnsembleInstrumentation(Instrumentation):

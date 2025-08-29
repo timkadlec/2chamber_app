@@ -2,7 +2,7 @@ from modules.auth import auth_bp
 from modules.auth.forms import LoginForm
 from models import User, Notification
 from werkzeug.security import check_password_hash
-from flask import flash, redirect, url_for, render_template, request, jsonify
+from flask import flash, redirect, url_for, render_template, request, jsonify, session
 from models import db
 from flask_login import login_user, logout_user, current_user, login_required
 
@@ -39,6 +39,8 @@ def login():
 @auth_bp.route('/logout')
 def logout():
     logout_user()
+    session.clear()
+    print(session)
     flash("Byl jste úspěšně odhlášen.", "success")
     return redirect(url_for('auth.login'))
 

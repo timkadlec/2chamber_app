@@ -14,9 +14,10 @@ def all_ensembles():
     page = request.args.get('page', 1, type=int)
     per_page = 10  # Adjust as needed
     pagination = Ensemble.query.filter(
-        Ensemble.semester_links.any(EnsembleSemester.semester_id == current_semester)).paginate(page=page,
-                                                                                                per_page=per_page,
-                                                                                                error_out=False)
+        Ensemble.semester_links.any(EnsembleSemester.semester_id == current_semester)).order_by(Ensemble.name).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False)
     ensembles = pagination.items
     return render_template("all_ensembles.html", ensembles=ensembles, pagination=pagination)
 
@@ -39,3 +40,18 @@ def ensemble_add():
         flash("Byl úspěšně přidán soubor.", "success")
         return redirect(url_for("ensemble.all_ensembles"))
     return render_template("ensemble_form.html", form=form)
+
+
+@ensemble_bp.route("/<int:ensemble_id>/detail", methods=["GET", "POST"])
+def ensemble_detail(ensemble_id):
+    ensemble = Ensemble.query.filter_by(id=ensemble_id).first_or_404()
+    return render_template("ensemble_detail.html", ensemble=ensemble)
+
+
+@ensemble_bp.route("/<int:ensemble_id>/delete", methods=["POST"])
+def ensemble_delete(ensemble_id):
+    ensemble_to_delete = Ensemble.query.get_or_404(ensemble_id)
+    db.session.delete(ensemble_to_delete)
+    db.session.commit()
+    flash("Soubor byl úspěšně smazán.", "success")
+    return redirect(url_for("ensemble.all_ensembles"))

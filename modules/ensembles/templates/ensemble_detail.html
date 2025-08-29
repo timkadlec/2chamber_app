@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+    <main class="py-4">
+        <div class="container-xl">
+
+            <!-- Back Link -->
+            <div class="mb-4">
+                <a href="{{ url_for('ensemble.all_ensembles') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i> Zpět na přehled souborů
+                </a>
+            </div>
+
+            <!-- Composer Detail Card -->
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Detail souboru</h5>
+                    <a href="#"
+                       class="btn btn-sm btn-info">
+                        <i class="fas fa-edit me-1"></i>Upravit soubor
+                    </a>
+                </div>
+
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col">
+                            <label class="form-label fw-semibold text-muted">Název:</label>
+                            <div>{{ ensemble.name }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {# Uncomment this block when you want to use notes #}
+                {#
+        <div class="mt-4">
+          <h6 class="fw-semibold text-muted mb-2">Poznámky</h6>
+          <p class="text-muted">
+            Připravit noty pro první housle. Zkontrolovat obsazení violoncell.
+          </p>
+        </div>
+        #}
+            </div>
+        </div>
+
+    </main>
+{% endblock %}

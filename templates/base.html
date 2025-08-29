@@ -7,18 +7,19 @@
 
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 
+    <!-- Custom fonts -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
 
-    <!-- Font Awesome (locally hosted) -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/all.css') }}">
+    <!-- Font Awesome (local) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
 
-    <!-- Bootstrap CSS -->
+    <!-- Bootstrap CSS (local) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.css') }}">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
 
-    <!-- Custom Fonts -->
+    <!-- Google font -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
@@ -27,14 +28,10 @@
         }
     </style>
 
-    <!-- In your <head> -->
+    <!-- Tom Select CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/tom-select/tom-select.bootstrap5.css') }}">
-    <script src="{{ url_for('static', filename='vendor/tom-select/tom-select.complete.js') }}"></script>
 
-    <!-- Optional: Your custom menu logic (can likely be removed if using Bootstrap’s offcanvas) -->
-    <script defer src="{{ url_for('static', filename='js/menu.js') }}"></script>
     {% block extra_styles %}{% endblock %}
-
 </head>
 <body>
 
@@ -42,21 +39,31 @@
 {% include 'partials/flash_messages.html' %}
 
 <main class="container-fluid mt-4">
-    {% block content %}
-    {% endblock %}
+    {% block content %}{% endblock %}
 </main>
 
-{% block extra_scripts %}{% endblock %}
+<!-- Bootstrap Bundle JS (local, includes Popper) -->
+<script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+
 <script>
-    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-        new bootstrap.Tooltip(el);
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.bootstrap) {
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+                new bootstrap.Tooltip(el);
+            });
+        }
     });
 </script>
 
-<!-- Bootstrap Bundle with Popper (must be at end of body) -->
-<script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.js') }}"></script>
-<!-- Fontawesome Bundle -->
+<!-- FontAwesome JS (optional, only if you want dynamic features) -->
 <script src="{{ url_for('static', filename='vendor/fontawesome/all.js') }}"></script>
+
+<!-- Tom Select JS -->
+<script defer src="{{ url_for('static', filename='vendor/tom-select/tom-select.complete.js') }}"></script>
+
+<!-- Your custom scripts -->
+<script defer src="{{ url_for('static', filename='js/menu.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
 
 </body>
 </html>

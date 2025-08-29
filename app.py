@@ -10,9 +10,12 @@ from modules.library import library_bp
 from modules.auth import auth_bp
 from modules.settings import settings_bp
 from modules.students import students_bp
+from modules.ui import ui_bp
 from collections import defaultdict
 from utils.error_handlers import register_error_handlers
-from utils.semesters import get_current_or_upcoming_semester
+from flask import session
+from sqlalchemy.orm import selectinload
+from models import AcademicYear, Semester
 
 
 def create_app():
@@ -33,6 +36,7 @@ def create_app():
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(settings_bp, url_prefix="/settings")
     app.register_blueprint(students_bp, url_prefix="/students")
+    app.register_blueprint(ui_bp, url_prefix="/ui")
 
     with app.app_context():
         db.create_all()
@@ -87,8 +91,23 @@ def create_app():
         return {"nav_links": nav_links}
 
     @app.context_processor
-    def inject_semester():
-        return {"current_semester": get_current_or_upcoming_semester()}
+    def inject_semester_context():
+        # current semester from session or a sensible default
+        current = None
+        if (sid := session.get('semester_id')):
+            current = Semester.query.get(sid)
+        if not current:
+            current = (Semester.query
+                       .order_by(Semester.start_date.desc())
+                       .first())
+
+        # list academic years with their semesters (for the dropdown)
+        years = (AcademicYear.query
+                 .options(selectinload(AcademicYear.semesters))
+                 .order_by(AcademicYear.start_date.desc())
+                 .all())
+
+        return dict(current_semester=current, academic_years=years)
 
     @login_manager.user_loader
     def load_user(user_id):

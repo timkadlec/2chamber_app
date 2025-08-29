@@ -2,6 +2,7 @@ from sqlalchemy.orm import relationship
 from collections import defaultdict
 from models import db
 from datetime import datetime
+from sqlalchemy import UniqueConstraint, CheckConstraint, Index
 
 
 class AcademicYear(db.Model):
@@ -18,15 +19,20 @@ class AcademicYear(db.Model):
         order_by="Semester.start_date"
     )
 
+    __table_args__ = (
+        CheckConstraint('start_date <= end_date', name='chk_ay_dates'),
+        Index('ix_ay_start_end', 'start_date', 'end_date'),
+    )
+
     @property
     def current_semester(self):
-        now = datetime.now().date()
-        return next((s for s in self.semesters if s.start_date <= now <= s.end_date), None)
+        today = datetime.now().date()
+        return next((s for s in self.semesters if s.start_date <= today <= s.end_date), None)
 
     @property
     def upcoming_semester(self):
-        now = datetime.now().date()
-        future = [s for s in self.semesters if s.start_date > now]
+        today = datetime.now().date()
+        future = [s for s in self.semesters if s.start_date > today]
         return min(future, key=lambda s: s.start_date) if future else None
 
 
@@ -37,18 +43,38 @@ class Semester(db.Model):
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
 
-    academic_year_id = db.Column(db.Integer, db.ForeignKey('academic_years.id'), nullable=True)
+    academic_year_id = db.Column(db.Integer, db.ForeignKey('academic_years.id', ondelete='SET NULL'))
     academic_year = relationship("AcademicYear", back_populates="semesters")
 
-    ensemble_links = db.relationship(
-        "EnsembleSemester",
-        back_populates="semester",
-        cascade="all, delete-orphan"
+    ensemble_links = db.relationship("EnsembleSemester", back_populates="semester", cascade="all, delete-orphan")
+
+    student_enrollments = db.relationship('StudentSemesterEnrollment', back_populates='semester',
+                                          cascade='all, delete-orphan')
+    subject_enrollments = db.relationship('StudentSubjectEnrollment', back_populates='semester',
+                                          cascade='all, delete-orphan')
+
+    __table_args__ = (
+        CheckConstraint('start_date <= end_date', name='chk_semester_dates'),
+        # Optional but useful if names repeat across years:
+        UniqueConstraint('academic_year_id', 'name', name='uq_semester_name_in_year'),
+        Index('ix_semester_start_end', 'start_date', 'end_date'),
     )
 
     @property
     def ensembles(self):
         return [link.ensemble for link in self.ensemble_links]
+
+
+class Subject(db.Model):
+    __tablename__ = 'subjects'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+
+    # If subject names are global-unique in your school, consider:
+    # __table_args__ = (UniqueConstraint('name', name='uq_subject_name'),)
+
+    student_enrollments = db.relationship('StudentSubjectEnrollment', back_populates='subject',
+                                          cascade='all, delete-orphan')
 
 
 # ------------------------

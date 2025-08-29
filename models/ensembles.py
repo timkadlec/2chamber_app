@@ -40,8 +40,6 @@ class Ensemble(db.Model):
         passive_deletes=True,  # <-- add this
     )
 
-
-
     instrumentation_entries = db.relationship(
         "EnsembleInstrumentation",
         back_populates="ensemble",

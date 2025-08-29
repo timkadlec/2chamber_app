@@ -2,6 +2,7 @@ from sqlalchemy import UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 from models import db
 
+
 class Student(db.Model):
     __tablename__ = 'students'
     id = db.Column(db.Integer, primary_key=True)
@@ -29,6 +30,7 @@ class Student(db.Model):
 
     @property
     def full_name(self): return f"{self.last_name} {self.first_name}"
+
     @property
     def main_instrument(self): return self.instrument
 
@@ -55,9 +57,9 @@ class StudentSubjectEnrollment(db.Model):
     semester_id = db.Column(db.Integer, db.ForeignKey('semesters.id', ondelete='CASCADE'), nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey('subjects.id', ondelete='CASCADE'), nullable=False)
 
-    student  = relationship('Student',  back_populates='subject_enrollments')
+    student = relationship('Student', back_populates='subject_enrollments')
     semester = relationship('Semester', back_populates='subject_enrollments')
-    subject  = relationship('Subject',  back_populates='student_enrollments')
+    subject = relationship('Subject', back_populates='student_enrollments')
 
     __table_args__ = (
         UniqueConstraint('student_id', 'semester_id', 'subject_id', name='uq_student_semester_subject'),

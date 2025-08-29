@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+    <main>
+        <div class="container-xl">
+
+
+            <!-- Table Wrapper -->
+            <div class="card shadow-sm mb-4">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light text-uppercase small text-muted">
+                        <tr>
+                            <th>Název předmětu</th>
+                            <th class="d-none d-md-table-cell">Počet zapsaných studentů</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for subject in subjects %}
+                            <tr>
+                                <td>{{ subject.name }}</td>
+                                <td class="d-none d-md-table-cell">
+                                    {{ subject.enrolled_count(semester_id) }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+{% endblock %}

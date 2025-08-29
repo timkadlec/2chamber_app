@@ -76,6 +76,11 @@ class Subject(db.Model):
     student_enrollments = db.relationship('StudentSubjectEnrollment', back_populates='subject',
                                           cascade='all, delete-orphan')
 
+    def enrolled_count(self, semester_id=None):
+        if semester_id:
+            return sum(1 for e in self.student_enrollments if e.semester_id == semester_id)
+        return len(self.student_enrollments)
+
 
 # ------------------------
 # Users, Roles, Permissions (GLOBAL USER SYSTEM)

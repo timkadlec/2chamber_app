@@ -1,6 +1,33 @@
 from sqlalchemy.orm import relationship
 from collections import defaultdict
 from models import db
+from datetime import datetime
+
+
+class AcademicYear(db.Model):
+    __tablename__ = 'academic_years'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+
+    semesters = db.relationship(
+        "Semester",
+        back_populates="academic_year",
+        cascade="all, delete-orphan",
+        order_by="Semester.start_date"
+    )
+
+    @property
+    def current_semester(self):
+        now = datetime.now().date()
+        return next((s for s in self.semesters if s.start_date <= now <= s.end_date), None)
+
+    @property
+    def upcoming_semester(self):
+        now = datetime.now().date()
+        future = [s for s in self.semesters if s.start_date > now]
+        return min(future, key=lambda s: s.start_date) if future else None
 
 
 class Semester(db.Model):
@@ -9,6 +36,9 @@ class Semester(db.Model):
     name = db.Column(db.String(100), nullable=False)
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
+
+    academic_year_id = db.Column(db.Integer, db.ForeignKey('academic_years.id'), nullable=True)
+    academic_year = relationship("AcademicYear", back_populates="semesters")
 
     ensemble_links = db.relationship(
         "EnsembleSemester",
@@ -19,6 +49,7 @@ class Semester(db.Model):
     @property
     def ensembles(self):
         return [link.ensemble for link in self.ensemble_links]
+
 
 # ------------------------
 # Users, Roles, Permissions (GLOBAL USER SYSTEM)

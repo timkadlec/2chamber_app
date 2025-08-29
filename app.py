@@ -12,6 +12,7 @@ from modules.settings import settings_bp
 from modules.students import students_bp
 from collections import defaultdict
 from utils.error_handlers import register_error_handlers
+from utils.semesters import get_current_or_upcoming_semester
 
 
 def create_app():
@@ -84,6 +85,10 @@ def create_app():
         nav_links = sorted(nav_links, key=lambda x: x["weight"])
 
         return {"nav_links": nav_links}
+
+    @app.context_processor
+    def inject_semester():
+        return {"current_semester": get_current_or_upcoming_semester()}
 
     @login_manager.user_loader
     def load_user(user_id):

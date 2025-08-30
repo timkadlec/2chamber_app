@@ -71,3 +71,13 @@ class EnsembleInstrumentation(Instrumentation):
     __mapper_args__ = {
         'polymorphic_identity': 'ensemble_instrumentation',
     }
+
+
+class EnsemblePlayer(db.Model):
+    __tablename__ = 'ensemble_players'
+    id = db.Column(db.Integer, primary_key=True)
+    player_id   = db.Column(db.Integer, db.ForeignKey('players.id', ondelete='CASCADE'), nullable=False)
+    ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete='CASCADE'), nullable=False)
+    __table_args__ = (
+        db.UniqueConstraint('player_id', 'ensemble_id', name='uq_ensemble_player'),
+    )

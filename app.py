@@ -1,4 +1,4 @@
-from flask import Flask, url_for, request, redirect
+from flask import Flask, url_for, request, redirect, g
 from flask_migrate import Migrate
 from config import ProductionConfig
 from models import db, User

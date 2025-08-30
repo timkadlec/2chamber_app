@@ -27,6 +27,7 @@ class EnsembleSemester(db.Model):
     )
 
 
+# --- Ensemble ---
 class Ensemble(db.Model):
     __tablename__ = 'ensembles'
     id = db.Column(db.Integer, primary_key=True)
@@ -37,7 +38,7 @@ class Ensemble(db.Model):
         "EnsembleSemester",
         back_populates="ensemble",
         cascade="all, delete-orphan",
-        passive_deletes=True,  # <-- add this
+        passive_deletes=True,
     )
 
     instrumentation_entries = db.relationship(
@@ -48,17 +49,29 @@ class Ensemble(db.Model):
         passive_deletes=True,
     )
 
+    # NEW: association rows for players in this ensemble
+    player_links = db.relationship(
+        "EnsemblePlayer",
+        back_populates="ensemble",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
     @property
     def semesters(self):
-        # avoids N+1 if you eager-load links+semester (see note below)
-        return sorted(
-            (link.semester for link in self.semester_links),
-            key=lambda s: s.start_date or date.min
-        )
+        return sorted((link.semester for link in self.semester_links),
+                      key=lambda s: s.start_date or date.min)
 
     @property
     def semester_ids(self):
-        return [s.semester.id for s in self.semester_links]
+        # small fix: use the FK, not link.semester.id
+        return [link.semester_id for link in self.semester_links]
+
+    @property
+    def players(self):
+        # convenience: list Player objects in the ensemble (dedup)
+        return [ep.player for ep in self.player_links]
+
 
 
 class EnsembleInstrumentation(Instrumentation):
@@ -68,16 +81,40 @@ class EnsembleInstrumentation(Instrumentation):
     ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete="CASCADE"), nullable=False)
     ensemble = relationship("Ensemble", back_populates="instrumentation_entries")
 
+    # NEW: reverse link to assignments
+    player_links = db.relationship(
+        "EnsemblePlayer",
+        back_populates="ensemble_instrumentation",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
     __mapper_args__ = {
         'polymorphic_identity': 'ensemble_instrumentation',
     }
 
 
+
 class EnsemblePlayer(db.Model):
     __tablename__ = 'ensemble_players'
     id = db.Column(db.Integer, primary_key=True)
-    player_id   = db.Column(db.Integer, db.ForeignKey('players.id', ondelete='CASCADE'), nullable=False)
-    ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete='CASCADE'), nullable=False)
+
+    player_id   = db.Column(db.Integer, db.ForeignKey('players.id', ondelete='CASCADE'), nullable=False, index=True)
+    ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete='CASCADE'), nullable=False, index=True)
+
+    ensemble_instrumentation_id = db.Column(
+        db.Integer,
+        db.ForeignKey('ensemble_instrumentations.id', ondelete='CASCADE'),
+        nullable=True,
+        index=True
+    )
+
+    player = db.relationship("Player", back_populates="ensemble_links")
+    ensemble = db.relationship("Ensemble", back_populates="player_links")
+    ensemble_instrumentation = db.relationship("EnsembleInstrumentation", back_populates="player_links")
+
     __table_args__ = (
-        db.UniqueConstraint('player_id', 'ensemble_id', name='uq_ensemble_player'),
+        db.UniqueConstraint('player_id', 'ensemble_id', 'ensemble_instrumentation_id',
+                            name='uq_ensemble_player_per_part'),
+        db.UniqueConstraint('player_id', 'ensemble_id', name='uq_ensemble_player_once'),
     )

@@ -19,8 +19,8 @@ class Student(db.Model):
     player = relationship(
         'Player',
         back_populates='student',
-        uselist=False,  # <-- key: one-to-one on ORM side
-        passive_deletes=True  # pairs with SET NULL on FK
+        uselist=False,
+        passive_deletes=True
     )
 
     # NEW: relationships to enrollment rows

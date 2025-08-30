@@ -16,11 +16,11 @@ class Student(db.Model):
     instrument_id = db.Column(db.Integer, db.ForeignKey('instruments.id', ondelete='SET NULL'), nullable=True)
     instrument = relationship('Instrument')
 
-    players = relationship(
+    player = relationship(
         'Player',
         back_populates='student',
-        passive_deletes=True  # works with SET NULL on FK
-        # NO delete-orphan, because Player can live independently
+        uselist=False,  # <-- key: one-to-one on ORM side
+        passive_deletes=True  # pairs with SET NULL on FK
     )
 
     # NEW: relationships to enrollment rows

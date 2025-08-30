@@ -375,8 +375,14 @@ class Player(db.Model):
     phone = db.Column(db.String(100))
     email = db.Column(db.String(100))
 
-    student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='SET NULL'), nullable=True, index=True)
-    student = relationship('Student', back_populates='players')
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey('students.id', ondelete='SET NULL'),
+        unique=True,
+        nullable=True,
+        index=True
+    )
+    student = relationship('Student', back_populates='player')
 
     instrument_id = db.Column(db.Integer, db.ForeignKey('instruments.id'))
     instrument = relationship('Instrument')

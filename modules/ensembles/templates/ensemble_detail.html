@@ -40,7 +40,16 @@
                             <div>{{ ensemble.name }}</div>
                         </div>
                     </div>
+                    <div class="row g-4">
+                        <div class="col">
+                            <label class="form-label fw-semibold text-muted">Obsazení:</label>
+                            <div>{% for entry in ensemble.instrumentation_entries %}{{ entry.instrument.name }}{% if not loop.last %}, {% endif %}{% endfor %}</div>
+                        </div>
+                    </div>
                 </div>
+
+
+
 
                 {# Uncomment this block when you want to use notes #}
                 {#
@@ -52,41 +61,85 @@
         </div>
         #}
             </div>
-        <!-- Ensemble Players Card -->
-        <div class="card shadow-sm mt-4">
+            <!-- Ensemble Players Card -->
+            <div class="card shadow-sm mt-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Hráči</h5>
-                    <a href="#"
-                       class="btn btn-sm btn-primary">
-                        <i class="fas fa-plus me-1"></i> Přidat hráče
+                    <!-- Trigger -->
+                    <a href="#" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                        <i class="fas fa-plus me-1"></i> Přidat hráče (student)
                     </a>
+
+                    <!-- Modal -->
+                    <div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <form action="{{ url_for("ensemble.add_student_to_ensemble", ensemble_id=ensemble.id) }}"
+                                  method="post" id="addStudentForm" class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Přidat hráče z aktivních studentů</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+
+                                <div class="modal-body">
+                                    <!-- Dropdown of students -->
+                                    <div class="mb-3">
+                                        <label for="student_id" class="form-label">Student</label>
+                                        <select id="student_id" name="student_id" class="form-select" required>
+                                            <option value="" disabled selected>— vyberte studenta —</option>
+                                            {% for s in available_students %}
+                                                <option value="{{ s.id }}">
+                                                    {{ s.last_name }} {{ s.first_name }}
+                                                    {% if s.instrument %} — {{ s.instrument.name }}{% endif %}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Zrušit</button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-plus me-1"></i> Přidat
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div class="table-responsive">
                     <table class="table align-middle mb-0">
                         <thead class="table-light text-uppercase small text-muted">
                         <tr>
-                            <th>Akademický rok</th>
-                            <th class="d-none d-lg-table-cell">Semestr</th>
+                            <th>Příjmení</th>
+                            <th class="d-none d-lg-table-cell">Jméno</th>
+                            <th class="d-none d-lg-table-cell">Nástroj</th>
                         </tr>
                         </thead>
                         <tbody>
-                        {% for semester in ensemble.semesters %}
+                        {% for ensemble_player in player_links %}
                             <tr>
-                                <td class="d-none d-md-table-cell">
-                                    {{ semester.academic_year.name }}
+                                <td>
+                                    {{ ensemble_player.player.last_name }}
                                 </td>
-                                <td class="d-none d-lg-table-cell">
-                                    {{ semester.name }}
+                                <td>
+                                    {{ ensemble_player.player.first_name }}
+
+                                </td>
+                                <td>
+                                    {{ ensemble_player.ensemble_instrumentation.instrument.name
+         if ensemble_player.ensemble_instrumentation else "-" }}
                                 </td>
                             </tr>
                         {% endfor %}
+
                         </tbody>
                     </table>
                 </div>
             </div>
 
-        <!-- Ensemble Semesters Card -->
+            <!-- Ensemble Semesters Card -->
             <div class="card shadow-sm mt-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Semestry</h5>

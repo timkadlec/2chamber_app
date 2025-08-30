@@ -64,14 +64,11 @@ class Ensemble(db.Model):
 
     @property
     def semester_ids(self):
-        # small fix: use the FK, not link.semester.id
         return [link.semester_id for link in self.semester_links]
 
     @property
     def players(self):
-        # convenience: list Player objects in the ensemble (dedup)
         return [ep.player for ep in self.player_links]
-
 
 
 class EnsembleInstrumentation(Instrumentation):
@@ -94,12 +91,11 @@ class EnsembleInstrumentation(Instrumentation):
     }
 
 
-
 class EnsemblePlayer(db.Model):
     __tablename__ = 'ensemble_players'
     id = db.Column(db.Integer, primary_key=True)
 
-    player_id   = db.Column(db.Integer, db.ForeignKey('players.id', ondelete='CASCADE'), nullable=False, index=True)
+    player_id = db.Column(db.Integer, db.ForeignKey('players.id', ondelete='CASCADE'), nullable=False, index=True)
     ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete='CASCADE'), nullable=False, index=True)
 
     ensemble_instrumentation_id = db.Column(

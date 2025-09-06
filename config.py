@@ -10,6 +10,10 @@ load_dotenv(os.path.join(basedir, '.env'))
 class BaseConfig:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    ORACLE_URL = os.getenv("ORACLE_URL")
+    SQLALCHEMY_BINDS = {}
+    if ORACLE_URL:
+        SQLALCHEMY_BINDS["oracle"] = ORACLE_URL
 
 
 class DevelopmentConfig(BaseConfig):

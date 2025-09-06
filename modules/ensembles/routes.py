@@ -1,7 +1,7 @@
 from flask import render_template, flash, redirect, url_for, session, request, jsonify
 from .forms import EnsembleForm
 from utils.nav import navlink
-from models import db, Ensemble, EnsembleSemester, Player, Student, EnsemblePlayer, EnsembleInstrumentation
+from models import db, Ensemble, EnsembleSemester, Player, Student, EnsemblePlayer, EnsembleInstrumentation, KomorniHraStud
 from . import ensemble_bp
 from sqlalchemy.orm import selectinload
 from sqlalchemy import or_, select
@@ -13,7 +13,7 @@ from sqlalchemy.exc import IntegrityError
 def all_ensembles():
     current_semester = session["semester_id"]
     page = request.args.get('page', 1, type=int)
-    per_page = 10  # Adjust as needed
+    per_page = 10
     pagination = Ensemble.query.filter(
         Ensemble.semester_links.any(EnsembleSemester.semester_id == current_semester)).order_by(Ensemble.name).paginate(
         page=page,

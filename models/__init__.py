@@ -8,3 +8,4 @@ from .auth import *
 from .ensembles import *
 from .students import *
 from .teachers import *
+from .oracle import *

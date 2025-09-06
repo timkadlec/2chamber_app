@@ -9,8 +9,8 @@ class AcademicYear(db.Model):
     __tablename__ = 'academic_years'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date, nullable=False)
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
 
     semesters = db.relationship(
         "Semester",
@@ -37,27 +37,37 @@ class AcademicYear(db.Model):
 
 
 class Semester(db.Model):
-    __tablename__ = 'semesters'
+    __tablename__ = "semesters"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    start_date = db.Column(db.Date, nullable=False)
-    end_date = db.Column(db.Date, nullable=False)
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date    )
 
-    academic_year_id = db.Column(db.Integer, db.ForeignKey('academic_years.id', ondelete='SET NULL'))
-    academic_year = relationship("AcademicYear", back_populates="semesters")
+    academic_year_id = db.Column(
+        db.Integer,
+        db.ForeignKey("academic_years.id", ondelete="SET NULL")
+    )
+    academic_year = db.relationship("AcademicYear", back_populates="semesters")
 
-    ensemble_links = db.relationship("EnsembleSemester", back_populates="semester", cascade="all, delete-orphan")
+    ensemble_links = db.relationship(
+        "EnsembleSemester", back_populates="semester", cascade="all, delete-orphan"
+    )
 
-    student_enrollments = db.relationship('StudentSemesterEnrollment', back_populates='semester',
-                                          cascade='all, delete-orphan')
-    subject_enrollments = db.relationship('StudentSubjectEnrollment', back_populates='semester',
-                                          cascade='all, delete-orphan')
+    student_enrollments = db.relationship(
+        "StudentSemesterEnrollment", back_populates="semester", cascade="all, delete-orphan"
+    )
+    subject_enrollments = db.relationship(
+        "StudentSubjectEnrollment", back_populates="semester", cascade="all, delete-orphan"
+    )
+
+    teacher_subjects = db.relationship(
+        "TeacherSubject", back_populates="semester", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
-        CheckConstraint('start_date <= end_date', name='chk_semester_dates'),
-        # Optional but useful if names repeat across years:
-        UniqueConstraint('academic_year_id', 'name', name='uq_semester_name_in_year'),
-        Index('ix_semester_start_end', 'start_date', 'end_date'),
+        db.CheckConstraint("start_date <= end_date", name="chk_semester_dates"),
+        db.UniqueConstraint("academic_year_id", "name", name="uq_semester_name_in_year"),
+        Index("ix_semester_start_end", "start_date", "end_date"),
     )
 
     @property
@@ -66,20 +76,39 @@ class Semester(db.Model):
 
 
 class Subject(db.Model):
-    __tablename__ = 'subjects'
+    __tablename__ = "subjects"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
+    name = db.Column(db.String(200), nullable=False, unique=True)
+    code = db.Column(db.String(100))
 
-    # If subject names are global-unique in your school, consider:
-    # __table_args__ = (UniqueConstraint('name', name='uq_subject_name'),)
+    # Enrollment relation (assumes you have this model elsewhere)
+    student_enrollments = db.relationship(
+        "StudentSubjectEnrollment",
+        back_populates="subject",
+        cascade="all, delete-orphan"
+    )
 
-    student_enrollments = db.relationship('StudentSubjectEnrollment', back_populates='subject',
-                                          cascade='all, delete-orphan')
+    # Association objects to teachers
+    subject_teachers = db.relationship(
+        "TeacherSubject",
+        back_populates="subject",
+        cascade="all, delete-orphan"
+    )
+
+    # Convenience: direct many-to-many view (through the association table)
+    teachers = db.relationship(
+        "Teacher",
+        secondary="teacher_subjects",
+        back_populates="subjects"
+    )
 
     def enrolled_count(self, semester_id=None):
         if semester_id:
             return sum(1 for e in self.student_enrollments if e.semester_id == semester_id)
         return len(self.student_enrollments)
+
+    def __repr__(self):
+        return f"<Subject {self.id} {self.name!r}>"
 
 
 # ------------------------
@@ -371,7 +400,7 @@ class Player(db.Model):
     __tablename__ = 'players'
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(100), nullable=False)
-    last_name  = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
     phone = db.Column(db.String(100))
     email = db.Column(db.String(100))
 

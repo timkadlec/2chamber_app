@@ -1,7 +1,7 @@
 from flask import Flask, url_for, request, redirect, g
 from flask_migrate import Migrate
 from config import ProductionConfig
-from models import db, User
+from models import db, User, Student, KomorniHraStud
 import locale
 from db_core_entries import seed_instruments, seed_roles_and_admin, seed_composers, seed_basic_compositions, \
     seed_mock_notification
@@ -43,12 +43,12 @@ def create_app():
     app.register_blueprint(subject_bp, url_prefix="/subjects")
 
     with app.app_context():
-        db.create_all()
-        seed_instruments()
-        seed_roles_and_admin()
-        seed_composers()
-        seed_basic_compositions()
-        seed_mock_notification()
+        db.create_all(bind_key=None)
+        # seed_instruments()
+        # seed_roles_and_admin()
+        # seed_composers()
+        # seed_basic_compositions()
+        # seed_mock_notification()
         register_error_handlers(app)
 
     def is_allowed(link):

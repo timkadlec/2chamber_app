@@ -10,6 +10,7 @@
                     <table class="table align-middle mb-0">
                         <thead class="table-light text-uppercase small text-muted">
                         <tr>
+                            <th>Kód předmětu</th>
                             <th>Název předmětu</th>
                             <th class="d-none d-md-table-cell">Počet zapsaných studentů</th>
                         </tr>
@@ -17,6 +18,7 @@
                         <tbody>
                         {% for subject in subjects %}
                             <tr>
+                            <td>{{ subject.code }}</td>
                                 <td>{{ subject.name }}</td>
                                 <td class="d-none d-md-table-cell">
                                     {{ subject.enrolled_count(semester_id) }}

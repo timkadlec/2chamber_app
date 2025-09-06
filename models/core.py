@@ -41,7 +41,7 @@ class Semester(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     start_date = db.Column(db.Date)
-    end_date = db.Column(db.Date    )
+    end_date = db.Column(db.Date)
 
     academic_year_id = db.Column(
         db.Integer,

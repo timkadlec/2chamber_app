@@ -12,6 +12,7 @@ class Student(db.Model):
     email = db.Column(db.String(256))
     osobni_cislo = db.Column(db.String(256), unique=True)
     active = db.Column(db.Boolean, default=True, index=True)
+    id_studia = db.Column(db.Integer())
 
     instrument_id = db.Column(db.Integer, db.ForeignKey('instruments.id', ondelete='SET NULL'), nullable=True)
     instrument = relationship('Instrument')
@@ -23,7 +24,6 @@ class Student(db.Model):
         passive_deletes=True
     )
 
-    # NEW: relationships to enrollment rows
     semester_enrollments = relationship(
         'StudentSemesterEnrollment',
         back_populates='student',

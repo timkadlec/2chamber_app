@@ -18,6 +18,14 @@ from utils.error_handlers import register_error_handlers
 from flask import session
 from sqlalchemy.orm import selectinload
 from models import AcademicYear, Semester
+from cli import (
+    cli_format_academic_year,
+    cli_get_or_create_academic_year,
+    cli_oracle_ping,
+    cli_get_or_create_semester,
+    cli_get_or_create_subject,
+    cli_oracle_students_update
+)
 
 
 def create_app():
@@ -41,6 +49,13 @@ def create_app():
     app.register_blueprint(ui_bp, url_prefix="/ui")
     app.register_blueprint(ensemble_bp, url_prefix="/ensembles")
     app.register_blueprint(subject_bp, url_prefix="/subjects")
+
+    app.cli.add_command(cli_format_academic_year)
+    app.cli.add_command(cli_get_or_create_academic_year)
+    app.cli.add_command(cli_oracle_ping)
+    app.cli.add_command(cli_get_or_create_semester)
+    app.cli.add_command(cli_get_or_create_subject)
+    app.cli.add_command(cli_oracle_students_update)
 
     with app.app_context():
         db.create_all(bind_key=None)

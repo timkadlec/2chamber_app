@@ -65,15 +65,16 @@ def cli_oracle_students_update():
     for ors in oracle_students:
         # student
         student = get_or_create_student(ors)
-        db.session.commit()
+        db.session.flush()
         if not student:
             skipped += 1
             click.echo(f"Skipped (no instrument or error): {ors}", err=True)
+            continue  # ⚡ TADY přestat
 
         # player
-        get_or_create_player_from_student(student)
-        db.session.commit()
-        if get_or_create_player_from_student(student):
+        player = get_or_create_player_from_student(student)
+        db.session.flush()
+        if player:
             created_players += 1
 
         # semester + subject
@@ -81,12 +82,15 @@ def cli_oracle_students_update():
         sem = get_or_create_semester(ors.SEMESTR_ID)
         subj = get_or_create_subject(ors.PREDMET_NAZEV, ors.PREDMET_KOD)
         click.echo(f"Subject: {subj}", err=True)
+
         if not (ay and sem and subj):
             skipped += 1
             click.echo(f"Skipped (semester/subject error): {sem}", err=True)
             continue
+
         if student_subject_enrollment(student.id, subj.id, sem.id):
             created_enrollments += 1
+
     try:
         db.session.commit()
     except IntegrityError:

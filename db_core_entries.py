@@ -1,5 +1,5 @@
 from models.core import db, InstrumentSection, InstrumentGroup, Instrument, ProjectState, EventType
-from models import Role, User, Notification
+from models import User
 from models import Composition, Composer, CompositionInstrumentation
 from werkzeug.security import generate_password_hash
 
@@ -103,9 +103,9 @@ def seed_instruments():
             Instrument(id=23, name="Trubka", abbreviation="Tr", instrument_section_id=3, instrument_group_id=11,
                        weight=130,
                        is_primary=True),
-            Instrument(id=24, name="Trombon", abbreviation="Tbn", instrument_section_id=3, instrument_group_id=12,
+            Instrument(id=24, name="Pozoun", abbreviation="Tbn", instrument_section_id=3, instrument_group_id=12,
                        weight=140, is_primary=True),
-            Instrument(id=25, name="Basový trombon", abbreviation="BTbn", instrument_section_id=3,
+            Instrument(id=25, name="Basový pozoun", abbreviation="BTbn", instrument_section_id=3,
                        instrument_group_id=12,
                        weight=145, is_primary=False),
             Instrument(id=26, name="Tuba", abbreviation="Tba", instrument_section_id=3, instrument_group_id=13,
@@ -200,67 +200,6 @@ def seed_instruments():
         return
 
 
-def seed_roles_and_admin():
-    # --- Seed Roles ---
-    role_names = ["Admin", "Project Manager", "Approver", "Viewer"]
-
-    for name in role_names:
-        existing_role = Role.query.filter_by(name=name).first()
-        if not existing_role:
-            role = Role(name=name)
-            db.session.add(role)
-            print(f"✅ Created role: {name}")
-
-    db.session.commit()
-
-    # --- Seed Admin User ---
-    admin_username = "admin"
-    admin_email = "tim@mwq.cz"
-    admin_password = "admin"  # You may change this or make it configurable
-
-    existing_admin = User.query.filter_by(username=admin_username).first()
-    admin_role = Role.query.filter_by(name="Admin").first()
-
-    test_username = "test"
-    test_email = "test@test.cz"
-    test_password = "test"
-
-    exisiting_testu_user = User.query.filter_by(username=test_username).first()
-    test_role = Role.query.filter_by(name="Viewer").first()
-
-    if not existing_admin:
-        admin_user = User(
-            username=admin_username,
-            email=admin_email,
-            password_hash=generate_password_hash(admin_password),
-            role=admin_role,
-            active=True
-        )
-        db.session.add(admin_user)
-        db.session.commit()
-        print("✅ Admin user created successfully.")
-        print(f"Username: {admin_username}, Password: {admin_password}")
-
-    else:
-        print("ℹ️ Admin user already exists.")
-
-    if not exisiting_testu_user:
-        test_user = User(
-            username=test_username,
-            email=test_email,
-            password_hash=generate_password_hash(test_password),
-            role=test_role,
-            active=True
-        )
-        db.session.add(test_user)
-        db.session.commit()
-        print("✅ Test user created successfully.")
-        print(f"Username: {test_username}, Password: {test_password}")
-
-    else:
-        print("ℹ️ Test user already exists.")
-
-
 def seed_composers():
     if not Composer.query.first():
         # Instrument Sections
@@ -308,21 +247,3 @@ def seed_basic_compositions():
     db.session.bulk_save_objects(compositions)
     db.session.commit()
     print("✅ Compositions seeded.")
-
-def seed_mock_notification():
-
-    user_id = 1
-    existing_notification = Notification.query.filter_by(user_id=user_id).first()
-
-    if not existing_notification:
-        notification = Notification(
-            user_id=user_id,
-            message="Test notification for Admin",
-            type="info",
-            is_read=False
-        )
-        db.session.add(notification)
-        db.session.commit()
-        print("✅ Mock notification created for user 1.")
-    else:
-        print("ℹ️ Mock notification already exists.")

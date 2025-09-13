@@ -175,9 +175,8 @@ def add_student_to_ensemble(ensemble_id):
     except IntegrityError:
         db.session.rollback()
         return jsonify({"message": "Hráč už je v ansámblu / na daném partu."}), 409
-
-    return jsonify(
-        {"ok": True, "player_id": player.id, "ensemble_player_id": ep.id, "ensemble_instrumentation_id": epi_id})
+    flash("Hráč byl úspěšně přidán", "success")
+    return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
 
 
 @ensemble_bp.route("/<int:ensemble_id>/delete", methods=["POST"])

@@ -75,15 +75,6 @@
         </nav>
 
         <div class="d-flex align-items-center justify-content-between border-top pt-3">
-            <div class="position-relative">
-                <i class="fa-solid fa-bell text-secondary" style="font-size: 1.2rem;"></i>
-                {% if current_user.is_authenticated and current_user.unread_notifications_count > 0 %}
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger small">
-            {{ current_user.unread_notifications_count }}
-            <span class="visually-hidden">unread notifications</span>
-          </span>
-                {% endif %}
-            </div>
 
             <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
                  style="width: 32px; height: 32px;">

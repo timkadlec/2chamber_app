@@ -38,7 +38,7 @@
                                 </td>
                                 <td class="d-none d-md-table-cell"></td>
                                 <td class="d-none d-lg-table-cell"></td>
-                                <td class="d-none d-sm-table-cell"></td>
+                                <td class="d-none d-sm-table-cell">{% for pl in ensemble.player_links %}{{ pl.player.first_name[0] }}. {{ pl.player.last_name }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
                                 <td class="text-end">
                                     <a href="{{ url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id) }}"
                                        class="btn btn-link btn-sm text-primary me-1">

@@ -7,4 +7,6 @@ auth_bp = Blueprint(
     static_folder='static'
 )
 
+
+
 from . import routes

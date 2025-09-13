@@ -3,9 +3,10 @@ from flask_migrate import Migrate
 from config import ProductionConfig
 from models import db, User, Student, KomorniHraStud
 import locale
-from db_core_entries import seed_instruments, seed_roles_and_admin, seed_composers, seed_basic_compositions, \
-    seed_mock_notification
-from flask_login import LoginManager, current_user
+from db_core_entries import seed_instruments, seed_composers, seed_basic_compositions
+import os
+from extensions import login_manager, oauth, migrate
+from flask_login import current_user
 from modules.library import library_bp
 from modules.auth import auth_bp
 from modules.settings import settings_bp
@@ -33,11 +34,11 @@ def create_app():
 
     config_class = ProductionConfig
     app.config.from_object(config_class)
-    db.init_app(app)
-    migrate = Migrate(app, db)
-    locale.setlocale(locale.LC_TIME, 'cs_CZ')  # for Czech
 
-    login_manager = LoginManager()
+    db.init_app(app)
+    migrate.init_app(app, db)
+    oauth.init_app(app)
+    locale.setlocale(locale.LC_TIME, 'cs_CZ')  # for Czech
 
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
@@ -59,7 +60,7 @@ def create_app():
 
     with app.app_context():
         db.create_all(bind_key=None)
-        # seed_instruments()
+        seed_instruments()
         # seed_roles_and_admin()
         # seed_composers()
         # seed_basic_compositions()
@@ -72,6 +73,18 @@ def create_app():
         if not current_user.is_authenticated:
             return False
         return current_user.role and current_user.role.name in link._nav_roles
+
+    @app.before_request
+    def restrict_web_only_to_logged_in():
+        # Allow static and auth routes to be accessed without login
+        if request.endpoint is None:
+            return
+
+        if request.blueprint == "auth" or request.endpoint.startswith("static"):
+            return
+
+        if not current_user.is_authenticated:
+            return redirect(url_for('auth.login', next=request.url))
 
     @app.context_processor
     def inject_nav_links():
@@ -109,6 +122,16 @@ def create_app():
 
         return {"nav_links": nav_links}
 
+    TENANT = os.environ["OAUTH_TENANT_ID"]
+    SCOPES = os.environ.get("OAUTH_SCOPES", "openid profile email")
+    oauth.register(
+        name="entra",
+        client_id=os.environ["OAUTH_CLIENT_ID"],
+        client_secret=os.environ["OAUTH_CLIENT_SECRET"],
+        server_metadata_url=f"https://login.microsoftonline.com/{TENANT}/v2.0/.well-known/openid-configuration",
+        client_kwargs={"scope": SCOPES},
+    )
+
     @app.context_processor
     def inject_semester_context():
         # current semester from session or a sensible default
@@ -130,20 +153,6 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
-
-    @app.before_request
-    def restrict_web_only_to_logged_in():
-        public_endpoints = [
-            'auth.login',
-            'auth.logout',
-            'auth.register',
-            'static'
-        ]
-        if request.endpoint in public_endpoints:
-            return
-
-        if not current_user.is_authenticated:
-            return redirect(url_for('auth.login', next=request.url))
+        return User.query.get(user_id)
 
     return app

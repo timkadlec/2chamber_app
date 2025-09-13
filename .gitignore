@@ -1,6 +1,7 @@
 node_modules
 data.db
-
+_pycache_
+*.pyc
 # Project exclude paths
 /venv/
 

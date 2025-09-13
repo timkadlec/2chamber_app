@@ -134,22 +134,25 @@ def create_app():
 
     @app.context_processor
     def inject_semester_context():
-        # current semester from session or a sensible default
         current = None
         if (sid := session.get('semester_id')):
             current = Semester.query.get(sid)
         if not current:
+            # fallback if table empty or session value stale
             current = (Semester.query
                        .order_by(Semester.start_date.desc())
                        .first())
 
-        # list academic years with their semesters (for the dropdown)
         years = (AcademicYear.query
                  .options(selectinload(AcademicYear.semesters))
                  .order_by(AcademicYear.start_date.desc())
                  .all())
 
-        return dict(current_semester=current, semester_id=current.id, academic_years=years)
+        return dict(
+            current_semester=current,
+            semester_id=current.id if current else None,
+            academic_years=years
+        )
 
     @login_manager.user_loader
     def load_user(user_id):

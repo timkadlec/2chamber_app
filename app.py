@@ -137,16 +137,24 @@ def create_app():
         current = None
         if (sid := session.get('semester_id')):
             current = Semester.query.get(sid)
+
         if not current:
             # fallback if table empty or session value stale
-            current = (Semester.query
-                       .order_by(Semester.start_date.desc())
-                       .first())
+            current = (
+                Semester.query
+                .order_by(Semester.start_date.desc())
+                .first()
+            )
+            if current:
+                # >>> TADY nastavíme defaultní semestr do session
+                session['semester_id'] = current.id
 
-        years = (AcademicYear.query
-                 .options(selectinload(AcademicYear.semesters))
-                 .order_by(AcademicYear.start_date.desc())
-                 .all())
+        years = (
+            AcademicYear.query
+            .options(selectinload(AcademicYear.semesters))
+            .order_by(AcademicYear.start_date.desc())
+            .all()
+        )
 
         return dict(
             current_semester=current,

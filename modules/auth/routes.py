@@ -32,15 +32,10 @@ def is_safe_url(target):
 
 @auth_bp.route("/callback")
 def auth_callback():
-    current_app.logger.info("⚡ auth_callback hit")
 
-    # Get token from Entra
     token = oauth.entra.authorize_access_token()
-    current_app.logger.info("🔑 Raw token: %s", json.dumps(token, indent=2))
 
-    # Extract claims
     claims = token.get("id_token_claims") or token.get("userinfo") or {}
-    current_app.logger.info("📋 Claims: %s", json.dumps(claims, indent=2))
 
     oid = claims.get("oid") or claims.get("sub")
     tid = claims.get("tid")
@@ -53,22 +48,17 @@ def auth_callback():
         oid, tid, name, upn, email
     )
 
-    # Error if no oid/tid
     if not oid or not tid:
-        current_app.logger.warning("❌ Missing oid or tid, login failed")
         flash("Přihlášení selhalo: chyba oid/tid.", "danger")
-        return redirect(url_for("ensembles.all_ensembles"))
+        return redirect(url_for("ensemble.all_ensembles"))
 
-    # Find or create user
     user = User.query.filter_by(oid=oid).first()
     if user:
-        current_app.logger.info("✅ Existing user found: %s", user.id)
         user.display_name = name or user.display_name
         user.email = email or user.email
         user.upn = upn or user.upn
         user.last_login_at = datetime.utcnow()
     else:
-        current_app.logger.info("🆕 Creating new user")
         user = User(
             oid=oid,
             tid=tid,
@@ -80,25 +70,22 @@ def auth_callback():
         db.session.add(user)
 
     db.session.commit()
-    current_app.logger.info("💾 User saved to DB: id=%s", user.id)
 
     login_user(user, remember=True)
-    current_app.logger.info("🔓 User logged in with Flask-Login")
 
     session["user"] = {
         "name": user.display_name,
         "oid": user.oid,
         "preferred_username": user.upn,
     }
-    current_app.logger.info("💼 Session user set: %s", session["user"])
 
     flash("Úspěšně přihlášený.", "success")
-    return redirect(url_for("ensembles.all_ensembles"))
+    return redirect(url_for("ensemble.all_ensembles"))
 
 
 @auth_bp.route("/logout")
 def logout():
     logout_user()  # let Flask-Login handle session + remember cookie
-    post_logout = url_for("index", _external=True)
+    post_logout = url_for("library.composers", _external=True)
     return redirect(f"{AUTH_BASE}/logout?post_logout_redirect_uri={post_logout}")
 

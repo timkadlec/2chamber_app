@@ -63,7 +63,11 @@ def ensemble_detail(ensemble_id):
     ensemble = Ensemble.query.filter_by(id=ensemble_id).first_or_404()
 
     instrumentations = ensemble.instrumentation_entries
-    player_links = ensemble.player_links
+    player_links = sorted(
+        ensemble.player_links,
+        key=lambda ep: (
+            ep.ensemble_instrumentation.instrument.weight if ep.ensemble_instrumentation and ep.ensemble_instrumentation.instrument else 9999)
+    )
 
     assigned_player_ids_sq = (db.session.query(EnsemblePlayer.player_id)
                               .filter(EnsemblePlayer.ensemble_id == ensemble.id)
@@ -186,11 +190,9 @@ def add_student_to_ensemble(ensemble_id):
         flash("Hráč byl úspěšně přidán", "success")
         return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
 
-
 @ensemble_bp.route("/<int:ensemble_id>/players/add-empty", methods=["POST"])
 def add_empty_player(ensemble_id):
     data = request.get_json(silent=True) or request.form or {}
-    epi_id = data.get("ensemble_instrumentation_id")
     inst_id = data.get("instrument_id")
 
     # Validate ensemble
@@ -198,25 +200,25 @@ def add_empty_player(ensemble_id):
     if not ensemble:
         return jsonify({"message": "Ansámbl neexistuje"}), 404
 
-    # Validate or create instrumentation
-    if epi_id:
-        epi = db.session.get(EnsembleInstrumentation, int(epi_id))
-        if not epi or epi.ensemble_id != ensemble.id:
-            return jsonify({"message": "Neplatný part"}), 400
-    else:
-        if not inst_id:
-            return jsonify({"message": "Chybí instrument_id"}), 400
-        epi, _created = _get_or_create_ensemble_instrumentation_by_ids(
-            ensemble_id=ensemble.id,
-            instrument_id=int(inst_id),
-        )
+    if not inst_id:
+        return jsonify({"message": "Chybí instrument_id"}), 400
 
-    # Create empty EnsemblePlayer row
-    ep = EnsemblePlayer(
+    # 1) Create new instrumentation seat for this ensemble/instrument
+    new_epi = EnsembleInstrumentation(
         ensemble_id=ensemble.id,
-        ensemble_instrumentation_id=epi.id
+        instrument_id=int(inst_id),
+        position=len(ensemble.instrumentation_entries) + 1
     )
-    db.session.add(ep)
+    db.session.add(new_epi)
+    db.session.flush()  # get new_epi.id
+
+    # 2) Create empty player linked to this new part
+    empty_player = EnsemblePlayer(
+        ensemble_id=ensemble.id,
+        ensemble_instrumentation_id=new_epi.id,
+        player_id=None
+    )
+    db.session.add(empty_player)
 
     try:
         db.session.commit()
@@ -224,7 +226,7 @@ def add_empty_player(ensemble_id):
         db.session.rollback()
         return jsonify({"message": f"Chyba při přidávání hráče: {e.orig}"}), 409
 
-    flash("Hráč byl úspěšně přidán", "success")
+    flash("Prázdný hráč byl úspěšně přidán", "success")
     return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
 
 

@@ -5,8 +5,8 @@
 
             <!-- Back Link -->
             <div class="mb-4">
-                <a href="{{ url_for('ensemble.all_ensembles') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-arrow-left me-2"></i> Zpět na přehled souborů
+                <a href="{{ url_for('ensemble.ensemble_detail', ensemble_id=ensemble.id) }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i> Zpět na detail souboru
                 </a>
             </div>
 
@@ -26,11 +26,7 @@
             <!-- Ensemble Detail Card -->
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Detail souboru</h5>
-                    <a href="{{ url_for("ensemble.ensemble_edit", ensemble_id=ensemble.id) }}"
-                       class="btn btn-sm btn-info">
-                        <i class="fas fa-edit me-1"></i>Upravit soubor
-                    </a>
+                    <h5 class="mb-0">Přidat studenta do souboru {{ ensemble.name }} na pozici </h5>
                 </div>
 
                 <div class="card-body">
@@ -130,7 +126,7 @@
          if ensemble_player.ensemble_instrumentation else "-" }}
                                 </td>
                                 <td>
-                                    <a href="{{ url_for('ensemble.add_student_to_ensemble', ensemble_id=ensemble.id) }}"><i class="text-primary fas fa-user-plus me-2"></i></a>
+                                    <a href="#"><i class="text-primary fas fa-user-plus me-2"></i></a>
                                     <a href="#"><i class="text-info fas fa-right-left me-2"></i></a>
                                     <a href="#" data-bs-toggle="modal"
                                        data-bs-target="#deletePlayerModal{{ ensemble_player.id }}" class="text-danger">
@@ -178,39 +174,6 @@
                 </div>
             </div>
 
-            <!-- Ensemble Semesters Card -->
-            <div class="card shadow-sm mt-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Semestry</h5>
-                    <a href="#"
-                       class="btn btn-sm btn-primary">
-                        <i class="fas fa-file-export me-1"></i> Převést do dalšího semestru
-                    </a>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table align-middle mb-0">
-                        <thead class="table-light text-uppercase small text-muted">
-                        <tr>
-                            <th class="table-cell">Akademický rok</th>
-                            <th class="table-cell">Semestr</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for semester in ensemble.semesters %}
-                            <tr>
-                                <td class="table-cell">
-                                    {{ semester.academic_year.name }}
-                                </td>
-                                <td class="table-cell">
-                                    {{ semester.name }}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
 
     </main>

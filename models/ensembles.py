@@ -2,7 +2,35 @@ from sqlalchemy.orm import relationship
 from models import db
 from models.core import Instrumentation, Semester
 from datetime import date
+from collections import defaultdict
 
+
+def format_ensemble_instrumentation(instrumentation_entries):
+    counter = defaultdict(int)
+    order = []
+
+    sorted_entries = sorted(
+        instrumentation_entries,
+        key=lambda x: (
+            x.instrument.weight if x.instrument else 9999,
+            x.position or 0
+        )
+    )
+
+    for entry in sorted_entries:
+        abbr = entry.instrument.abbreviation or entry.instrument.name
+        abbr = abbr.strip()
+
+        if abbr not in counter:
+            order.append(abbr)
+        counter[abbr] += 1
+
+    formatted = []
+    for abbr in order:
+        count = counter[abbr]
+        formatted.append(f"{count}{abbr}" if count > 1 else abbr)
+
+    return ", ".join(formatted)
 
 class EnsembleSemester(db.Model):
     __tablename__ = 'ensemble_semesters'
@@ -70,6 +98,10 @@ class Ensemble(db.Model):
     def players(self):
         return [ep.player for ep in self.player_links]
 
+    @property
+    def instrumentation(self):
+        return format_ensemble_instrumentation(self.instrumentation_entries)
+
 
 class EnsembleInstrumentation(Instrumentation):
     __tablename__ = 'ensemble_instrumentations'
@@ -95,7 +127,7 @@ class EnsemblePlayer(db.Model):
     __tablename__ = 'ensemble_players'
     id = db.Column(db.Integer, primary_key=True)
 
-    player_id = db.Column(db.Integer, db.ForeignKey('players.id', ondelete='CASCADE'), nullable=False, index=True)
+    player_id = db.Column(db.Integer, db.ForeignKey('players.id', ondelete='CASCADE'), nullable=True, index=True)
     ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete='CASCADE'), nullable=False, index=True)
 
     ensemble_instrumentation_id = db.Column(

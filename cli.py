@@ -1,6 +1,6 @@
 import click
 from flask.cli import with_appcontext
-from models import db, KomorniHraStud
+from models import db, KomorniHraStud, StudentSubjectEnrollment
 from utils.import_oracle import get_or_create_academic_year, get_or_create_semester, get_or_create_subject, \
     get_or_create_student, get_or_create_player_from_student, student_subject_enrollment
 from sqlalchemy.exc import IntegrityError, DBAPIError
@@ -62,6 +62,9 @@ def cli_oracle_students_update():
 
     oracle_students = db.session.query(KomorniHraStud).all()
 
+    # semester -> set(student_id) that should stay
+    active_students_by_semester = {}
+
     for ors in oracle_students:
         # student
         student = get_or_create_student(ors)
@@ -69,7 +72,10 @@ def cli_oracle_students_update():
         if not student:
             skipped += 1
             click.echo(f"Skipped (no instrument or error): {ors}", err=True)
-            continue  # ⚡ TADY přestat
+            continue
+
+        # track this student as active for this semester
+        active_students_by_semester.setdefault(ors.SEMESTR_ID, set()).add(student.id)
 
         # player
         player = get_or_create_player_from_student(student)
@@ -90,6 +96,21 @@ def cli_oracle_students_update():
 
         if student_subject_enrollment(student.id, subj.id, sem.id):
             created_enrollments += 1
+
+    # ⚡ Remove enrollments of students that disappeared from the view
+    for sem_id, active_student_ids in active_students_by_semester.items():
+        existing_enrollments = (
+            db.session.query(StudentSubjectEnrollment)
+            .filter(StudentSubjectEnrollment.semester_id == sem_id)
+            .all()
+        )
+        for enr in existing_enrollments:
+            if enr.student_id not in active_student_ids:
+                click.echo(
+                    f"Removing enrollment of student {enr.student_id} from semester {sem_id}",
+                    err=True,
+                )
+                db.session.delete(enr)
 
     try:
         db.session.commit()

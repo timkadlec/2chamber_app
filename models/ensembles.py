@@ -140,9 +140,3 @@ class EnsemblePlayer(db.Model):
     player = db.relationship("Player", back_populates="ensemble_links")
     ensemble = db.relationship("Ensemble", back_populates="player_links")
     ensemble_instrumentation = db.relationship("EnsembleInstrumentation", back_populates="player_links")
-
-    __table_args__ = (
-        db.UniqueConstraint('player_id', 'ensemble_id', 'ensemble_instrumentation_id',
-                            name='uq_ensemble_player_per_part'),
-        db.UniqueConstraint('player_id', 'ensemble_id', name='uq_ensemble_player_once'),
-    )

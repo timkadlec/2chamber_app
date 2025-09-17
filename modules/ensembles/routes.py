@@ -51,7 +51,7 @@ def ensemble_edit(ensemble_id):
     if request.method == "GET":
         form.name.data = ensemble.name
     if form.validate_on_submit():
-        ensemble.name = form.name
+        ensemble.name = form.name.data
         db.session.commit()
         flash("Soubor byl úspěšně přidán aktualizován.", "success")
         return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id, ))

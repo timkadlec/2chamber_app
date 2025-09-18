@@ -152,6 +152,7 @@ class EnsembleTeacher(db.Model):
     __tablename__ = 'ensemble_teachers'
     id = db.Column(db.Integer, primary_key=True)
 
+    hour_donation = db.Column(db.Integer)
     teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id', ondelete='CASCADE'), nullable=True, index=True)
     ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete='CASCADE'), nullable=False, index=True)
 

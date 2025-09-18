@@ -45,7 +45,7 @@
                 <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm"
                      style="width: 36px; height: 36px;">
                     {% if current_user.is_authenticated %}
-                        {{ current_user.first_name[0] if current_user.first_name else '' }}{{ current_user.last_name[0] if current_user.last_name else '' }}
+                        {{ current_user.display_name[0] }}
                     {% else %}
                         H
                     {% endif %}

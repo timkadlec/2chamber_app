@@ -23,6 +23,13 @@ class Teacher(db.Model):
         back_populates="teachers"
     )
 
+    ensemble_links = db.relationship(
+        "EnsembleTeacher",
+        back_populates="teacher",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
     def __repr__(self):
         return f"<Teacher {self.id} {self.full_name or (self.first_name or '') + ' ' + (self.last_name or '')}>"
 

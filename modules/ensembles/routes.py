@@ -2,7 +2,7 @@ from flask import render_template, flash, redirect, url_for, session, request, j
 from .forms import EnsembleForm
 from utils.nav import navlink
 from models import db, Ensemble, EnsembleSemester, Player, Student, EnsemblePlayer, EnsembleInstrumentation, \
-    KomorniHraStud, Instrument
+    KomorniHraStud, Instrument, StudentSubjectEnrollment, Semester
 from . import ensemble_bp
 from sqlalchemy.orm import selectinload
 from sqlalchemy import or_, select
@@ -134,61 +134,34 @@ def _get_or_create_ensemble_instrumentation_by_ids(ensemble_id: int, instrument_
     return epi, True
 
 
-@ensemble_bp.route("/<int:ensemble_id>/players/add-student", methods=["GET", "POST"])
-def add_student_to_ensemble(ensemble_id):
+@ensemble_bp.route("/<int:ensemble_id>/player/<int:ensemble_instrumentation_id>/add-student", methods=["GET", "POST"])
+def add_student_to_ensemble(ensemble_id, ensemble_instrumentation_id):
     ensemble = Ensemble.query.get(ensemble_id)
+    instrumentation = EnsembleInstrumentation.query.get(ensemble_instrumentation_id)
+    current_semester = Semester.query.filter_by(id=session.get("semester_id")).first()
     if request.method == "GET":
-        return render_template("ensemble_add_student.html", ensemble=ensemble)
+        available_students = (
+            db.session.query(Student)
+            .filter(Student.active.is_(True))
+            .filter(Student.instrument_id == instrumentation.instrument_id)
+            .join(StudentSubjectEnrollment, StudentSubjectEnrollment.student_id == Student.id)
+            .filter(StudentSubjectEnrollment.semester_id == current_semester.id)
+            .options(
+                selectinload(Student.instrument),
+                selectinload(Student.player),
+            )
+            .order_by(Student.last_name, Student.first_name)
+            .all()
+        )
+        print(available_students)
+        return render_template("ensemble_add_student.html", ensemble=ensemble, instrumentation=instrumentation, available_students=available_students)
 
     if request.method == "POST":
-        data = request.get_json(silent=True) or request.form or {}
-        student_id = data.get("student_id", type=int) if hasattr(data, "get") else data.get("student_id")
-        epi_id = data.get("ensemble_instrumentation_id") or None
-
-        if not student_id:
-            return jsonify({"message": "student_id je povinné"}), 400
-
-        ensemble = db.session.get(Ensemble, ensemble_id)
-        if not ensemble:
-            return jsonify({"message": "Ansámbl neexistuje"}), 404
-
-        student = db.session.get(Student, student_id)
-        if not student or not student.active:
-            return jsonify({"message": "Student neexistuje nebo není aktivní"}), 404
-
-        if epi_id:
-            epi = db.session.get(EnsembleInstrumentation, int(epi_id))
-            if not epi or epi.ensemble_id != ensemble.id:
-                return jsonify({"message": "Neplatný part"}), 400
-        else:
-            player = getattr(student, "player", None)
-            instrument_id = (player.instrument_id if player and player.instrument_id
-                             else student.instrument_id)
-            if not instrument_id:
-                return jsonify({"message": "Student/hráč nemá přiřazený nástroj; není možné vytvořit part."}), 400
-
-            epi, _created = _get_or_create_ensemble_instrumentation_by_ids(
-                ensemble_id=ensemble.id,
-                instrument_id=instrument_id,
-            )
-            epi_id = epi.id
-
-        # Ensure a Player exists for this Student (after we maybe used it above)
-        player = _get_or_create_player_for_student(student)
-
-        ep = EnsemblePlayer(
-            ensemble_id=ensemble.id,
-            player_id=player.id,
-            ensemble_instrumentation_id=epi_id
-        )
-        db.session.add(ep)
-        try:
-            db.session.commit()
-        except IntegrityError:
-            db.session.rollback()
-            return jsonify({"message": "Hráč už je v ansámblu / na daném partu."}), 409
+        selected_student = request.args.get("selected_student")
+        print(selected_student)
         flash("Hráč byl úspěšně přidán", "success")
         return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
+
 
 @ensemble_bp.route("/<int:ensemble_id>/players/add-empty", methods=["POST"])
 def add_empty_player(ensemble_id):

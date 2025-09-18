@@ -14,13 +14,8 @@ class Teacher(db.Model):
     teacher_subjects = db.relationship(
         "TeacherSubject",
         back_populates="teacher",
-        cascade="all, delete-orphan"
-    )
-
-    subjects = db.relationship(
-        "Subject",
-        secondary="teacher_subjects",
-        back_populates="teachers"
+        cascade="all, delete-orphan",
+        passive_deletes=True
     )
 
     ensemble_links = db.relationship(
@@ -29,6 +24,11 @@ class Teacher(db.Model):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
+
+    @property
+    def subjects(self):
+        """Convenience: list of subjects (read-only)."""
+        return [ts.subject for ts in self.teacher_subjects]
 
     def __repr__(self):
         return f"<Teacher {self.id} {self.full_name or (self.first_name or '') + ' ' + (self.last_name or '')}>"
@@ -58,8 +58,7 @@ class TeacherSubject(db.Model):
         index=True,
     )
 
-    # optional metadata for the assignment
-    role = db.Column(db.String(80))  # e.g., "guarantor", "assistant"
+    role = db.Column(db.String(80))
     notes = db.Column(db.Text)
 
     teacher = db.relationship("Teacher", back_populates="teacher_subjects")
@@ -67,10 +66,7 @@ class TeacherSubject(db.Model):
     semester = db.relationship("Semester", back_populates="teacher_subjects")
 
     __table_args__ = (
-        # prevent duplicates within the same semester
-        db.UniqueConstraint("teacher_id", "subject_id", "semester_id",
-                            name="uq_teacher_subject_semester"),
-        # handy for queries like “all teachers for subject X in semester Y”
+        db.UniqueConstraint("teacher_id", "subject_id", "semester_id", name="uq_teacher_subject_semester"),
         Index("ix_tsubj_subject_sem", "subject_id", "semester_id"),
         Index("ix_tsubj_teacher_sem", "teacher_id", "semester_id"),
     )

@@ -8,5 +8,5 @@ from utils.nav import navlink
 @subject_bp.route('/all-subjects')
 @navlink("Předměty", weight=40)
 def all_subjects():
-    subjects = Subject.query.all()
+    subjects = Subject.query.order_by(Subject.name).all()
     return render_template("all_subjects.html", subjects=subjects)

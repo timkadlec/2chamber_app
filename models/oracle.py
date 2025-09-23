@@ -11,7 +11,7 @@ class _ReadOnly:
 
 class KomorniHraStud(_ReadOnly, db.Model):
     __bind_key__ = "oracle"  # tells SQLAlchemy to use the Oracle bind
-    __tablename__ = "SA_APP_KOMORNI_HRA_STUD_TEST"
+    __tablename__ = "SA_APP_KOMORNI_HRA_STUD"
     __table_args__ = {"info": {"omit_from_migrations": True}}
 
     ID_STUDIA = db.Column(db.BigInteger, primary_key=True)
@@ -48,7 +48,7 @@ class KomorniHraStud(_ReadOnly, db.Model):
 
 class KomorniHraUcitel(_ReadOnly, db.Model):
     __bind_key__ = "oracle"
-    __tablename__ = "SA_APP_KOMORNI_HRA_UCIT_TEST"
+    __tablename__ = "SA_APP_KOMORNI_HRA_UCIT"
     __table_args__ = {"info": {"omit_from_migrations": True}}
 
     OSOBNI_CISLO = db.Column(db.BigInteger, primary_key=True)

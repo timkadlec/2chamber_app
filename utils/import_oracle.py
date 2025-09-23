@@ -85,7 +85,7 @@ def get_or_create_student(oracle_student_model):
     if lookup:
         return lookup
     try:
-        instrument = Instrument.query.filter_by(name=oracle_student_model.NAZEV_CS_PRG).first()
+        instrument = Instrument.query.filter_by(name=oracle_student_model.KATEDRA_NAZEV).first()
         if not instrument:
             return None  # instrument unknown; caller should log/skip
 

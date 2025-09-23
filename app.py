@@ -5,6 +5,7 @@ from models import db, User, Student, KomorniHraStud
 import locale
 from db_core_entries import seed_instruments, seed_composers, seed_basic_compositions
 import os
+import oracledb
 from extensions import login_manager, oauth, migrate
 from flask_login import current_user
 from modules.library import library_bp
@@ -36,6 +37,7 @@ def create_app():
     app.config.from_object(config_class)
 
     db.init_app(app)
+    oracledb.init_oracle_client(lib_dir=os.environ.get("ORACLE_DRIVER"))
     migrate.init_app(app, db)
     oauth.init_app(app)
     locale.setlocale(locale.LC_TIME, 'cs_CZ')  # for Czech

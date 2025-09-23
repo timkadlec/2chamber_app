@@ -77,9 +77,15 @@ class Ensemble(db.Model):
         passive_deletes=True,
     )
 
-    # NEW: association rows for players in this ensemble
     player_links = db.relationship(
         "EnsemblePlayer",
+        back_populates="ensemble",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    teacher_links = db.relationship(
+        "EnsembleTeacher",
         back_populates="ensemble",
         cascade="all, delete-orphan",
         passive_deletes=True,
@@ -141,8 +147,15 @@ class EnsemblePlayer(db.Model):
     ensemble = db.relationship("Ensemble", back_populates="player_links")
     ensemble_instrumentation = db.relationship("EnsembleInstrumentation", back_populates="player_links")
 
-    __table_args__ = (
-        db.UniqueConstraint('player_id', 'ensemble_id', 'ensemble_instrumentation_id',
-                            name='uq_ensemble_player_per_part'),
-        db.UniqueConstraint('player_id', 'ensemble_id', name='uq_ensemble_player_once'),
-    )
+
+class EnsembleTeacher(db.Model):
+    __tablename__ = 'ensemble_teachers'
+    id = db.Column(db.Integer, primary_key=True)
+
+    hour_donation = db.Column(db.Integer)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id', ondelete='CASCADE'), nullable=True, index=True)
+    ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete='CASCADE'), nullable=False, index=True)
+
+
+    teacher = db.relationship("Teacher", back_populates="ensemble_links")
+    ensemble = db.relationship("Ensemble", back_populates="teacher_links")

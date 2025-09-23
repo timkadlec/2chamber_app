@@ -88,19 +88,17 @@ class Subject(db.Model):
         cascade="all, delete-orphan"
     )
 
-    # Association objects to teachers
     subject_teachers = db.relationship(
         "TeacherSubject",
         back_populates="subject",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        passive_deletes=True
     )
 
-    # Convenience: direct many-to-many view (through the association table)
-    teachers = db.relationship(
-        "Teacher",
-        secondary="teacher_subjects",
-        back_populates="subjects"
-    )
+    @property
+    def teachers(self):
+        """Convenience: list of teachers (read-only)."""
+        return [ts.teacher for ts in self.subject_teachers]
 
     def enrolled_count(self, semester_id=None):
         if semester_id:

@@ -108,6 +108,7 @@
         <div class="collapse navbar-collapse justify-content-end">
             <div class="d-flex align-items-center">
                 <!-- Semester dropdown -->
+            {% if current_semester %}
                 <div class="dropdown me-2">
                     <button class="btn btn-sm btn-outline-primary dropdown-toggle"
                             type="button"
@@ -127,7 +128,7 @@
                                        href="{{ url_for('ui.set_semester', semester_id=sem.id, next=request.full_path) }}">
                                         {{ sem.name }}
                                         <span class="text-muted small">
-                      ({{ sem.start_date.strftime('%-d.%m.%Y') }}–{{ sem.end_date.strftime('%-d.%m.%Y') }})
+                      ({{ sem.start_date.strftime('%d.%m.%Y').lstrip('0') }}–{{ sem.end_date.strftime('%d.%m.%Y').lstrip('0') }})
                     </span>
                                     </a>
                                 </li>
@@ -139,6 +140,7 @@
                         {% endfor %}
                     </ul>
                 </div>
+            {% endif %}
 
                 <!-- Right-side nav -->
                 <ul class="navbar-nav mb-2 mb-lg-0 ms-3">

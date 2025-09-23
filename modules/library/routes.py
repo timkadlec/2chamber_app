@@ -134,6 +134,7 @@ def composition_add():
             db.session.rollback()
         else:
             db.session.add(nc)
+            db.session.flush()
             process_chamber_instrumentation_line(nc.id, form.instrumentation.data)
             db.session.commit()
             flash("Skladba úspěšně vytvořena", "success")

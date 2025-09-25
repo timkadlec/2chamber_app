@@ -4,8 +4,7 @@ from dotenv import load_dotenv
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 # Load .env file
-load_dotenv(os.path.join(basedir, '.env'))
-
+load_dotenv("/etc/skh/.env")
 
 def construct_oracle_db_uri(user, password, host, port, service_name):
     return f"oracle+oracledb://{user}:{password}@{host}:{port}/?service_name={service_name}"

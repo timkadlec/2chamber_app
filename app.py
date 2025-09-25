@@ -40,7 +40,6 @@ def create_app():
     oracledb.init_oracle_client(lib_dir=os.environ.get("ORACLE_DRIVER"))
     migrate.init_app(app, db)
     oauth.init_app(app)
-    locale.setlocale(locale.LC_TIME, 'cs_CZ')  # for Czech
 
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'

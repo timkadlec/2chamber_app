@@ -1,4 +1,4 @@
-from flask import Flask, url_for, request, redirect, g
+from flask import Flask, url_for, request, redirect, g, render_template
 from flask_migrate import Migrate
 from config import ProductionConfig
 from models import db, User, Student, KomorniHraStud
@@ -166,5 +166,9 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(user_id)
+
+    @app.route("/")
+    def index():
+        return render_template("hero_page.html")
 
     return app

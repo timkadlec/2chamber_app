@@ -1,0 +1,33 @@
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-center">
+            <!-- Instrument filter -->
+            <div class="col-sm-4 col-md-3">
+                <select class="form-select form-select-sm" name="instrument_id">
+                    <option value="">-- Všechny nástroje --</option>
+                    {% for inst in instruments %}
+                        <option value="{{ inst.id }}"
+                                {% if selected_instrument_id == inst.id %}selected{% endif %}>
+                            {{ inst.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Active filter -->
+            <div class="col-sm-3 col-md-2">
+                <select class="form-select form-select-sm" name="active">
+                    <option value="">-- Aktivní i neaktivní --</option>
+                    <option value="1" {% if request.args.get('active') == '1' %}selected{% endif %}>Aktivní</option>
+                    <option value="0" {% if request.args.get('active') == '0' %}selected{% endif %}>Neaktivní</option>
+                </select>
+            </div>
+
+            <!-- Submit + Reset -->
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-primary">Filtrovat</button>
+                <a href="{{ url_for('students.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>

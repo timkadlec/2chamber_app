@@ -14,13 +14,34 @@
                 </select>
             </div>
 
+            <!-- Subject filter -->
+            <div class="col-sm-4 col-md-3">
+                <select class="form-select form-select-sm" name="subject_id">
+                    <option value="">-- Všechny předměty --</option>
+                    {% for subj in subjects %}
+                        <option value="{{ subj.id }}"
+                                {% if selected_subject_id == subj.id %}selected{% endif %}>
+                            {{ subj.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <!-- Active filter -->
             <div class="col-sm-3 col-md-2">
                 <select class="form-select form-select-sm" name="active">
                     <option value="">-- Aktivní i neaktivní --</option>
-                    <option value="1" {% if request.args.get('active') == '1' %}selected{% endif %}>Aktivní</option>
-                    <option value="0" {% if request.args.get('active') == '0' %}selected{% endif %}>Neaktivní</option>
+                    <option value="1" {% if selected_active == '1' %}selected{% endif %}>Aktivní</option>
+                    <option value="0" {% if selected_active == '0' %}selected{% endif %}>Neaktivní</option>
                 </select>
+            </div>
+
+            <!-- Search field -->
+            <div class="col-sm-6 col-md-3">
+                <input type="text" class="form-control form-control-sm"
+                       name="q"
+                       value="{{ search_query or '' }}"
+                       placeholder="Hledat jméno studenta...">
             </div>
 
             <!-- Submit + Reset -->

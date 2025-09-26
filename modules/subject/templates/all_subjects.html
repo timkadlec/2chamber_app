@@ -21,7 +21,7 @@
                             <td>{{ subject.code }}</td>
                                 <td>{{ subject.name }}</td>
                                 <td class="d-none d-md-table-cell">
-                                    {{ subject.enrolled_count(semester_id) }}
+                                    <a href="{{ url_for('students.index', subject_id=subject.id) }}">{{ subject.enrolled_count(semester_id) }}</a>
                                 </td>
                             </tr>
                         {% endfor %}

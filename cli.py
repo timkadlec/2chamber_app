@@ -138,3 +138,22 @@ def cli_oracle_students_update():
         f"\n✅ Done. Created students: {created_students}, players: {created_players}, enrollments: {created_enrollments}, skipped: {skipped}",
         err=True
     )
+
+@click.command("oracle-semesters")
+@with_appcontext
+def cli_oracle_semesters():
+    """Show distinct semesters currently present in Oracle view."""
+    semesters = (
+        db.session.query(KomorniHraStud.SEMESTR_ID)
+        .distinct()
+        .order_by(KomorniHraStud.SEMESTR_ID)
+        .all()
+    )
+
+    if not semesters:
+        click.echo("⚠️ No semesters found in Oracle view.", err=True)
+        return
+
+    click.echo("📚 Semesters present in Oracle view:")
+    for sem_id, in semesters:
+        click.echo(f" - {sem_id}")

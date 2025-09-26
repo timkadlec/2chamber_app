@@ -26,7 +26,8 @@ from cli import (
     cli_oracle_ping,
     cli_get_or_create_semester,
     cli_get_or_create_subject,
-    cli_oracle_students_update
+    cli_oracle_students_update,
+    cli_oracle_semesters
 )
 
 
@@ -58,6 +59,7 @@ def create_app():
     app.cli.add_command(cli_get_or_create_semester)
     app.cli.add_command(cli_get_or_create_subject)
     app.cli.add_command(cli_oracle_students_update)
+    app.cli.add_command(cli_oracle_semesters)
 
     with app.app_context():
         db.create_all(bind_key=None)

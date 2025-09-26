@@ -90,6 +90,7 @@ def get_or_create_student(oracle_student_model):
             return None  # instrument unknown; caller should log/skip
 
         new_student = Student(
+            osobni_cislo=oracle_student_model.CISLO_OSOBY,
             id_studia=oracle_student_model.ID_STUDIA,
             last_name=oracle_student_model.PRIJMENI,
             first_name=oracle_student_model.JMENO,

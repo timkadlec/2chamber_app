@@ -16,6 +16,7 @@ class KomorniHraStud(_ReadOnly, db.Model):
 
     ID_STUDIA = db.Column(db.BigInteger, primary_key=True)
     SEMESTR_ID = db.Column(db.String(6), primary_key=True)
+    CISLO_OSOBY = db.Column(db.Integer)
 
     PRIJMENI = db.Column(db.String(128))
     JMENO = db.Column(db.String(128))

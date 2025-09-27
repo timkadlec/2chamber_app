@@ -154,11 +154,42 @@ def add_student_to_ensemble(ensemble_id, ensemble_instrumentation_id):
             .all()
         )
         print(available_students)
-        return render_template("ensemble_add_student.html", ensemble=ensemble, instrumentation=instrumentation, available_students=available_students)
+        return render_template("ensemble_add_student.html", ensemble=ensemble, instrumentation=instrumentation,
+                               available_students=available_students)
 
     if request.method == "POST":
-        selected_student = request.args.get("selected_student")
-        print(selected_student)
+        selected_student_id = request.form.get("selected_student")
+        student = Student.query.get(selected_student_id)
+
+        if not student:
+            flash("Student nebyl nalezen.", "danger")
+            return redirect(url_for("ensemble.add_student_to_ensemble",
+                                    ensemble_id=ensemble.id,
+                                    ensemble_instrumentation_id=instrumentation.id))
+        current_assignment = (
+            db.session.query(EnsemblePlayer)
+            .filter_by(
+                ensemble_id=ensemble.id,
+                ensemble_instrumentation_id=ensemble_instrumentation_id
+            )
+            .first()
+        )
+
+        if current_assignment:
+            # update existing
+            current_assignment.player_id = student.player.id
+        else:
+            # create new assignment
+            current_assignment = EnsemblePlayer(
+                ensemble_id=ensemble.id,
+                ensemble_instrumentation_id=ensemble_instrumentation_id,
+                player_id=student.player.id
+            )
+            db.session.add(current_assignment)
+
+        db.session.commit()
+
+
         flash("Hráč byl úspěšně přidán", "success")
         return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
 

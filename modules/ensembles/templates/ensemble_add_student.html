@@ -99,13 +99,15 @@
                                             souboru {{ ensemble.name }}?
                                         </div>
                                         <div class="modal-footer">
-                                            <form action="{{ url_for('ensemble.add_student_to_ensemble', ensemble_id=ensemble.id,ensemble_instrumentation_id=instrumentation.id, selected_student=student.id) }}">
-
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                                Zavřít
-                                            </button>
-                                            <button type="submit" class="btn btn-primary">Přidat</button>
-
+                                            <form method="POST"
+                                                  action="{{ url_for('ensemble.add_student_to_ensemble',
+          ensemble_id=ensemble.id,
+          ensemble_instrumentation_id=instrumentation.id) }}">
+                                                <input type="hidden" name="selected_student" value="{{ student.id }}">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                    Zavřít
+                                                </button>
+                                                <button type="submit" class="btn btn-primary">Přidat</button>
                                             </form>
                                         </div>
                                     </div>

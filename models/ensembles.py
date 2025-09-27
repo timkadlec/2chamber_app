@@ -32,28 +32,6 @@ def format_ensemble_instrumentation(instrumentation_entries):
 
     return ", ".join(formatted)
 
-class EnsembleSemester(db.Model):
-    __tablename__ = 'ensemble_semesters'
-    id = db.Column(db.Integer, primary_key=True)
-
-    ensemble_id = db.Column(
-        db.Integer,
-        db.ForeignKey('ensembles.id', ondelete="CASCADE"),  # <-- add ondelete
-        nullable=False
-    )
-    semester_id = db.Column(
-        db.Integer,
-        db.ForeignKey('semesters.id', ondelete="CASCADE"),  # optional: also cascade if a Semester is removed
-        nullable=False
-    )
-
-    ensemble = db.relationship("Ensemble", back_populates="semester_links")
-    semester = db.relationship("Semester", back_populates="ensemble_links")
-
-    __table_args__ = (
-        db.UniqueConstraint('ensemble_id', 'semester_id', name='uq_ensemble_semester'),
-    )
-
 
 # --- Ensemble ---
 class Ensemble(db.Model):
@@ -129,6 +107,29 @@ class EnsembleInstrumentation(Instrumentation):
     }
 
 
+class EnsembleSemester(db.Model):
+    __tablename__ = 'ensemble_semesters'
+    id = db.Column(db.Integer, primary_key=True)
+
+    ensemble_id = db.Column(
+        db.Integer,
+        db.ForeignKey('ensembles.id', ondelete="CASCADE"),  # <-- add ondelete
+        nullable=False
+    )
+    semester_id = db.Column(
+        db.Integer,
+        db.ForeignKey('semesters.id', ondelete="CASCADE"),  # optional: also cascade if a Semester is removed
+        nullable=False
+    )
+
+    ensemble = db.relationship("Ensemble", back_populates="semester_links")
+    semester = db.relationship("Semester", back_populates="ensemble_links")
+
+    __table_args__ = (
+        db.UniqueConstraint('ensemble_id', 'semester_id', name='uq_ensemble_semester'),
+    )
+
+
 class EnsemblePlayer(db.Model):
     __tablename__ = 'ensemble_players'
     id = db.Column(db.Integer, primary_key=True)
@@ -155,7 +156,6 @@ class EnsembleTeacher(db.Model):
     hour_donation = db.Column(db.Integer)
     teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id', ondelete='CASCADE'), nullable=True, index=True)
     ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete='CASCADE'), nullable=False, index=True)
-
 
     teacher = db.relationship("Teacher", back_populates="ensemble_links")
     ensemble = db.relationship("Ensemble", back_populates="teacher_links")

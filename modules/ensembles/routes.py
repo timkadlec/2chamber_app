@@ -134,38 +134,46 @@ def _get_or_create_ensemble_instrumentation_by_ids(ensemble_id: int, instrument_
     return epi, True
 
 
-@ensemble_bp.route("/<int:ensemble_id>/player/<int:ensemble_instrumentation_id>/add-student", methods=["GET", "POST"])
-def add_student_to_ensemble(ensemble_id, ensemble_instrumentation_id):
+@ensemble_bp.route("/<int:ensemble_id>/player/<int:ensemble_instrumentation_id>/<mode>", methods=["GET", "POST"])
+def add_player_to_ensemble(ensemble_id, ensemble_instrumentation_id, mode="student"):
     ensemble = Ensemble.query.get(ensemble_id)
     instrumentation = EnsembleInstrumentation.query.get(ensemble_instrumentation_id)
     current_semester = Semester.query.filter_by(id=session.get("semester_id")).first()
     if request.method == "GET":
-        available_students = (
-            db.session.query(Student)
-            .filter(Student.active.is_(True))
-            .filter(Student.instrument_id == instrumentation.instrument_id)
-            .join(StudentSubjectEnrollment, StudentSubjectEnrollment.student_id == Student.id)
-            .filter(StudentSubjectEnrollment.semester_id == current_semester.id)
-            .options(
-                selectinload(Student.instrument),
-                selectinload(Student.player),
+        if mode == "student":
+            available_players = (
+                db.session.query(Student)
+                .filter(Student.active.is_(True))
+                .filter(Student.instrument_id == instrumentation.instrument_id)
+                .join(StudentSubjectEnrollment, StudentSubjectEnrollment.student_id == Student.id)
+                .filter(StudentSubjectEnrollment.semester_id == current_semester.id)
+                .options(
+                    selectinload(Student.instrument),
+                    selectinload(Student.player),
+                )
+                .order_by(Student.last_name, Student.first_name)
+                .all()
             )
-            .order_by(Student.last_name, Student.first_name)
-            .all()
-        )
-        print(available_students)
-        return render_template("ensemble_add_student.html", ensemble=ensemble, instrumentation=instrumentation,
-                               available_students=available_students)
+        else:
+            available_players = (db.session.query(Player).filter(Player.student_id.is_(None))
+                                 .filter(Player.instrument_id == instrumentation.instrument_id)
+                                 .options(
+                selectinload(Player.instrument),
+            )
+                                 .all())
+        return render_template("ensemble_add_player.html", ensemble=ensemble, instrumentation=instrumentation,
+                               available_players=available_players)
 
     if request.method == "POST":
-        selected_student_id = request.form.get("selected_student")
-        student = Student.query.get(selected_student_id)
+        selected_player_id = int(request.form.get("selected_player_id"))
+        player = Player.query.get(selected_player_id)
 
-        if not student:
-            flash("Student nebyl nalezen.", "danger")
-            return redirect(url_for("ensemble.add_student_to_ensemble",
+        if not player:
+            flash("Hráč nebyl nalezen.", "danger")
+            return redirect(url_for("ensemble.add_player_to_ensemble",
                                     ensemble_id=ensemble.id,
-                                    ensemble_instrumentation_id=instrumentation.id))
+                                    ensemble_instrumentation_id=instrumentation.id,
+                                    mode="student"))
         current_assignment = (
             db.session.query(EnsemblePlayer)
             .filter_by(
@@ -177,18 +185,17 @@ def add_student_to_ensemble(ensemble_id, ensemble_instrumentation_id):
 
         if current_assignment:
             # update existing
-            current_assignment.player_id = student.player.id
+            current_assignment.player_id = player.id
         else:
             # create new assignment
             current_assignment = EnsemblePlayer(
                 ensemble_id=ensemble.id,
                 ensemble_instrumentation_id=ensemble_instrumentation_id,
-                player_id=student.player.id
+                player_id=player.id
             )
             db.session.add(current_assignment)
 
         db.session.commit()
-
 
         flash("Hráč byl úspěšně přidán", "success")
         return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))

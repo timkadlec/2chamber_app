@@ -3,7 +3,7 @@
     <main>
         {% set active = "students" %}
         <div class="container-xl pb-4">
-            <h1 class="text-secondary">Hráči</h1>
+            <h1 class="text-secondary">Hosté</h1>
         </div>
 
 
@@ -45,7 +45,7 @@
                                        class="btn btn-link btn-sm text-primary me-1">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ url_for("players.player_edit", player_id=player.id) }}"
+                                    <a href="{{ url_for("guests.player_edit", player_id=player.id) }}"
                                        class="btn btn-link btn-sm text-primary me-1">
                                         <i class="fas fa-edit"></i>
                                     </a>
@@ -72,7 +72,7 @@
                                                     <b>{{ player.full_name }}</b>?
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <form action="{{ url_for('players.player_delete', player_id=player.id) }}"
+                                                    <form action="{{ url_for('guests.player_delete', player_id=player.id) }}"
                                                           method="post" class="d-inline">
                                                         <button type="button" class="btn btn-secondary"
                                                                 data-bs-dismiss="modal">Close
@@ -109,7 +109,7 @@
                                 {% if pagination.has_prev %}
                                     <li class="page-item">
                                         <a class="page-link"
-                                           href="{{ url_for('players.index', page=pagination.prev_num) }}"
+                                           href="{{ url_for('guests.index', page=pagination.prev_num) }}"
                                            aria-label="Předchozí">
                                             <span aria-hidden="true">&laquo;</span>
                                         </a>
@@ -118,13 +118,13 @@
                                 {% for p in range(1, pagination.pages + 1) %}
                                     <li class="page-item {% if pagination.page == p %}active{% endif %}">
                                         <a class="page-link"
-                                           href="{{ url_for('players.index', page=p) }}">{{ p }}</a>
+                                           href="{{ url_for('guests.index', page=p) }}">{{ p }}</a>
                                     </li>
                                 {% endfor %}
                                 {% if pagination.has_next %}
                                     <li class="page-item">
                                         <a class="page-link"
-                                           href="{{ url_for('players.index', page=pagination.next_num) }}"
+                                           href="{{ url_for('guests.index', page=pagination.next_num) }}"
                                            aria-label="Další">
                                             <span aria-hidden="true">&raquo;</span>
                                         </a>

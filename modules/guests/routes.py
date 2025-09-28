@@ -1,14 +1,14 @@
 from flask import render_template, request, flash, redirect, url_for, session, request
-from modules.players.forms import PlayerForm
+from modules.guests.forms import PlayerForm
 from utils.nav import navlink
 from models import db, Student, StudentSubjectEnrollment, Instrument, Subject, Player
-from modules.players import players_bp
+from modules.guests import guest_bp
 from sqlalchemy import and_
 from sqlalchemy import or_
 
 
-@players_bp.route("/", methods=["GET"])
-@navlink("Hráči", group="Lidé", weight=200)
+@guest_bp.route("/", methods=["GET"])
+@navlink("Hosté", group="Lidé", weight=200)
 def index():
     page = request.args.get("page", 1, type=int)
     per_page = 20
@@ -51,7 +51,7 @@ def is_duplicate_player(player):
     return bool(duplicate_p)
 
 
-@players_bp.route("/add", methods=["GET", "POST"])
+@guest_bp.route("/add", methods=["GET", "POST"])
 def player_add():
     form = PlayerForm(mode="add")
     if request.method == "POST":
@@ -68,15 +68,15 @@ def player_add():
             db.session.add(new_player)
             db.session.commit()
             flash("Nový hráč byl přidán", "success")
-            return redirect(url_for("players.index"))
+            return redirect(url_for("guests.index"))
         else:
             flash("Takový hráč již existuje", "danger")
-            return redirect(url_for("players.player_add"))
+            return redirect(url_for("guests.player_add"))
 
     return render_template("player_form.html", form=form)
 
 
-@players_bp.route("/<int:player_id>/edit", methods=["GET", "POST"])
+@guest_bp.route("/<int:player_id>/edit", methods=["GET", "POST"])
 def player_edit(player_id):
     player = Player.query.get_or_404(player_id)
     form = PlayerForm(obj=player)
@@ -86,15 +86,15 @@ def player_edit(player_id):
         form.populate_obj(player)
         db.session.commit()
         flash("Hráč byl úspěšně upraven", "success")
-        return redirect(url_for("players.index"))
+        return redirect(url_for("guests.index"))
 
     return render_template("player_form.html", form=form, player=player)
 
 
-@players_bp.route("/delete/<int:player_id>", methods=["POST"])
+@guest_bp.route("/delete/<int:player_id>", methods=["POST"])
 def player_delete(player_id):
     player = Player.query.get_or_404(player_id)
     db.session.delete(player)
     db.session.commit()
     flash("Hráč byl úspěšně smazán", "success")
-    return redirect(url_for("players.index"))
+    return redirect(url_for("guests.index"))

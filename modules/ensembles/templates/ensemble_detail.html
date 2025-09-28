@@ -130,10 +130,13 @@
          if ensemble_player.ensemble_instrumentation else "-" }}
                                 </td>
                                 <td>
-                                    <a href="{{ url_for('ensemble.add_student_to_ensemble', ensemble_id=ensemble.id, ensemble_instrumentation_id=ensemble_player.ensemble_instrumentation.id) }}">
+                                    <a href="{{ url_for('ensemble.add_player_to_ensemble', ensemble_id=ensemble.id, ensemble_instrumentation_id=ensemble_player.ensemble_instrumentation.id, mode="student") }}">
                                         <i class="text-primary fas fa-user-plus me-2"></i>
                                     </a>
-                                    <a href="#"><i class="text-info fas fa-right-left me-2"></i></a>
+                                    <a href="#">
+                                        <i class="text-info fas fa-right-left me-2"></i></a>
+                                    <a href="{{ url_for('ensemble.add_player_to_ensemble', ensemble_id=ensemble.id, ensemble_instrumentation_id=ensemble_player.ensemble_instrumentation.id, mode="guest") }}">
+                                        <i class="text-warning fas fa-user-tag me-2"></i></a>
                                     <a href="#" data-bs-toggle="modal"
                                        data-bs-target="#deletePlayerModal{{ ensemble_player.id }}" class="text-danger">
                                         <i class="text-danger fas fa-trash me-2"></i>

@@ -65,45 +65,45 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% for student in available_students %}
+                        {% for player in available_players %}
                             <tr>
                                 <td>
-                                    {{ student.last_name }}
+                                    {{ player.last_name }}
                                 </td>
                                 <td>
-                                    {{ student.first_name }}
+                                    {{ player.first_name }}
 
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                                            data-bs-target="#StudentSelectionModal{{ student.id }}">Vybrat
+                                            data-bs-target="#PlayerSelectionModal{{ player.id }}">Vybrat
                                     </button>
                                 </td>
                             </tr>
                             <!-- Modal -->
-                            <div class="modal fade" id="StudentSelectionModal{{ student.id }}" tabindex="-1"
-                                 aria-labelledby="StudentSelectionModal{{ student.id }}Label" aria-hidden="true">
+                            <div class="modal fade" id="PlayerSelectionModal{{ player.id }}" tabindex="-1"
+                                 aria-labelledby="PlayerSelectionModal{{ player.id }}Label" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
                                         <div class="modal-header">
                                             <h1 class="modal-title fs-5"
-                                                id="StudentSelectionModal{{ student.id }}Label">
-                                                Přiřadit studenta do souboru
+                                                id="StudentSelectionModal{{ player.id }}Label">
+                                                Přiřadit hráče do souboru
                                             </h1>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                                     aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
                                             Opravdu si přejete přidat
-                                            studenta <b>{{ student.last_name }} {{ student.first_name }}</b> do
+                                            studenta <b>{{ player.last_name }} {{ player.first_name }}</b> do
                                             souboru {{ ensemble.name }}?
                                         </div>
                                         <div class="modal-footer">
                                             <form method="POST"
-                                                  action="{{ url_for('ensemble.add_student_to_ensemble',
+                                                  action="{{ url_for('ensemble.add_player_to_ensemble',
           ensemble_id=ensemble.id,
-          ensemble_instrumentation_id=instrumentation.id) }}">
-                                                <input type="hidden" name="selected_student" value="{{ student.id }}">
+          ensemble_instrumentation_id=instrumentation.id, mode=("student" if request.args.get("mode") == "student" else "guest")) }}">
+                                                <input type="hidden" name="selected_player_id" value="{{ player.id }}">
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                                     Zavřít
                                                 </button>

@@ -424,6 +424,10 @@ class Player(db.Model):
         else:
             return f"{self.last_name} {self.first_name}"
 
+    @property
+    def is_guest(self):
+        return self.student_id is None
+
 
 class PlayerAssignment(db.Model):
     __tablename__ = 'player_assignments'

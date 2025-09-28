@@ -61,18 +61,24 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-end">
-                                    <a href="{{ url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id) }}"
-                                       class="btn btn-link btn-sm text-primary me-1" title="Detail">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{{ url_for("ensemble.ensemble_edit", ensemble_id=ensemble.id) }}"
-                                       class="btn btn-link btn-sm text-primary me-1" title="Upravit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button type="button" class="btn btn-link btn-sm text-danger" data-bs-toggle="modal"
-                                            data-bs-target="#deleteEnsembleModal{{ ensemble.id }}" title="Smazat">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    <div class="d-flex justify-content-end mt-2">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id) }}"
+                                               class="btn btn-outline-primary" title="Detail">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for("ensemble.ensemble_edit", ensemble_id=ensemble.id) }}"
+                                               class="btn btn-outline-primary" title="Upravit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#deleteEnsembleModal{{ ensemble.id }}"
+                                                    title="Smazat">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                     <!-- Delete modal -->
                                     <div class="modal fade" id="deleteEnsembleModal{{ ensemble.id }}" tabindex="-1"
                                          aria-labelledby="deleteEnsembleModal{{ ensemble.id }}Label" aria-hidden="true">
@@ -139,22 +145,24 @@
                                 <p class="mb-1 small text-muted">
                                     <i class="fas fa-music me-1"></i> {{ ensemble.instrumentation }}
                                 </p>
-
                                 <div class="d-flex justify-content-end mt-2">
-                                    <a href="{{ url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id) }}"
-                                       class="btn btn-sm btn-outline-primary me-1" title="Detail">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{{ url_for("ensemble.ensemble_edit", ensemble_id=ensemble.id) }}"
-                                       class="btn btn-sm btn-outline-primary me-1" title="Upravit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button type="button" class="btn btn-sm btn-outline-danger"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#deleteEnsembleModal{{ ensemble.id }}" title="Smazat">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id) }}"
+                                           class="btn btn-outline-primary" title="Detail">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for("ensemble.ensemble_edit", ensemble_id=ensemble.id) }}"
+                                           class="btn btn-outline-primary" title="Upravit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteEnsembleModal{{ ensemble.id }}" title="Smazat">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </div>
+
                             </div>
                         </div>
                     {% endfor %}

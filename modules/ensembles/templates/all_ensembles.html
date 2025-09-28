@@ -16,17 +16,18 @@
                 </div>
             </div>
 
-            <!-- Include the filters component-->
-            <!-- Table Wrapper -->
             <div class="card shadow-sm mb-4">
-                <div class="table-responsive">
+
+                <!-- Desktop/tablet view -->
+                <div class="table-responsive d-none d-md-block">
                     <table class="table align-middle mb-0">
                         <thead class="table-light text-uppercase small text-muted">
                         <tr>
                             <th>Název souboru</th>
-                            <th class="d-none d-sm-table-cell">Instrumentace</th>
-                            <th class="d-none d-sm-table-cell">Pedagog</th>
-                            <th class="d-none d-sm-table-cell">Členové</th>
+                            <th>Instrumentace</th>
+                            <th>Pedagog</th>
+                            <th>Členové</th>
+                            <th>Kontrola</th>
                             <th class="text-end">Akce</th>
                         </tr>
                         </thead>
@@ -36,33 +37,49 @@
                                 <td>
                                     <div class="fw-semibold text-dark">{{ ensemble.name }}</div>
                                 </td>
-                                <td class="d-none d-md-table-cell">{{ ensemble.instrumentation }}</td>
-                                <td class="d-none d-lg-table-cell"></td>
-                                <td class="d-none d-sm-table-cell">{% for pl in ensemble.player_links %}{% if pl.player.first_name or pl.player.last_name %}{{ pl.player.first_name[0] }}. {{ pl.player.last_name }}{% else %}Prázdný hráč{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+                                <td>{{ ensemble.instrumentation }}</td>
+                                <td></td>
+                                <td>
+                                    {% for pl in ensemble.player_links %}
+                                        {% if pl.player.first_name or pl.player.last_name %}
+                                            {{ pl.player.first_name[0] }}. {{ pl.player.last_name }}
+                                        {% else %}
+                                            Prázdný hráč
+                                        {% endif %}
+                                        {% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% if ensemble.health_check == "OK" %}
+                                        <span class="badge bg-success">
+                                <i class="fas fa-check-circle me-1"></i> OK
+                            </span>
+                                    {% else %}
+                                        <span class="badge bg-danger" title="{{ ensemble.health_check }}">
+                                <i class="fas fa-exclamation-triangle me-1"></i> Nesplňuje
+                            </span>
+                                    {% endif %}
+                                </td>
                                 <td class="text-end">
                                     <a href="{{ url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id) }}"
-                                       class="btn btn-link btn-sm text-primary me-1">
+                                       class="btn btn-link btn-sm text-primary me-1" title="Detail">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     <a href="{{ url_for("ensemble.ensemble_edit", ensemble_id=ensemble.id) }}"
-                                       class="btn btn-link btn-sm text-primary me-1">
+                                       class="btn btn-link btn-sm text-primary me-1" title="Upravit">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <button type="button" class="btn btn-link btn-sm text-danger" data-bs-toggle="modal"
-                                            data-bs-target="#deleteEnsembleModal{{ ensemble.id }}">
+                                            data-bs-target="#deleteEnsembleModal{{ ensemble.id }}" title="Smazat">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                     <!-- Delete modal -->
-                                    <div class="modal fade" id="deleteEnsembleModal{{ ensemble.id }}"
-                                         tabindex="-1"
-                                         aria-labelledby="deleteEnsembleModal{{ ensemble.id }}Label"
-                                         aria-hidden="true">
+                                    <div class="modal fade" id="deleteEnsembleModal{{ ensemble.id }}" tabindex="-1"
+                                         aria-labelledby="deleteEnsembleModal{{ ensemble.id }}Label" aria-hidden="true">
                                         <div class="modal-dialog">
                                             <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <h1 class="modal-title fs-5"
-                                                        id="deleteCompositionModal{{ ensemble.id }}Label">Smazat
-                                                        soubor</h1>
+                                                    <h1 class="modal-title fs-5">Smazat soubor</h1>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"
                                                             aria-label="Close"></button>
                                                 </div>
@@ -73,12 +90,11 @@
                                                     <form action="{{ url_for("ensemble.ensemble_delete", ensemble_id=ensemble.id) }}"
                                                           method="post" class="d-inline">
                                                         <button type="button" class="btn btn-secondary"
-                                                                data-bs-dismiss="modal">Close
+                                                                data-bs-dismiss="modal">
+                                                            Close
                                                         </button>
-                                                        <button type="submit" class="btn btn-danger">Smazat
-                                                        </button>
+                                                        <button type="submit" class="btn btn-danger">Smazat</button>
                                                     </form>
-
                                                 </div>
                                             </div>
                                         </div>
@@ -88,6 +104,60 @@
                         {% endfor %}
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Mobile/card view -->
+                <div class="d-md-none p-2">
+                    {% for ensemble in ensembles %}
+                        <div class="card mb-3">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h6 class="fw-bold mb-1">{{ ensemble.name }}</h6>
+                                    {% if ensemble.health_check == "OK" %}
+                                        <span class="badge bg-success">
+                                <i class="fas fa-check-circle"></i>
+                            </span>
+                                    {% else %}
+                                        <span class="badge bg-danger" title="{{ ensemble.health_check }}">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </span>
+                                    {% endif %}
+                                </div>
+
+                                <p class="mb-1 small text-muted">
+                                    <i class="fas fa-users me-1"></i>
+                                    {% for pl in ensemble.player_links %}
+                                        {% if pl.player.first_name or pl.player.last_name %}
+                                            {{ pl.player.first_name[0] }}. {{ pl.player.last_name }}
+                                        {% else %}
+                                            Prázdný hráč
+                                        {% endif %}
+                                        {% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                </p>
+
+                                <p class="mb-1 small text-muted">
+                                    <i class="fas fa-music me-1"></i> {{ ensemble.instrumentation }}
+                                </p>
+
+                                <div class="d-flex justify-content-end mt-2">
+                                    <a href="{{ url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id) }}"
+                                       class="btn btn-sm btn-outline-primary me-1" title="Detail">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for("ensemble.ensemble_edit", ensemble_id=ensemble.id) }}"
+                                       class="btn btn-sm btn-outline-primary me-1" title="Upravit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteEnsembleModal{{ ensemble.id }}" title="Smazat">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
 
                 <!-- Pagination -->
@@ -133,6 +203,7 @@
                     </div>
                 </div>
             </div>
+
 
         </div>
     </main>

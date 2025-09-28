@@ -67,15 +67,15 @@
 
                     <!-- Výsledek kontroly -->
                     <div class="mt-2">
-                        {% if ensemble.external_percentage_check %}
+                        {% if ensemble.health_check == "OK" %}
                             <div class="alert alert-success py-2 px-3 mb-0 d-flex align-items-center">
                                 <i class="fas fa-check-circle me-2"></i>
-                                <span>Výsledek kontroly: <strong>OK</strong></span>
+                                <span>Výsledek kontroly: <strong>{{ ensemble.health_check }}</strong></span>
                             </div>
                         {% else %}
                             <div class="alert alert-danger py-2 px-3 mb-0 d-flex align-items-center">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
-                                <span>Výsledek kontroly: <strong>Nesplňuje podmínky</strong></span>
+                                <span>Výsledek kontroly: <strong>{{ ensemble.health_check }}</strong></span>
                             </div>
                         {% endif %}
                     </div>
@@ -94,50 +94,23 @@
             </div>
             <!-- Ensemble Players Card -->
             <div class="card shadow-sm mt-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h5 class="mb-0">Hráči</h5>
-                    <!-- Trigger -->
-                    <a href="#" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
-                        <i class="fas fa-plus me-1"></i> Přidat hráče (prázdný)
-                    </a>
 
-                    <!-- Modal Empty Player -->
-                    <div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <form action="{{ url_for("ensemble.add_empty_player", ensemble_id=ensemble.id) }}"
-                                  method="post" id="addStudentForm" class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Přidat prázdného hráče</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-
-                                <div class="modal-body">
-                                    <!-- Dropdown of students -->
-                                    <div class="mb-3">
-                                        <label for="instrument_id" class="form-label">Nástroj</label>
-                                        <select id="instrument_id" name="instrument_id" class="form-select" required>
-                                            <option value="" disabled selected>— Vyberte nástroj —</option>
-                                            {% for i in available_instruments %}
-                                                <option value="{{ i.id }}">
-                                                    {{ i.name }}
-                                                </option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Zrušit</button>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-plus me-1"></i> Přidat
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                    <div class="d-flex gap-2">
+                        <a href="#"
+                           class="btn btn-sm btn-primary d-flex align-items-center"
+                           data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                            <i class="fas fa-plus"></i>
+                            <span class="ms-2 d-none d-md-inline">Přidat hráče (prázdný)</span>
+                        </a>
+                        <a href="#"
+                           class="btn btn-sm btn-primary d-flex align-items-center">
+                            <i class="fas fa-user-plus"></i>
+                            <span class="ms-2 d-none d-md-inline">Přidat studenta</span>
+                        </a>
                     </div>
-
                 </div>
-
                 <div class="table-responsive">
                     <table class="table align-middle mb-0">
                         <thead class="table-light text-uppercase small text-muted">
@@ -232,29 +205,46 @@
             <!-- Ensemble Semesters Card -->
             <div class="card shadow-sm mt-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Semestry</h5>
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-alt me-2 text-secondary d-none d-md-inline"></i> Semestry
+                    </h5>
                     <a href="#"
-                       class="btn btn-sm btn-primary">
-                        <i class="fas fa-file-export me-1"></i> Převést do dalšího semestru
+                       class="btn btn-sm btn-primary d-flex align-items-center">
+                        <!-- Icon always visible -->
+                        <i class="fas fa-file-export"></i>
+                        <!-- Text only visible from md and up -->
+                        <span class="ms-2 d-none d-md-inline">Převést do dalšího semestru</span>
                     </a>
+
                 </div>
 
                 <div class="table-responsive">
                     <table class="table align-middle mb-0">
                         <thead class="table-light text-uppercase small text-muted">
                         <tr>
-                            <th class="table-cell">Akademický rok</th>
-                            <th class="table-cell">Semestr</th>
+                            <th style="width:50%">Akademický rok</th>
+                            <th style="width:50%">Semestr</th>
                         </tr>
                         </thead>
                         <tbody>
                         {% for semester in ensemble.semesters %}
                             <tr>
-                                <td class="table-cell">
-                                    {{ semester.academic_year.name }}
+                                <td>
+                                    <i class="fas fa-university me-2 text-muted"></i>
+                                    <span class="fw-semibold">{{ semester.academic_year.name }}</span>
                                 </td>
-                                <td class="table-cell">
-                                    {{ semester.name }}
+                                <td>
+                                    {% if "letní" in semester.name|lower %}
+                                        <span class="badge bg-info text-dark">
+                                <i class="fas fa-sun me-1"></i>{{ semester.name }}
+                            </span>
+                                    {% elif "zimní" in semester.name|lower %}
+                                        <span class="badge bg-primary">
+                                <i class="fas fa-snowflake me-1"></i>{{ semester.name }}
+                            </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ semester.name }}</span>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}
@@ -262,6 +252,7 @@
                     </table>
                 </div>
             </div>
+
         </div>
 
     </main>

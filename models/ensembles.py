@@ -95,13 +95,15 @@ class Ensemble(db.Model):
         return sum(1 for ep in self.player_links if not ep.player or ep.player.student is None)
 
     @property
-    def external_percentage_check(self):
+    def health_check(self):
         total = len(self.player_links)
+        if total <= 2:
+            return "Soubor nesplňuje kritérium minima hráčů."
         percentage_students = round((self.student_count / total) * 100, 2)
         if percentage_students > 50:
-            return True
+            return "OK"
         else:
-            return False
+            return "Soubor obsahuej vysoké procento hostů."
 
 
 class EnsembleInstrumentation(Instrumentation):

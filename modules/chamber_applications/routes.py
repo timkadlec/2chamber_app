@@ -44,7 +44,7 @@ def new_application():
         db.session.add(application)
         db.session.commit()
 
-        flash("Application created successfully!", "success")
-        return redirect(url_for("bp.applications_list"))
+        flash("Žádost byla úspěšně vytvořena!", "success")
+        return redirect(url_for("chamber_applications.index"))
 
     return render_template("new_chamber_application.html", form=form)

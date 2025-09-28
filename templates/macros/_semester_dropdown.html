@@ -1,0 +1,34 @@
+{% macro semester_dropdown(current_semester, academic_years, request) %}
+    {% if current_semester %}
+        <div class="dropdown text-center my-2 my-md-0 me-md-2">
+            <button class="btn btn-sm btn-outline-primary dropdown-toggle w-100 w-md-auto"
+                    type="button"
+                    id="semesterDropdown"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                {{ current_semester.name }} {{ current_semester.academic_year.name }}
+            </button>
+
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="semesterDropdown"
+                style="min-width: 18rem;">
+                {% for ay in academic_years %}
+                    <li><h6 class="dropdown-header">{{ ay.name }}</h6></li>
+                    {% for sem in ay.semesters %}
+                        <li>
+                            <a class="dropdown-item {% if current_semester and sem.id == current_semester.id %}active{% endif %}"
+                               href="{{ url_for('ui.set_semester', semester_id=sem.id, next=request.full_path) }}">
+                                {{ sem.name }}
+                                <span class="text-muted small">
+                                    ({{ sem.start_date.strftime('%d.%m.%Y').lstrip('0') }}–{{ sem.end_date.strftime('%d.%m.%Y').lstrip('0') }})
+                                </span>
+                            </a>
+                        </li>
+                    {% endfor %}
+                    {% if not loop.last %}
+                        <li><hr class="dropdown-divider"></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+{% endmacro %}

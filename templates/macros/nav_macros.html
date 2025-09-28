@@ -9,20 +9,24 @@
 {% endmacro %}
 
 {% macro nav_dropdown(link, active_path) %}
-    <li class="nav-item position-relative has-submenu">
-        {% set active_group = false %}
-        {% for child in link.children %}
-            {% if active_path == child.url %}
-                {% set active_group = true %}
-            {% endif %}
-        {% endfor %}
+    {% set active_group = false %}
+    {% for child in link.children %}
+        {% if active_path == child.url %}
+            {% set active_group = true %}
+        {% endif %}
+    {% endfor %}
 
-        <a class="nav-link {% if active_group %}fw-semibold text-primary{% else %}text-dark{% endif %}"
-           href="#">
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle {% if active_group %}fw-semibold text-primary{% else %}text-dark{% endif %}"
+           href="#"
+           id="dropdown-{{ link.name|replace(' ', '-') }}"
+           role="button"
+           data-bs-toggle="dropdown"
+           aria-expanded="false">
             {{ link.name }}
         </a>
-
-        <ul class="top-submenu shadow-sm border position-absolute bg-white mt-2 py-2 px-2 rounded d-none">
+        <ul class="dropdown-menu shadow-sm border-0"
+            aria-labelledby="dropdown-{{ link.name|replace(' ', '-') }}">
             {% for child in link.children %}
                 <li>
                     <a href="{{ child.url }}"
@@ -34,6 +38,7 @@
         </ul>
     </li>
 {% endmacro %}
+
 
 {% macro profile_dropdown(current_user) %}
     <li class="nav-item dropdown">

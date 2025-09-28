@@ -8,7 +8,7 @@ from sqlalchemy import or_
 
 
 @players_bp.route("/", methods=["GET"])
-@navlink("Hráči")
+@navlink("Hráči", group="Lidé", weight=200)
 def index():
     page = request.args.get("page", 1, type=int)
     per_page = 20

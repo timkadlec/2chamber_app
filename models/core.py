@@ -440,34 +440,6 @@ class PlayerAssignment(db.Model):
     }
 
 
-class PlayerApplication(db.Model):
-    __tablename__ = "player_applications"
-    id = db.Column(db.Integer, primary_key=True)
-
-    player_id = db.Column(db.Integer, db.ForeignKey('players.id'), nullable=False)
-
-    # Project or Event target (nullable if not both)
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)
-    event_id = db.Column(db.Integer, db.ForeignKey('events.id'), nullable=True)
-
-    player = relationship("Player")
-    project = relationship("Project")
-    event = relationship("Event")
-
-    # Status: pending / approved / rejected
-    status = db.Column(db.String(20), default="pending")
-
-    # Requested instrument (optional override, e.g. "piccolo", "cor anglais")
-    requested_instrument_id = db.Column(db.Integer, db.ForeignKey('instruments.id'))
-    requested_instrument = relationship('Instrument')
-
-    note = db.Column(db.String(255))  # optional note from player (e.g. "I'm free only on Friday")
-
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    reviewed_at = db.Column(db.DateTime, nullable=True)
-    reviewer = db.Column(db.String(100))  # Optional (e.g. who approved/rejected)
-
-
 class ProjectPlayerAssignment(PlayerAssignment):
     __tablename__ = 'project_player_assignments'
     id = db.Column(db.Integer, db.ForeignKey('player_assignments.id'), primary_key=True)

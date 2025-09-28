@@ -59,6 +59,9 @@
     </style>
 {% endblock %}
 
+{% import 'macros/nav_macros.html' as navmacros %}
+{% import 'macros/_semester_dropdown.html' as semmacros %}
+
 <!-- Mobile side menu -->
 <div class="offcanvas offcanvas-start" tabindex="-1" id="sideMenu" aria-labelledby="sideMenuLabel">
     <div class="offcanvas-header border-bottom">
@@ -68,14 +71,20 @@
 
     <div class="offcanvas-body d-flex flex-column justify-content-between py-3">
         <nav class="nav flex-column mb-4">
-            {% import 'macros/nav_macros.html' as navmacros %}
+            <!-- Semester dropdown in mobile -->
+            {{ semmacros.semester_dropdown(current_semester, academic_years, request) }}
+
             {% for link in nav_links %}
-                {{ navmacros.nav_link(link, request.path) }}
+                {% if link.children %}
+                    {{ navmacros.nav_dropdown(link, request.path) }}
+                {% else %}
+                    {{ navmacros.nav_link(link, request.path) }}
+                {% endif %}
             {% endfor %}
+
         </nav>
 
         <div class="d-flex align-items-center justify-content-between border-top pt-3">
-
             <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
                  style="width: 32px; height: 32px;">
                 {% if current_user.is_authenticated %}
@@ -107,40 +116,11 @@
         <!-- Desktop Nav -->
         <div class="collapse navbar-collapse justify-content-end">
             <div class="d-flex align-items-center">
-                <!-- Semester dropdown -->
-            {% if current_semester %}
-                <div class="dropdown me-2">
-                    <button class="btn btn-sm btn-outline-primary dropdown-toggle"
-                            type="button"
-                            id="semesterDropdown"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                        {{ current_semester.name }} {{ current_semester.academic_year.name }}
-                    </button>
 
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="semesterDropdown"
-                        style="min-width: 18rem;">
-                        {% for ay in academic_years %}
-                            <li><h6 class="dropdown-header">{{ ay.name }}</h6></li>
-                            {% for sem in ay.semesters %}
-                                <li>
-                                    <a class="dropdown-item {% if current_semester and sem.id == current_semester.id %}active{% endif %}"
-                                       href="{{ url_for('ui.set_semester', semester_id=sem.id, next=request.full_path) }}">
-                                        {{ sem.name }}
-                                        <span class="text-muted small">
-                      ({{ sem.start_date.strftime('%d.%m.%Y').lstrip('0') }}–{{ sem.end_date.strftime('%d.%m.%Y').lstrip('0') }})
-                    </span>
-                                    </a>
-                                </li>
-                            {% endfor %}
-                            {% if not loop.last %}
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>{% endif %}
-                        {% endfor %}
-                    </ul>
+                <!-- Semester dropdown for desktop -->
+                <div class="d-none d-md-block me-2">
+                    {{ semmacros.semester_dropdown(current_semester, academic_years, request) }}
                 </div>
-            {% endif %}
 
                 <!-- Right-side nav -->
                 <ul class="navbar-nav mb-2 mb-lg-0 ms-3">
@@ -155,7 +135,7 @@
                 </ul>
             </div>
         </div>
-    </div> <!-- this was missing: closes .container-fluid -->
+    </div> <!-- closes .container-fluid -->
 </nav>
 
 {% block extra_scripts %}

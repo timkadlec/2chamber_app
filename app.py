@@ -16,6 +16,7 @@ from modules.ui import ui_bp
 from modules.ensembles import ensemble_bp
 from modules.subject import subject_bp
 from modules.players import players_bp
+from modules.chamber_applications import chamber_applications_bp
 from collections import defaultdict
 from utils.error_handlers import register_error_handlers
 from flask import session
@@ -54,6 +55,7 @@ def create_app():
     app.register_blueprint(ensemble_bp, url_prefix="/ensembles")
     app.register_blueprint(subject_bp, url_prefix="/subjects")
     app.register_blueprint(players_bp, url_prefix="/players")
+    app.register_blueprint(chamber_applications_bp, url_prefix="/chamber_applications")
 
     app.cli.add_command(cli_format_academic_year)
     app.cli.add_command(cli_get_or_create_academic_year)

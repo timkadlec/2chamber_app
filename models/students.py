@@ -88,11 +88,11 @@ class StudentChamberApplication(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
     student = relationship('Student', back_populates='chamber_applications')
 
-    ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete='CASCADE'), nullable=False)
-    ensemble = relationship('Ensemble')
-
     status_id = db.Column(db.Integer, db.ForeignKey('student_chamber_application_statuses.id', ondelete='SET NULL'))
     status = relationship('StudentChamberApplicationStatus')
+
+    semester_id = db.Column(db.Integer, db.ForeignKey('semesters.id', ondelete='SET NULL'))
+    semester = relationship('Semester')
 
     created_by_id = db.Column(db.String, db.ForeignKey('users.id', ondelete='SET NULL'))
     created_by = relationship('User')

@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% block content %}
+    <main>
+        <div class="container-xl">
+
+            <div class="container-xl pb-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <h1 class="text-secondary">Žádosti o komorní hru</h1>
+                    <a href="{{ url_for("chamber_applications.new_application") }}"
+                       class="btn btn-primary d-flex align-items-center">
+                        <i class="fas fa-plus me-2"></i> Založit žádost
+                    </a>
+                </div>
+
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light text-uppercase small text-muted">
+                        <tr>
+                            <th>Student</th>
+                            <th>Členové</th>
+                            <th>Stav</th>
+                            <th>Vytvořeno</th>
+                            <th class="text-end">Akce</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for app in applications %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold text-dark">
+                                        {{ app.student.full_name }}
+                                    </div>
+                                </td>
+                                <td class="d-none d-sm-table-cell">
+                                    {% for pl in app.players %}
+                                        {{ pl.player.student.full_name if pl.player.student else 'Prázdný hráč' }}
+                                        {% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {{ app.status.name if app.status else "N/A" }}
+                                </td>
+                                <td>
+                                    {{ app.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                </td>
+                                <td class="text-end">
+                                    <a href="#"
+                                       class="btn btn-link btn-sm text-primary me-1">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="#"
+                                       class="btn btn-link btn-sm text-primary me-1">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-link btn-sm text-danger" data-bs-toggle="modal"
+                                            data-bs-target="#deleteAppModal{{ app.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <!-- Delete modal -->
+                                    <div class="modal fade" id="deleteAppModal{{ app.id }}" tabindex="-1"
+                                         aria-labelledby="deleteAppModal{{ app.id }}Label" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h1 class="modal-title fs-5" id="deleteAppModal{{ app.id }}Label">
+                                                        Smazat žádost
+                                                    </h1>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                            aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body text-start">
+                                                    Opravdu si přejete smazat žádost studenta
+                                                    <b>{{ app.student.full_name }}</b>?
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <form action="#"
+                                                          method="post" class="d-inline">
+                                                        <button type="button" class="btn btn-secondary"
+                                                                data-bs-dismiss="modal">Zavřít
+                                                        </button>
+                                                        <button type="submit" class="btn btn-danger">Smazat</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="card-footer bg-white">
+                    <div class="d-flex flex-column flex-md-row align-items-center justify-content-between">
+                        <div class="text-muted small">
+                            Zobrazeno
+                            <span class="fw-semibold">{{ pagination.page * pagination.per_page - pagination.per_page + 1 }}</span>
+                            až
+                            <span class="fw-semibold">{{ pagination.page * pagination.per_page if pagination.total > pagination.page * pagination.per_page else pagination.total }}</span>
+                            z
+                            <span class="fw-semibold">{{ pagination.total }}</span>
+                            žádostí
+                        </div>
+                        <nav aria-label="Stránkování">
+                            <ul class="pagination pagination-sm mb-0 mt-3 mt-md-0">
+                                {% if pagination.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           href="{{ url_for('chamber_applications.index', page=pagination.prev_num) }}"
+                                           aria-label="Předchozí">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {% for p in range(1, pagination.pages + 1) %}
+                                    <li class="page-item {% if pagination.page == p %}active{% endif %}">
+                                        <a class="page-link"
+                                           href="{{ url_for('chamber_applications.index', page=p) }}">{{ p }}</a>
+                                    </li>
+                                {% endfor %}
+                                {% if pagination.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           href="{{ url_for('chamber_applications.index', page=pagination.next_num) }}"
+                                           aria-label="Další">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+{% endblock %}

@@ -45,7 +45,7 @@
                                        class="btn btn-link btn-sm text-primary me-1">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="#"
+                                    <a href="{{ url_for("players.player_edit", player_id=player.id) }}"
                                        class="btn btn-link btn-sm text-primary me-1">
                                         <i class="fas fa-edit"></i>
                                     </a>
@@ -72,7 +72,7 @@
                                                     <b>{{ player.full_name }}</b>?
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <form action="#"
+                                                    <form action="{{ url_for('players.player_delete', player_id=player.id) }}"
                                                           method="post" class="d-inline">
                                                         <button type="button" class="btn btn-secondary"
                                                                 data-bs-dismiss="modal">Close

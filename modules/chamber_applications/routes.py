@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, redirect, url_for
+from flask import render_template, request, flash, redirect, url_for, session
 from utils.nav import navlink
 from modules.chamber_applications import chamber_applications_bp
 from models import Composition, Composer
@@ -16,10 +16,10 @@ def index():
 
     pagination = StudentChamberApplication.query \
         .order_by(StudentChamberApplication.created_at.desc()) \
+        .filter_by(semester_id=session.get("semester_id")) \
         .paginate(page=page, per_page=per_page, error_out=False)
 
     applications = pagination.items
-
     return render_template(
         "all_chamber_applications.html",
         applications=applications,
@@ -34,6 +34,7 @@ def new_application():
     if form.validate_on_submit():
         application = StudentChamberApplication(
             student=form.student.data,
+            semester_id=session.get("semester_id"),
             created_by=current_user
         )
 

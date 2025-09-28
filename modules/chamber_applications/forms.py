@@ -19,9 +19,9 @@ def player_query():
 
 class StudentChamberApplicationForm(FlaskForm):
     student = QuerySelectField(
-        "Student (žadatel)",
+        "Student (applicant)",
         query_factory=student_query,
-        allow_blank=False,
+        allow_blank=True,
         get_label=lambda s: s.full_name,
         validators=[DataRequired()]
     )

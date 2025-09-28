@@ -1,9 +1,9 @@
 from flask import render_template, request, flash, redirect, url_for, session, request
+from modules.players.forms import PlayerForm
 from utils.nav import navlink
-from models import Student, StudentSubjectEnrollment, Instrument, Subject, Player
+from models import db, Student, StudentSubjectEnrollment, Instrument, Subject, Player
 from modules.players import players_bp
 from sqlalchemy import and_
-
 from sqlalchemy import or_
 
 
@@ -35,7 +35,6 @@ def index():
 
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
-
     return render_template(
         "all_players.html",
         players=pagination.items,
@@ -44,3 +43,58 @@ def index():
         selected_instrument_id=instrument_id,
         search_query=search_query,
     )
+
+
+def is_duplicate_player(player):
+    duplicate_p = Player.query.filter_by(first_name=player.first_name, last_name=player.last_name,
+                                         instrument_id=player.instrument_id).first()
+    return bool(duplicate_p)
+
+
+@players_bp.route("/add", methods=["GET", "POST"])
+def player_add():
+    form = PlayerForm(mode="add")
+    if request.method == "POST":
+        first_name = form.first_name.data
+        last_name = form.last_name.data
+        instrument = form.instrument.data
+        email = form.email.data
+        phone = form.phone.data
+
+        new_player = Player(first_name=first_name, last_name=last_name, instrument_id=instrument.id, email=email,
+                            phone=phone)
+
+        if not is_duplicate_player(new_player):
+            db.session.add(new_player)
+            db.session.commit()
+            flash("Nový hráč byl přidán", "success")
+            return redirect(url_for("players.index"))
+        else:
+            flash("Takový hráč již existuje", "danger")
+            return redirect(url_for("players.player_add"))
+
+    return render_template("player_form.html", form=form)
+
+
+@players_bp.route("/<int:player_id>/edit", methods=["GET", "POST"])
+def player_edit(player_id):
+    player = Player.query.get_or_404(player_id)
+    form = PlayerForm(obj=player)
+    form.mode = "edit"
+
+    if form.validate_on_submit():
+        form.populate_obj(player)
+        db.session.commit()
+        flash("Hráč byl úspěšně upraven", "success")
+        return redirect(url_for("players.index"))
+
+    return render_template("player_form.html", form=form, player=player)
+
+
+@players_bp.route("/delete/<int:player_id>", methods=["POST"])
+def player_delete(player_id):
+    player = Player.query.get_or_404(player_id)
+    db.session.delete(player)
+    db.session.commit()
+    flash("Hráč byl úspěšně smazán", "success")
+    return redirect(url_for("players.index"))

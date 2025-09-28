@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+    <main class="py-4">
+        <div class="container-xl">
+
+            <!-- Back link -->
+            <div class="mb-4">
+                <a href="{{ url_for('players.index') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i> Zpět na přehled hráčů
+                </a>
+            </div>
+
+            <!-- Player Form Card -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        {{ form.title }}
+                    </h5>
+                </div>
+
+                {% if form.mode == "add" %}
+                    <form method="POST" action="{{ url_for('players.player_add') }}">
+                {% elif form.mode == "edit" %}
+                    <form method="POST" action="{{ url_for('players.player_edit', player_id=player.id) }}">
+                {% endif %}
+                {{ form.csrf_token }}
+
+                <div class="card-body">
+                    <div class="row g-3">
+
+                        <!-- First Name -->
+                        <div class="col-md-6">
+                            <label for="first_name" class="form-label">{{ form.first_name.label }}</label>
+                            {{ form.first_name(class="form-control") }}
+                        </div>
+
+                        <!-- Last Name -->
+                        <div class="col-md-6">
+                            <label for="last_name" class="form-label">{{ form.last_name.label }}</label>
+                            {{ form.last_name(class="form-control") }}
+                        </div>
+
+                        <!-- Instrument -->
+                        <div class="col-md-6">
+                            <label for="instrument" class="form-label">{{ form.instrument.label }}</label>
+                            {{ form.instrument(class="form-select") }}
+                        </div>
+
+                        <!-- Phone -->
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">{{ form.phone.label }}</label>
+                            {{ form.phone(class="form-control") }}
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">{{ form.email.label }}</label>
+                            {{ form.email(class="form-control") }}
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="card-footer text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>{{ form.submit.label }}
+                    </button>
+                </div>
+
+                </form>
+            </div>
+
+        </div>
+    </main>
+{% endblock %}

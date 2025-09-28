@@ -1,0 +1,32 @@
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-center">
+            <!-- Instrument filter -->
+            <div class="col-sm-4 col-md-3">
+                <select class="form-select form-select-sm" name="instrument_id">
+                    <option value="">-- Všechny nástroje --</option>
+                    {% for inst in instruments %}
+                        <option value="{{ inst.id }}"
+                                {% if selected_instrument_id == inst.id %}selected{% endif %}>
+                            {{ inst.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Search field -->
+            <div class="col-sm-6 col-md-3">
+                <input type="text" class="form-control form-control-sm"
+                       name="q"
+                       value="{{ search_query or '' }}"
+                       placeholder="Hledat jméno hráče...">
+            </div>
+
+            <!-- Submit + Reset -->
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-primary">Filtrovat</button>
+                <a href="{{ url_for('players.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>

@@ -417,6 +417,13 @@ class Player(db.Model):
         passive_deletes=True,
     )
 
+    @property
+    def full_name(self):
+        if self.student_id:
+            return f"{self.student.last_name} {self.student.first_name}"
+        else:
+            return f"{self.last_name} {self.first_name}"
+
 
 class PlayerAssignment(db.Model):
     __tablename__ = 'player_assignments'

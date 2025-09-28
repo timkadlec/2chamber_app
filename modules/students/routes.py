@@ -1,6 +1,7 @@
 from flask import render_template, request, flash, redirect, url_for, session, request
 from utils.nav import navlink
-from models import Student, StudentSubjectEnrollment, Instrument, Subject
+from models import Student, StudentSubjectEnrollment, Instrument, Subject, Player, EnsemblePlayer, Ensemble, \
+    EnsembleSemester, db
 from modules.students import students_bp
 from sqlalchemy import and_
 
@@ -33,11 +34,6 @@ def index():
         if subject_ids:
             query = query.filter(StudentSubjectEnrollment.subject_id.in_(subject_ids))
 
-    # Active filter
-    active = request.args.get("active")
-    if active in ("0", "1"):
-        query = query.filter(Student.active == (active == "1"))
-
     # Search filter (by first_name OR last_name)
     search_query = request.args.get("q", "").strip()
     if search_query:
@@ -47,6 +43,32 @@ def index():
                 Student.last_name.ilike(f"%{search_query}%"),
             )
         )
+
+    has_ensemble = request.args.get("has_ensemble")
+
+    if has_ensemble in ("0", "1"):
+        query = query.outerjoin(Player, Student.player).outerjoin(
+            EnsemblePlayer, Player.id == EnsemblePlayer.player_id
+        ).outerjoin(
+            Ensemble, Ensemble.id == EnsemblePlayer.ensemble_id
+        ).outerjoin(
+            EnsembleSemester, Ensemble.id == EnsembleSemester.ensemble_id
+        )
+
+        if has_ensemble == "1":
+            query = query.filter(EnsembleSemester.semester_id == semester_id)
+        else:  # has_ensemble == "0"
+            # students with no ensembles in the selected semester
+            query = query.filter(
+                ~Student.id.in_(
+                    db.session.query(Student.id)
+                    .join(Player)
+                    .join(EnsemblePlayer)
+                    .join(Ensemble)
+                    .join(EnsembleSemester)
+                    .filter(EnsembleSemester.semester_id == semester_id)
+                )
+            )
 
     # Sort by name
     query = query.order_by(Student.last_name, Student.first_name)
@@ -61,6 +83,6 @@ def index():
         instruments=Instrument.query.filter_by(is_primary=True).order_by(Instrument.weight).all(),
         selected_instrument_ids=instrument_ids,
         selected_subject_ids=subject_ids,
-        selected_active=active,
+        selected_has_ensemble=has_ensemble,
         search_query=search_query,
     )

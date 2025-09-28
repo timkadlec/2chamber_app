@@ -25,6 +25,15 @@
                 </select>
             </div>
 
+            <!-- Has Ensemble filter -->
+            <div class="col-sm-4 col-md-3">
+                <select class="form-select form-select-sm" id="has_ensemble" name="has_ensemble">
+                    <option value="">-- Má / nemá soubor --</option>
+                    <option value="1" {% if selected_has_ensemble == '1' %}selected{% endif %}>Má soubor</option>
+                    <option value="0" {% if selected_has_ensemble == '0' %}selected{% endif %}>Nemá soubor</option>
+                </select>
+            </div>
+
 
             <!-- Search field -->
             <div class="col-sm-6 col-md-3">
@@ -52,6 +61,12 @@
         new TomSelect("#subject_id", {
             plugins: ['remove_button'],
             placeholder: "Vyberte předmět(y)",
+        });
+        new TomSelect("#has_ensemble", {
+            plugins: ['remove_button'],
+            allowEmptyOption: true,
+            placeholder: "Má / nemá soubor",
+            maxItems: 1
         });
     });
 </script>

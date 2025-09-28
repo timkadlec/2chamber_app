@@ -4,7 +4,8 @@
         {% set active = "students" %}
         <div class="container-xl pb-4">
             <h1 class="text-secondary">Studenti</h1>
-            <p>Přehled studentů na aktuálně vybraný semestr. Lze filtrovat podle zapsaných předmětů, nástroje i podle jména.</p>
+            <p>Přehled studentů na aktuálně vybraný semestr. Lze filtrovat podle zapsaných předmětů, nástroje i podle
+                jména.</p>
         </div>
 
 
@@ -24,7 +25,7 @@
                             <th class="d-none d-md-table-cell">Hlavní nástroj</th>
                             <th class="d-none d-lg-table-cell">E-mail</th>
                             <th class="d-none d-lg-table-cell">Telefon</th>
-                            <th class="d-none d-sm-table-cell">Aktivní</th>
+                            <th class="d-none d-sm-table-cell">Soubory</th>
                             <th class="text-end">Akce</th>
                         </tr>
                         </thead>
@@ -47,12 +48,29 @@
                                     {{ student.phone_number or "—" }}
                                 </td>
                                 <td class="d-none d-sm-table-cell">
-                                    {% if student.active %}
-                                        <span class="badge bg-success">Ano</span>
+                                    {% set count = student.player.ensemble_count_in_semester(current_semester.id) %}
+
+                                    {% if count == 0 %}
+                                        {% set percent, color, label = (0, "bg-danger", "0") %}
+                                    {% elif count == 1 %}
+                                        {% set percent, color, label = (25, "bg-success", "1") %}
+                                    {% elif count == 2 %}
+                                        {% set percent, color, label = (50, "bg-warning text-dark", "2") %}
+                                    {% elif count == 3 %}
+                                        {% set percent, color, label = (75, "bg-info text-dark", "3") %}
                                     {% else %}
-                                        <span class="badge bg-secondary">Ne</span>
+                                        {% set percent, color, label = (100, "bg-danger", count|string) %}
                                     {% endif %}
+
+                                    <div class="progress" style="height: 1.5rem; width: 100px;">
+                                        <div class="progress-bar {{ color }}" role="progressbar"
+                                             style="width: {{ percent }}%;" aria-valuenow="{{ percent }}"
+                                             aria-valuemin="0" aria-valuemax="100">
+                                            {{ label }}
+                                        </div>
+                                    </div>
                                 </td>
+
                                 <td class="text-end">
                                     <a href="#"
                                        class="btn btn-link btn-sm text-primary me-1">

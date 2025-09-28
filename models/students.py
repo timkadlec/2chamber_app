@@ -14,7 +14,7 @@ class Student(db.Model):
     active = db.Column(db.Boolean, default=True, index=True)
     id_studia = db.Column(db.Integer())
 
-    instrument_id = db.Column(db.Integer, db.ForeignKey('instruments.id', ondelete='SET NULL'), nullable=True)
+    instrument_id = db.Column(db.Integer, db.ForeignKey('instruments.id', ondelete='SET NULL'))
     instrument = relationship('Instrument')
 
     player = relationship(
@@ -31,6 +31,12 @@ class Student(db.Model):
     )
     subject_enrollments = relationship(
         'StudentSubjectEnrollment',
+        back_populates='student',
+        cascade='all, delete-orphan'
+    )
+
+    chamber_applications = relationship(
+        'StudentChamberApplication',
         back_populates='student',
         cascade='all, delete-orphan'
     )
@@ -73,3 +79,46 @@ class StudentSubjectEnrollment(db.Model):
         Index('ix_sse_subject_semester', 'subject_id', 'semester_id'),
         Index('ix_sse_student_semester', 'student_id', 'semester_id'),
     )
+
+
+class StudentChamberApplication(db.Model):
+    __tablename__ = 'student_chamber_applications'
+    id = db.Column(db.Integer, primary_key=True)
+
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
+    student = relationship('Student', back_populates='chamber_applications')
+
+    ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete='CASCADE'), nullable=False)
+    ensemble = relationship('Ensemble')
+
+    status_id = db.Column(db.Integer, db.ForeignKey('student_chamber_application_statuses.id', ondelete='SET NULL'))
+    status = relationship('StudentChamberApplicationStatus')
+
+    created_by_id = db.Column(db.String, db.ForeignKey('users.id', ondelete='SET NULL'))
+    created_by = relationship('User')
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    players = relationship(
+        'StudentChamberApplicationPlayers',
+        back_populates='application',
+        cascade='all, delete-orphan'
+    )
+
+
+class StudentChamberApplicationPlayers(db.Model):
+    __tablename__ = 'student_chamber_application_players'
+    id = db.Column(db.Integer, primary_key=True)
+
+    application_id = db.Column(db.Integer, db.ForeignKey('student_chamber_applications.id', ondelete='CASCADE'),
+                               nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey('players.id', ondelete='CASCADE'), nullable=False)
+
+    application = relationship('StudentChamberApplication', back_populates='players')
+    player = relationship('Player')  # one-way only, no back_populates
+
+
+class StudentChamberApplicationStatus(db.Model):
+    __tablename__ = 'student_chamber_application_statuses'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255))

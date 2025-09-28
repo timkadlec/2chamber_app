@@ -100,10 +100,42 @@
                     <div class="d-flex gap-2">
                         <a href="#"
                            class="btn btn-sm btn-primary d-flex align-items-center"
-                           data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                           data-bs-toggle="modal" data-bs-target="#addPlayerModal">
                             <i class="fas fa-plus"></i>
                             <span class="ms-2 d-none d-md-inline">Přidat hráče (prázdný)</span>
                         </a>
+                        <!-- Add Empty Player Modal -->
+                        <div class="modal fade" id="addPlayerModal" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <form action="{{ url_for("ensemble.add_empty_player", ensemble_id=ensemble.id) }}"
+                                      method="post" class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Přidat prázdného hráče</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label for="instrument_id" class="form-label">Nástroj</label>
+                                            <select id="instrument_id" name="instrument_id" class="form-select"
+                                                    required>
+                                                <option value="" disabled selected>— Vyberte nástroj —</option>
+                                                {% for i in available_instruments %}
+                                                    <option value="{{ i.id }}">{{ i.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Zrušit
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-plus me-1"></i> Přidat
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
                         <a href="#"
                            class="btn btn-sm btn-primary d-flex align-items-center">
                             <i class="fas fa-user-plus"></i>

@@ -142,25 +142,30 @@ def add_player_to_ensemble(ensemble_id, ensemble_instrumentation_id, mode="stude
     if request.method == "GET":
         if mode == "student":
             available_players = (
-                db.session.query(Student)
-                .filter(Student.active.is_(True))
-                .filter(Student.instrument_id == instrumentation.instrument_id)
+                db.session.query(Player)
+                .join(Student, Player.student)  # only players linked to students
                 .join(StudentSubjectEnrollment, StudentSubjectEnrollment.student_id == Student.id)
+                .filter(Student.active.is_(True))
+                .filter(Player.instrument_id == instrumentation.instrument_id)
                 .filter(StudentSubjectEnrollment.semester_id == current_semester.id)
                 .options(
-                    selectinload(Student.instrument),
-                    selectinload(Student.player),
+                    selectinload(Player.instrument),
+                    selectinload(Player.student).selectinload(Student.instrument),
                 )
                 .order_by(Student.last_name, Student.first_name)
                 .all()
             )
         else:
-            available_players = (db.session.query(Player).filter(Player.student_id.is_(None))
-                                 .filter(Player.instrument_id == instrumentation.instrument_id)
-                                 .options(
-                selectinload(Player.instrument),
+            available_players = (
+                db.session.query(Player)
+                .filter(Player.student_id.is_(None))
+                .filter(Player.instrument_id == instrumentation.instrument_id)
+                .options(
+                    selectinload(Player.instrument),
+                )
+                .all()
             )
-                                 .all())
+
         return render_template("ensemble_add_player.html", ensemble=ensemble, instrumentation=instrumentation,
                                available_players=available_players)
 

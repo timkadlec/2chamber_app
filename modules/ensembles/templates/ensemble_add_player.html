@@ -48,77 +48,117 @@
 
             </div>
 
-            <!-- Student Selection Card -->
+            <!-- Available Players -->
             <div class="card shadow-sm mt-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Dostupní hráči v
-                        semestru {{ current_semester.name }} {{ current_semester.academic_year.name }}</h5>
+                    <h5 class="mb-0">
+                        Dostupní hráči v semestru {{ current_semester.name }} {{ current_semester.academic_year.name }}
+                    </h5>
                 </div>
 
                 <div class="table-responsive">
                     <table class="table align-middle mb-0">
                         <thead class="table-light text-uppercase small text-muted">
                         <tr>
-                            <th class="d-none d-lg-table-cell">Příjmení</th>
-                            <th class="d-none d-lg-table-cell">Jméno</th>
-                            <th class="">Akce</th>
+                            <th>Hráč</th>
+                            <th class="text-center">Zatížení</th>
+                            <th class="text-end">Akce</th>
                         </tr>
                         </thead>
                         <tbody>
                         {% for player in available_players %}
-                            <tr>
-                                <td>
-                                    {{ player.last_name }}
-                                </td>
-                                <td>
-                                    {{ player.first_name }}
+                            {% set count = player.ensemble_count_in_semester(current_semester.id) %}
+                            {% if count == 0 %}
+                                {% set percent, color, label = (0, "bg-danger", "0") %}
+                            {% elif count == 1 %}
+                                {% set percent, color, label = (25, "bg-success", "1") %}
+                            {% elif count == 2 %}
+                                {% set percent, color, label = (50, "bg-warning text-dark", "2") %}
+                            {% elif count == 3 %}
+                                {% set percent, color, label = (75, "bg-info text-dark", "3") %}
+                            {% else %}
+                                {% set percent, color, label = (100, "bg-danger", count|string) %}
+                            {% endif %}
 
-                                </td>
+                            <tr>
+                                <!-- Player info -->
                                 <td>
-                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                                            data-bs-target="#PlayerSelectionModal{{ player.id }}">Vybrat
+                                    <div class="fw-semibold text-dark">{{ player.last_name }} {{ player.first_name }}</div>
+                                    {% if player.instrument %}
+                                        <span class="badge bg-light text-dark border">
+                <i class="fas fa-music me-1"></i>{{ player.instrument.name }}
+              </span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Workload bar -->
+                                <td class="text-center">
+                                    <div class="progress" style="height: 0.75rem; width: 100px;"
+                                         title="{{ count }} soubor(ů) v tomto semestru">
+                                        <div class="progress-bar {{ color }}"
+                                             role="progressbar"
+                                             style="width: {{ percent }}%;"
+                                             aria-valuenow="{{ percent }}" aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- Action -->
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-primary select-player-btn"
+                                            data-player-id="{{ player.id }}"
+                                            data-player-name="{{ player.last_name }} {{ player.first_name }}">
+                                        <i class="fas fa-user-plus me-1"></i> Vybrat
                                     </button>
                                 </td>
                             </tr>
-                            <!-- Modal -->
-                            <div class="modal fade" id="PlayerSelectionModal{{ player.id }}" tabindex="-1"
-                                 aria-labelledby="PlayerSelectionModal{{ player.id }}Label" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h1 class="modal-title fs-5"
-                                                id="StudentSelectionModal{{ player.id }}Label">
-                                                Přiřadit hráče do souboru
-                                            </h1>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            Opravdu si přejete přidat
-                                            studenta <b>{{ player.last_name }} {{ player.first_name }}</b> do
-                                            souboru {{ ensemble.name }}?
-                                        </div>
-                                        <div class="modal-footer">
-                                            <form method="POST"
-                                                  action="{{ url_for('ensemble.add_player_to_ensemble',
-          ensemble_id=ensemble.id,
-          ensemble_instrumentation_id=instrumentation.id, mode=("student" if request.args.get("mode") == "student" else "guest")) }}">
-                                                <input type="hidden" name="selected_player_id" value="{{ player.id }}">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                                    Zavřít
-                                                </button>
-                                                <button type="submit" class="btn btn-primary">Přidat</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         {% endfor %}
-
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            <!-- Reusable Modal -->
+            <div class="modal fade" id="PlayerSelectionModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5">Přiřadit hráče do souboru</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body" id="player-modal-body"></div>
+                        <div class="modal-footer">
+                            <form method="POST" id="player-modal-form"
+                                  action="{{ url_for('ensemble.add_player_to_ensemble',
+                  ensemble_id=ensemble.id,
+                  ensemble_instrumentation_id=instrumentation.id,
+                  mode=('student' if request.args.get('mode') == 'student' else 'guest')) }}">
+                                <input type="hidden" name="selected_player_id" id="modal-player-id">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zavřít</button>
+                                <button type="submit" class="btn btn-primary">Přidat</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    document.querySelectorAll(".select-player-btn").forEach(btn => {
+                        btn.addEventListener("click", function () {
+                            const playerId = this.dataset.playerId;
+                            const playerName = this.dataset.playerName;
+
+                            document.getElementById("modal-player-id").value = playerId;
+                            document.getElementById("player-modal-body").innerHTML =
+                                `Opravdu si přejete přidat studenta <b>${playerName}</b> do souboru {{ ensemble.name }}?`;
+
+                            new bootstrap.Modal(document.getElementById("PlayerSelectionModal")).show();
+                        });
+                    });
+                });
+            </script>
+
 
         </div>
 

@@ -3,11 +3,10 @@
         <form method="get" class="row g-2 align-items-center">
             <!-- Instrument filter -->
             <div class="col-sm-4 col-md-3">
-                <select class="form-select form-select-sm" name="instrument_id">
-                    <option value="">-- Všechny nástroje --</option>
+                <select class="form-select form-select-sm" id="instrument_id" name="instrument_id" multiple>
                     {% for inst in instruments %}
                         <option value="{{ inst.id }}"
-                                {% if selected_instrument_id == inst.id %}selected{% endif %}>
+                                {% if inst.id in (selected_instrument_ids or []) %}selected{% endif %}>
                             {{ inst.name }}
                         </option>
                     {% endfor %}
@@ -16,25 +15,16 @@
 
             <!-- Subject filter -->
             <div class="col-sm-4 col-md-3">
-                <select class="form-select form-select-sm" name="subject_id">
-                    <option value="">-- Všechny předměty --</option>
+                <select class="form-select form-select-sm" id="subject_id" name="subject_id" multiple>
                     {% for subj in subjects %}
                         <option value="{{ subj.id }}"
-                                {% if selected_subject_id == subj.id %}selected{% endif %}>
+                                {% if subj.id in (selected_subject_ids or []) %}selected{% endif %}>
                             {{ subj.name }}
                         </option>
                     {% endfor %}
                 </select>
             </div>
 
-            <!-- Active filter -->
-            <div class="col-sm-3 col-md-2">
-                <select class="form-select form-select-sm" name="active">
-                    <option value="">-- Aktivní i neaktivní --</option>
-                    <option value="1" {% if selected_active == '1' %}selected{% endif %}>Aktivní</option>
-                    <option value="0" {% if selected_active == '0' %}selected{% endif %}>Neaktivní</option>
-                </select>
-            </div>
 
             <!-- Search field -->
             <div class="col-sm-6 col-md-3">
@@ -52,3 +42,16 @@
         </form>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        new TomSelect("#instrument_id", {
+            plugins: ['remove_button'],
+            placeholder: "Vyberte nástroj(e)",
+        });
+        new TomSelect("#subject_id", {
+            plugins: ['remove_button'],
+            placeholder: "Vyberte předmět(y)",
+        });
+    });
+</script>

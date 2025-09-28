@@ -16,21 +16,22 @@ def index():
 
     query = Student.query
 
+    instrument_ids = request.args.getlist("instrument_id", type=int)
+    subject_ids = request.args.getlist("subject_id", type=int)
+
     # Instrument filter
-    instrument_id = request.args.get("instrument_id", type=int)
-    if instrument_id:
-        query = query.filter(Student.instrument_id == instrument_id)
+    if instrument_ids:
+        query = query.filter(Student.instrument_id.in_(instrument_ids))
 
     # Subject / semester filters
-    selected_subject_id = request.args.get("subject_id", type=int)
-    if semester_id or selected_subject_id:
+    if semester_id or subject_ids:
         query = query.join(StudentSubjectEnrollment)
 
         if semester_id:
             query = query.filter(StudentSubjectEnrollment.semester_id == semester_id)
 
-        if selected_subject_id:
-            query = query.filter(StudentSubjectEnrollment.subject_id == selected_subject_id)
+        if subject_ids:
+            query = query.filter(StudentSubjectEnrollment.subject_id.in_(subject_ids))
 
     # Active filter
     active = request.args.get("active")
@@ -58,8 +59,8 @@ def index():
         pagination=pagination,
         subjects=Subject.query.order_by(Subject.weight).all(),
         instruments=Instrument.query.filter_by(is_primary=True).order_by(Instrument.weight).all(),
-        selected_instrument_id=instrument_id,
-        selected_subject_id=selected_subject_id,
+        selected_instrument_ids=instrument_ids,
+        selected_subject_ids=subject_ids,
         selected_active=active,
         search_query=search_query,
     )

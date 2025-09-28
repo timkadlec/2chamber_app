@@ -86,6 +86,23 @@ class Ensemble(db.Model):
     def instrumentation(self):
         return format_ensemble_instrumentation(self.instrumentation_entries)
 
+    @property
+    def student_count(self):
+        return sum(1 for ep in self.player_links if ep.player and ep.player.student is not None)
+
+    @property
+    def external_count(self):
+        return sum(1 for ep in self.player_links if not ep.player or ep.player.student is None)
+
+    @property
+    def external_percentage_check(self):
+        total = len(self.player_links)
+        percentage_students = round((self.student_count / total) * 100, 2)
+        if percentage_students > 50:
+            return True
+        else:
+            return False
+
 
 class EnsembleInstrumentation(Instrumentation):
     __tablename__ = 'ensemble_instrumentations'

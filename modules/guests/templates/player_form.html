@@ -5,7 +5,7 @@
 
             <!-- Back link -->
             <div class="mb-4">
-                <a href="{{ url_for('players.index') }}" class="btn btn-outline-secondary btn-sm">
+                <a href="{{ url_for('guests.index') }}" class="btn btn-outline-secondary btn-sm">
                     <i class="fas fa-arrow-left me-2"></i> Zpět na přehled hráčů
                 </a>
             </div>
@@ -19,9 +19,9 @@
                 </div>
 
                 {% if form.mode == "add" %}
-                    <form method="POST" action="{{ url_for('players.player_add') }}">
+                    <form method="POST" action="{{ url_for('guests.player_add') }}">
                 {% elif form.mode == "edit" %}
-                    <form method="POST" action="{{ url_for('players.player_edit', player_id=player.id) }}">
+                    <form method="POST" action="{{ url_for('guests.player_edit', player_id=player.id) }}">
                 {% endif %}
                 {{ form.csrf_token }}
 

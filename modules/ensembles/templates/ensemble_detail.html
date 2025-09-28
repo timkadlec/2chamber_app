@@ -34,17 +34,50 @@
                 </div>
 
                 <div class="card-body">
-                    <div class="row g-4">
-                        <div class="col">
-                            <label class="form-label fw-semibold text-muted">Název:</label>
-                            <div>{{ ensemble.name }}</div>
+                    <!-- Název -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted">Název:</label>
+                        <div class="fs-5 fw-bold text-dark">
+                            <i class="fas fa-music me-2 text-secondary"></i>{{ ensemble.name }}
                         </div>
                     </div>
-                    <div class="row g-4">
-                        <div class="col">
-                            <label class="form-label fw-semibold text-muted">Obsazení:</label>
-                            <div>{{ ensemble.instrumentation }}</div>
+
+                    <!-- Obsazení -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted">Obsazení:</label>
+                        <div class="text-dark">
+                            <i class="fas fa-users me-2 text-secondary"></i>{{ ensemble.instrumentation }}
                         </div>
+                    </div>
+
+                    <!-- Kontrola obsazení -->
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold text-muted">Kontrola obsazení:</label>
+                        <div class="d-flex flex-wrap gap-3 mt-1">
+            <span class="badge bg-primary">
+                <i class="fas fa-user-graduate me-1"></i>
+                Studenti HAMU: {{ ensemble.student_count }}
+            </span>
+                            <span class="badge bg-warning text-dark">
+                <i class="fas fa-user-friends me-1"></i>
+                Hosté: {{ ensemble.external_count }}
+            </span>
+                        </div>
+                    </div>
+
+                    <!-- Výsledek kontroly -->
+                    <div class="mt-2">
+                        {% if ensemble.external_percentage_check %}
+                            <div class="alert alert-success py-2 px-3 mb-0 d-flex align-items-center">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span>Výsledek kontroly: <strong>OK</strong></span>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-danger py-2 px-3 mb-0 d-flex align-items-center">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <span>Výsledek kontroly: <strong>Nesplňuje podmínky</strong></span>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -112,43 +145,58 @@
                             <th class="d-none d-lg-table-cell">Příjmení</th>
                             <th class="d-none d-lg-table-cell">Jméno</th>
                             <th class="d-none d-lg-table-cell">Nástroj</th>
-                            <th class="">Akce</th>
+                            <th class="d-none d-lg-table-cell">Akce</th>
                         </tr>
                         </thead>
                         <tbody>
                         {% for ensemble_player in player_links %}
-                            <tr>
+                            <tr class="{% if ensemble_player.player.is_guest %}table-warning{% endif %}">
                                 <td>
+                                    {% if ensemble_player.player.is_guest %}
+                                        <i class="fas fa-triangle-exclamation me-2 text-warning"
+                                           title="Jedná se o hosta"></i>
+                                    {% endif %}
                                     {{ ensemble_player.player.last_name }}
                                 </td>
                                 <td>
                                     {{ ensemble_player.player.first_name }}
+                                </td>
+                                <td>
+                                    {% if ensemble_player.ensemble_instrumentation %}
+                                        <span class="badge bg-light text-dark border">
+                            <i class="fas fa-music me-1"></i>
+                            {{ ensemble_player.ensemble_instrumentation.instrument.name }}
+                        </span>
+                                    {% else %}
+                                        <span class="text-muted">–</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for('ensemble.add_player_to_ensemble', ensemble_id=ensemble.id, ensemble_instrumentation_id=ensemble_player.ensemble_instrumentation.id, mode="student") }}"
+                                           class="btn btn-light" title="Přiřadit studenta">
+                                            <i class="fas fa-user-plus text-primary"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-light" title="Přesunout hráče">
+                                            <i class="fas fa-right-left text-info"></i>
+                                        </a>
+                                        <a href="{{ url_for('ensemble.add_player_to_ensemble', ensemble_id=ensemble.id, ensemble_instrumentation_id=ensemble_player.ensemble_instrumentation.id, mode="guest") }}"
+                                           class="btn btn-light" title="Přiřadit hosta">
+                                            <i class="fas fa-user-tag text-warning"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-light" data-bs-toggle="modal"
+                                           data-bs-target="#deletePlayerModal{{ ensemble_player.id }}"
+                                           title="Smazat hráče">
+                                            <i class="fas fa-trash text-danger"></i>
+                                        </a>
+                                    </div>
 
-                                </td>
-                                <td>
-                                    {{ ensemble_player.ensemble_instrumentation.instrument.name
-         if ensemble_player.ensemble_instrumentation else "-" }}
-                                </td>
-                                <td>
-                                    <a href="{{ url_for('ensemble.add_player_to_ensemble', ensemble_id=ensemble.id, ensemble_instrumentation_id=ensemble_player.ensemble_instrumentation.id, mode="student") }}">
-                                        <i class="text-primary fas fa-user-plus me-2"></i>
-                                    </a>
-                                    <a href="#">
-                                        <i class="text-info fas fa-right-left me-2"></i></a>
-                                    <a href="{{ url_for('ensemble.add_player_to_ensemble', ensemble_id=ensemble.id, ensemble_instrumentation_id=ensemble_player.ensemble_instrumentation.id, mode="guest") }}">
-                                        <i class="text-warning fas fa-user-tag me-2"></i></a>
-                                    <a href="#" data-bs-toggle="modal"
-                                       data-bs-target="#deletePlayerModal{{ ensemble_player.id }}" class="text-danger">
-                                        <i class="text-danger fas fa-trash me-2"></i>
-                                    </a>
-                                    <!-- Modal Empty Player -->
+                                    <!-- Delete Modal -->
                                     <div class="modal fade" id="deletePlayerModal{{ ensemble_player.id }}" tabindex="-1"
                                          aria-hidden="true">
                                         <div class="modal-dialog modal-dialog-centered">
                                             <form action="{{ url_for('ensemble.delete_ensemble_player', ensemble_id=ensemble.id) }}"
-                                                  method="post"
-                                                  class="modal-content">
-
+                                                  method="post" class="modal-content">
                                                 <input type="hidden" name="ensemble_player_id"
                                                        value="{{ ensemble_player.id }}" required>
 
@@ -171,13 +219,11 @@
                                                     </button>
                                                 </div>
                                             </form>
-
                                         </div>
                                     </div>
                                 </td>
                             </tr>
                         {% endfor %}
-
                         </tbody>
                     </table>
                 </div>

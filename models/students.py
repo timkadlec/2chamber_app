@@ -1,5 +1,5 @@
 from sqlalchemy import UniqueConstraint, Index
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, object_session
 from models import db
 from sqlalchemy.ext.hybrid import hybrid_method
 
@@ -125,6 +125,39 @@ class StudentChamberApplication(db.Model):
         back_populates='application',
         cascade='all, delete-orphan'
     )
+
+    @property
+    def all_player_ids(self):
+        """Return a set of all player IDs (applicant + co-players)."""
+        ids = {self.student.player.id} if self.student and self.student.player else set()
+        ids |= {p.player_id for p in self.players if p.player_id}
+        return ids
+
+    @property
+    def related_applications(self):
+        """Return other applications with the exact same set of players in the same semester."""
+        session = object_session(self)
+        if not session or not self.semester_id:
+            return []
+
+        my_players = self.all_player_ids
+
+        # load other apps in same semester (excluding self)
+        candidates = (
+            session.query(StudentChamberApplication)
+            .filter(
+                StudentChamberApplication.semester_id == self.semester_id,
+                StudentChamberApplication.id != self.id,
+            )
+            .all()
+        )
+
+        related = []
+        for app in candidates:
+            if app.all_player_ids == my_players:
+                related.append(app)
+
+        return related
 
 
 class StudentChamberApplicationPlayers(db.Model):

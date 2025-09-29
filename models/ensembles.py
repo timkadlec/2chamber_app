@@ -37,7 +37,7 @@ def format_ensemble_instrumentation(instrumentation_entries):
 class Ensemble(db.Model):
     __tablename__ = 'ensembles'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(160), nullable=False, unique=True)
+    name = db.Column(db.String(160), nullable=False, unique=False)
     active = db.Column(db.Boolean, default=True)
 
     semester_links = db.relationship(

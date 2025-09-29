@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import SelectField, SelectMultipleField, SubmitField, DateField, TextAreaField
-from wtforms.validators import DataRequired,Optional
+from wtforms.validators import DataRequired, Optional
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 from models import Student, Ensemble, Player
 
@@ -15,6 +15,7 @@ def ensemble_query():
 
 def player_query():
     return Player.query.order_by(Player.last_name, Player.first_name)
+
 
 def player_label(p):
     base = p.student.full_name if p.student else p.full_name
@@ -51,3 +52,7 @@ class StudentChamberApplicationForm(FlaskForm):
                                 )
 
     submit = SubmitField("Založi žádost")
+
+
+class EmptyForm(FlaskForm):
+    pass

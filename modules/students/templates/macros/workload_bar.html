@@ -1,0 +1,20 @@
+{% macro workload_bar(count) %}
+    {% if count == 0 %}
+        {% set percent, color, label = (0, "bg-danger", "0") %}
+    {% elif count == 1 %}
+        {% set percent, color, label = (25, "bg-success", "1") %}
+    {% elif count == 2 %}
+        {% set percent, color, label = (50, "bg-warning text-dark", "2") %}
+    {% elif count == 3 %}
+        {% set percent, color, label = (75, "bg-info text-dark", "3") %}
+    {% else %}
+        {% set percent, color, label = (100, "bg-danger", count|string) %}
+    {% endif %}
+    <div class="progress" style="height: 1.25rem; width: 6rem;">
+        <div class="progress-bar {{ color }}" role="progressbar"
+             style="width: {{ percent }}%;" aria-valuenow="{{ percent }}"
+             aria-valuemin="0" aria-valuemax="100">
+            {{ label }}
+        </div>
+    </div>
+{% endmacro %}

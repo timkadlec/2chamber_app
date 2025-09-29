@@ -34,24 +34,31 @@
                         </p>
                     </section>
 
+                    {% from "macros/workload_bar.html" import workload_bar %}
+
                     <!-- Players -->
                     <section class="mb-4">
                         <h5 class="fw-bold">Spoluhráči</h5>
                         {% if application.players %}
                             <ul class="list-group list-group-flush">
                                 {% for entry in application.players %}
-                                    <li class="list-group-item">
-                                        {% if entry.player.student %}
-                                            {{ entry.player.student.full_name }}
-                                        {% else %}
-                                            {{ entry.player.full_name }}, j.h.
-                                        {% endif %}
-                                        <span class="text-muted">({{ entry.player.instrument.name }})</span>
-                                        {% if entry.player.student %}
-                                            {% if entry.player.student.has_erasmus_in_semester(session['semester_id']|int) %}
-                                                <img src="{{ url_for('static', filename='images/Erasmus_Logo.svg') }}"
-                                                     alt="Erasmus+ logo" style="max-width:5em; height:auto;">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            {% if entry.player.student %}
+                                                {{ entry.player.student.full_name }}
+                                            {% else %}
+                                                {{ entry.player.full_name }}, j.h.
                                             {% endif %}
+                                            <span class="text-muted">({{ entry.player.instrument.name }})</span>
+
+                                            {% if entry.player.student and entry.player.student.has_erasmus_in_semester(session['semester_id']|int) %}
+                                                <img src="{{ url_for('static', filename='images/Erasmus_Logo.svg') }}"
+                                                     alt="Erasmus+ logo" class="ms-2" style="max-height:1.5rem;">
+                                            {% endif %}
+                                        </div>
+
+                                        {% if entry.player.student %}
+                                            {{ workload_bar(entry.player.ensemble_count_in_semester(current_semester.id)) }}
                                         {% endif %}
                                     </li>
                                 {% endfor %}

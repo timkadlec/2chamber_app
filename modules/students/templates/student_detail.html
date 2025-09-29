@@ -81,7 +81,7 @@
                     {% for enrollment in student.subject_enrollments %}
                         <tr>
                             <td>{{ enrollment.subject.name }}</td>
-                            <td>{{ enrollment.semester.name }}</td>
+                            <td>{{ enrollment.semester.name }} {{ enrollment.semester.academic_year.name }}</td>
                             <td>
                                 {% if enrollment.erasmus %}
                                     <span class="badge bg-info text-dark">Erasmus</span>

@@ -33,7 +33,8 @@ class Student(db.Model):
     subject_enrollments = relationship(
         'StudentSubjectEnrollment',
         back_populates='student',
-        cascade='all, delete-orphan'
+        cascade='all, delete-orphan',
+        order_by="desc(StudentSubjectEnrollment.semester_id)"
     )
 
     chamber_applications = relationship(

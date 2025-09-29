@@ -2,7 +2,7 @@ from flask import render_template, request, flash, redirect, url_for, session
 from utils.nav import navlink
 from modules.chamber_applications import chamber_applications_bp
 from models import db, Ensemble, EnsembleSemester, EnsemblePlayer, EnsembleInstrumentation, Semester, \
-    StudentChamberApplication, StudentChamberApplicationPlayers, StudentChamberApplicationStatus, Student
+    StudentChamberApplication, StudentChamberApplicationPlayers, StudentChamberApplicationStatus, Student, Instrument
 from .forms import StudentChamberApplicationForm, EmptyForm
 from flask_login import current_user
 from sqlalchemy.exc import IntegrityError
@@ -27,10 +27,11 @@ def index():
     per_page = 20
     q = request.args.get("q", "").strip()
     hide_approved = request.args.get("hide_approved")
-    status_filter = request.args.get("status")  # new
-    health_filter = request.args.get("health")  # new
+    status_filter = request.args.get("status")
+    health_filter = request.args.get("health")
+    instrument_filter = request.args.getlist("instrument_ids", type=int)
 
-    # base query: always by semester
+    # base query: always filter by semester
     base_query = (
         StudentChamberApplication.query
         .join(Student)
@@ -43,6 +44,10 @@ def index():
             base_query.join(StudentChamberApplicationStatus)
             .filter(StudentChamberApplicationStatus.code != "approved")
         )
+
+    # filter by instrument (SQL-level, not Python)
+    if instrument_filter:
+        base_query = base_query.filter(Student.instrument_id.in_(instrument_filter))
 
     # sort newest first
     base_query = base_query.order_by(StudentChamberApplication.submission_date.desc())
@@ -71,23 +76,15 @@ def index():
         norm_q = normalize(q)
         filtered = []
         for app in all_apps:
-            # applicant
-            if (
-                norm_q in normalize(app.student.first_name)
-                or norm_q in normalize(app.student.last_name)
-            ):
+            if norm_q in normalize(app.student.first_name) or norm_q in normalize(app.student.last_name):
                 filtered.append(app)
                 continue
-            # co-players
             for entry in app.players:
                 pl = entry.player
                 if not pl:
                     continue
                 if pl.student:
-                    if (
-                        norm_q in normalize(pl.student.first_name)
-                        or norm_q in normalize(pl.student.last_name)
-                    ):
+                    if norm_q in normalize(pl.student.first_name) or norm_q in normalize(pl.student.last_name):
                         filtered.append(app)
                         break
                 else:
@@ -104,14 +101,9 @@ def index():
 
     class Pagination:
         def __init__(self, page, per_page, total, items):
-            self.page = page
-            self.per_page = per_page
-            self.total = total
-            self.items = items
-
+            self.page, self.per_page, self.total, self.items = page, per_page, total, items
         @property
-        def pages(self):
-            return (self.total + self.per_page - 1) // self.per_page
+        def pages(self): return (self.total + self.per_page - 1) // self.per_page
         @property
         def has_prev(self): return self.page > 1
         @property
@@ -123,6 +115,9 @@ def index():
 
     pagination = Pagination(page, per_page, total, items)
 
+    # load instruments for dropdown
+    instruments = db.session.query(Instrument).filter_by(is_primary=True).order_by(Instrument.weight).all()
+
     return render_template(
         "all_chamber_applications.html",
         applications=items,
@@ -131,6 +126,8 @@ def index():
         hide_approved=hide_approved,
         status_filter=status_filter,
         health_filter=health_filter,
+        instrument_filter=instrument_filter,
+        instruments=instruments,
     )
 
 

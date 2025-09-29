@@ -1,0 +1,86 @@
+<form method="get" class="row g-2 align-items-end">
+
+    <!-- Search -->
+    <div class="col-md-3">
+        <label for="filter-q" class="form-label">Hledat hráče</label>
+        <input id="filter-q" name="q" type="text"
+               class="form-control form-control-sm"
+               placeholder="Jméno studenta nebo hráče..."
+               value="{{ q or '' }}">
+    </div>
+
+    <!-- Nástroj -->
+    <div class="col-md-3">
+        <label for="filter-instrument" class="form-label">Nástroj žadatele</label>
+        <select id="filter-instrument" name="instrument_ids" class="form-select form-select-sm" multiple>
+            {% for inst in instruments %}
+                <option value="{{ inst.id }}"
+                        {% if instrument_filter and inst.id in instrument_filter %}selected{% endif %}>
+                    {{ inst.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Status -->
+    <div class="col-md-3">
+        <label for="filter-status" class="form-label">Status žádosti</label>
+        <select id="filter-status" name="status" class="form-select form-select-sm">
+            <option value="">Všechny</option>
+            <option value="pending" {% if status_filter=='pending' %}selected{% endif %}>Čeká na vyřízení</option>
+            <option value="approved" {% if status_filter=='approved' %}selected{% endif %}>Schválené</option>
+            <option value="rejected" {% if status_filter=='rejected' %}selected{% endif %}>Zamítnuté</option>
+        </select>
+    </div>
+
+    <!-- Health -->
+    <div class="col-md-3">
+        <label for="filter-health" class="form-label">Health check</label>
+        <select id="filter-health" name="health" class="form-select form-select-sm">
+            <option value="">Všechny</option>
+            <option value="ok" {% if health_filter=='ok' %}selected{% endif %}>OK</option>
+            <option value="minimum" {% if health_filter=='minimum' %}selected{% endif %}>Minimum hráčů nesplněno
+            </option>
+            <option value="guests" {% if health_filter=='guests' %}selected{% endif %}>Příliš hostů</option>
+        </select>
+    </div>
+
+    <!-- Submit -->
+    <div class="col-md-1 text-md-end">
+        <button type="submit" class="btn btn-sm btn-outline-primary w-100">
+            <i class="fas fa-filter"></i>
+        </button>
+    </div>
+</form>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Search (free text, single term)
+        new TomSelect("#filter-q", {
+            create: true,
+            maxItems: 1,
+            persist: false,
+            placeholder: "Jméno studenta nebo hráče..."
+        });
+
+
+        // Instruments (multi-select with remove buttons)
+        new TomSelect("#filter-instrument", {
+            maxItems: null,
+            placeholder: "Vyberte nástroj...",
+            plugins: {
+                remove_button: {title: "Odebrat"}
+            }
+        });
+
+        // Status (single select)
+        new TomSelect("#filter-status", {
+            sortField: {field: "text", direction: "asc"}
+        });
+
+        // Health (single select)
+        new TomSelect("#filter-health", {
+            sortField: {field: "text", direction: "asc"}
+        });
+    });
+</script>

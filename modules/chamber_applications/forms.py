@@ -25,12 +25,18 @@ def player_label(p):
     return label
 
 
+def student_label(s):
+    base = s.full_name if s else ""
+    label = f"{base} ({s.instrument.name})" if s.instrument else base
+    return label
+
+
 class StudentChamberApplicationForm(FlaskForm):
     student = QuerySelectField(
         "Student (žadatel)",
         query_factory=student_query,
         allow_blank=True,
-        get_label=lambda s: s.full_name,
+        get_label=student_label,
         validators=[DataRequired()]
     )
 

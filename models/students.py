@@ -113,6 +113,9 @@ class StudentChamberApplication(db.Model):
     semester_id = db.Column(db.Integer, db.ForeignKey('semesters.id', ondelete='SET NULL'))
     semester = relationship('Semester')
 
+    notes = db.Column(db.Text)
+    submission_date = db.Column(db.Date)
+
     created_by_id = db.Column(db.String, db.ForeignKey('users.id', ondelete='SET NULL'))
     created_by = relationship('User')
     created_at = db.Column(db.DateTime, server_default=db.func.now())
@@ -134,9 +137,6 @@ class StudentChamberApplicationPlayers(db.Model):
 
     application = relationship('StudentChamberApplication', back_populates='players')
     player = relationship('Player')
-
-    notes = db.Column(db.Text)
-    submission_date = db.Column(db.Date)
 
 
 class StudentChamberApplicationStatus(db.Model):

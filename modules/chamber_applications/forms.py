@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import SelectField, SelectMultipleField, SubmitField
+from wtforms import SelectField, SelectMultipleField, SubmitField, DateField, TextAreaField
 from wtforms.validators import DataRequired,Optional
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 from models import Student, Ensemble, Player
@@ -19,7 +19,7 @@ def player_query():
 
 class StudentChamberApplicationForm(FlaskForm):
     student = QuerySelectField(
-        "Student (applicant)",
+        "Student (žadatel)",
         query_factory=student_query,
         allow_blank=True,
         get_label=lambda s: s.full_name,
@@ -27,10 +27,14 @@ class StudentChamberApplicationForm(FlaskForm):
     )
 
     players = QuerySelectMultipleField(
-        "Spluhráči",
+        "Spoluhráči",
         query_factory=player_query,
         get_label=lambda p: f"{p.student.full_name if p.student else p.full_name}",
         validators=[Optional()]
     )
+
+    notes = TextAreaField("Poznámky")
+
+    submission_date = DateField("Datum podání")
 
     submit = SubmitField("Založi žádost")

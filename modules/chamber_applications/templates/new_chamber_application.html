@@ -34,7 +34,6 @@
                     <div class="mb-3">
                         {{ form.players.label(class="form-label") }}
                         {{ form.players(class="form-select", multiple=True, size=8) }}
-                        <div class="form-text">Hold Ctrl (Windows/Linux) or Cmd (Mac) to select multiple players.</div>
                         {% if form.players.errors %}
                             <div class="text-danger">
                                 {{ form.players.errors[0] }}

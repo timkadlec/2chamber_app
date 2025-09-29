@@ -133,7 +133,10 @@ class StudentChamberApplicationPlayers(db.Model):
     player_id = db.Column(db.Integer, db.ForeignKey('players.id', ondelete='CASCADE'), nullable=False)
 
     application = relationship('StudentChamberApplication', back_populates='players')
-    player = relationship('Player')  # one-way only, no back_populates
+    player = relationship('Player')
+
+    notes = db.Column(db.Text)
+    submission_date = db.Column(db.Date)
 
 
 class StudentChamberApplicationStatus(db.Model):

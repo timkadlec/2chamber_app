@@ -42,7 +42,7 @@
                                 <td>
                                     {% for pl in ensemble.player_links %}
                                         {% if pl.player.first_name or pl.player.last_name %}
-                                            {{ pl.player.first_name[0] }}. {{ pl.player.last_name }}
+                                            <em>{{ pl.player.instrument.abbreviation }}.</em> {{ pl.player.first_name[0] }}. {{ pl.player.last_name }}
                                         {% else %}
                                             Prázdný hráč
                                         {% endif %}

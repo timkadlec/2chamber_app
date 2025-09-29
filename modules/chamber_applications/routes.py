@@ -27,63 +27,80 @@ def index():
     per_page = 20
     q = request.args.get("q", "").strip()
     hide_approved = request.args.get("hide_approved")
+    status_filter = request.args.get("status")  # new
+    health_filter = request.args.get("health")  # new
 
-    # base query: filter by semester
+    # base query: always by semester
     base_query = (
         StudentChamberApplication.query
         .join(Student)
         .filter(StudentChamberApplication.semester_id == session.get("semester_id"))
     )
 
-    # hide approved if requested
+    # hide approved toggle
     if hide_approved:
         base_query = (
             base_query.join(StudentChamberApplicationStatus)
             .filter(StudentChamberApplicationStatus.code != "approved")
         )
 
-    # sort by submission date (newest first)
+    # sort newest first
     base_query = base_query.order_by(StudentChamberApplication.submission_date.desc())
-
     all_apps = base_query.all()
 
-    # --- Search ---
+    # --- Status filter ---
+    if status_filter:
+        all_apps = [
+            app for app in all_apps
+            if app.status and app.status.code == status_filter
+        ]
+
+    # --- Health filter ---
+    if health_filter:
+        all_apps = [
+            app for app in all_apps
+            if (
+                (health_filter == "ok" and "OK" in app.health_check)
+                or (health_filter == "minimum" and "minimum" in app.health_check)
+                or (health_filter == "guests" and "vysoké procento hostů" in app.health_check)
+            )
+        ]
+
+    # --- Search filter ---
     if q:
         norm_q = normalize(q)
         filtered = []
         for app in all_apps:
-            # applicant name
+            # applicant
             if (
-                    norm_q in normalize(app.student.first_name)
-                    or norm_q in normalize(app.student.last_name)
+                norm_q in normalize(app.student.first_name)
+                or norm_q in normalize(app.student.last_name)
             ):
                 filtered.append(app)
                 continue
-
             # co-players
             for entry in app.players:
                 pl = entry.player
                 if not pl:
                     continue
-                if pl.student:  # linked student
+                if pl.student:
                     if (
-                            norm_q in normalize(pl.student.first_name)
-                            or norm_q in normalize(pl.student.last_name)
+                        norm_q in normalize(pl.student.first_name)
+                        or norm_q in normalize(pl.student.last_name)
                     ):
                         filtered.append(app)
                         break
-                else:  # external player
+                else:
                     if norm_q in normalize(pl.full_name):
                         filtered.append(app)
                         break
-    else:
-        filtered = all_apps
+        all_apps = filtered
 
-    # --- Manual pagination ---
-    total = len(filtered)
+    # manual pagination
+    total = len(all_apps)
     start = (page - 1) * per_page
     end = start + per_page
-    items = filtered[start:end]
+    items = all_apps[start:end]
 
     class Pagination:
         def __init__(self, page, per_page, total, items):
@@ -95,22 +112,14 @@ def index():
         @property
         def pages(self):
             return (self.total + self.per_page - 1) // self.per_page
-
         @property
-        def has_prev(self):
-            return self.page > 1
-
+        def has_prev(self): return self.page > 1
         @property
-        def has_next(self):
-            return self.page < self.pages
-
+        def has_next(self): return self.page < self.pages
         @property
-        def prev_num(self):
-            return self.page - 1
-
+        def prev_num(self): return self.page - 1
         @property
-        def next_num(self):
-            return self.page + 1
+        def next_num(self): return self.page + 1
 
     pagination = Pagination(page, per_page, total, items)
 
@@ -120,6 +129,8 @@ def index():
         pagination=pagination,
         q=q,
         hide_approved=hide_approved,
+        status_filter=status_filter,
+        health_filter=health_filter,
     )
 
 

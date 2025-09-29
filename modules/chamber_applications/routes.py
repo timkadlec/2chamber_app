@@ -2,8 +2,8 @@ from flask import render_template, request, flash, redirect, url_for, session
 from utils.nav import navlink
 from modules.chamber_applications import chamber_applications_bp
 from models import db, Ensemble, EnsembleSemester, EnsemblePlayer, EnsembleInstrumentation, Semester, \
-    StudentChamberApplication, StudentChamberApplicationPlayers, StudentChamberApplicationStatus, Student, Instrument
-from .forms import StudentChamberApplicationForm, EmptyForm
+    StudentChamberApplication, StudentChamberApplicationPlayers, StudentChamberApplicationStatus, Student, Instrument, StudentChamberApplicationException
+from .forms import StudentChamberApplicationForm, EmptyForm, ExceptionRequestForm
 from flask_login import current_user
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
@@ -136,7 +136,10 @@ def index():
 def detail(application_id):
     application = StudentChamberApplication.query.get_or_404(application_id)
     form = EmptyForm()
-    return render_template("chamber_application_detail.html", application=application, form=form)
+    exception_form = ExceptionRequestForm()
+    return render_template("chamber_application_detail.html", application=application,
+                           form=form,
+                           exception_form=exception_form,)
 
 
 @chamber_applications_bp.route("/new", methods=["GET", "POST"])
@@ -365,3 +368,18 @@ def delete(application_id):
     db.session.commit()
     flash(f"Žádost byla úspěšně smazána", "success")
     return redirect(url_for("chamber_applications.index"))
+
+
+@chamber_applications_bp.route('/<int:application_id>/ensemble/exception/request', methods=['POST'])
+def exception_request(application_id: int):
+    form = ExceptionRequestForm()
+    if form.validate_on_submit():
+        new_request = StudentChamberApplicationException(
+            application_id=application_id,
+            created_by=current_user,
+            reason=form.reason.data,
+        )
+        db.session.add(new_request)
+        db.session.commit()
+        flash("Žádost o výjimku byla úspěšně odeslána")
+    return redirect(url_for('chamber_applications.detail', application_id=application_id))

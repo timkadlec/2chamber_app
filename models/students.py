@@ -207,8 +207,8 @@ class StudentChamberApplicationException(db.Model):
     application_id = db.Column(db.Integer, db.ForeignKey('student_chamber_applications.id', ondelete='CASCADE'))
     application = relationship("StudentChamberApplication", back_populates="exception")
     reason = db.Column(db.String(255))
-    comment = db.Column(db.String(255))
-    status = db.Column(db.String(255))
+
+    status = db.Column(db.String(255), default="pending")
 
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     created_by_id = db.Column(db.String, db.ForeignKey('users.id', ondelete='SET NULL'))
@@ -216,6 +216,8 @@ class StudentChamberApplicationException(db.Model):
         'User',
         foreign_keys=[created_by_id]
     )
+
+    reviewer_comment = db.Column(db.Text)
     reviewed_at = db.Column(db.DateTime)
     reviewed_by_id = db.Column(db.String, db.ForeignKey('users.id', ondelete='SET NULL'))
     reviewed_by = relationship(

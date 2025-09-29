@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import SelectField, SelectMultipleField, SubmitField, DateField, TextAreaField
+from wtforms import SelectField, SelectMultipleField, SubmitField, DateField, TextAreaField, HiddenField
 from wtforms.validators import DataRequired, Optional
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
 from models import Student, Ensemble, Player
@@ -74,3 +74,10 @@ class StudentChamberApplicationForm(FlaskForm):
 
 class EmptyForm(FlaskForm):
     pass
+
+
+class ExceptionRequestForm(FlaskForm):
+    reason = TextAreaField("Odůvodnění",
+                           validators=[DataRequired()],
+                           render_kw={"rows": 3, "class": "form-control"})
+    submit = SubmitField("Zažádat")

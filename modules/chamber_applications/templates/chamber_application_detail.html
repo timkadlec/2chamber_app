@@ -115,8 +115,55 @@
                             <div class="alert alert-danger mb-0 small d-flex align-items-center">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
                                 {{ application.health_check }}
-                                <div class="d-inline align-content-end">
-                                    <button class="btn btn-sm btn-info">Zažádat o výjimku</button>
+                                <button type="button"
+                                        class="btn btn-sm btn-info"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#requestException{{ application.id }}">
+                                    <i class="fas fa-file-lines"></i><span class="d-none d-md-inline ms-2" disabled="">Zažádat o výjimku</span>
+                                </button>
+                                <!-- ExceptionRequest Modal -->
+                                <div class="modal fade" id="requestException{{ application.id }}" tabindex="-1"
+                                     aria-labelledby="requestExceptionLabel{{ application.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-info">
+                                                <h5 class="modal-title"
+                                                    id="rejecrequestExceptionLabel{{ application.id }}">
+                                                    <i class="fas fa-file-lines"></i><span
+                                                        class="ms-2">Žádost o výjimku</span>
+                                                </h5>
+                                                <button type="button" class="btn-close"
+                                                        data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form method="POST"
+                                                  action="{{url_for('chamber_applications.exception_request', application_id=application.id)}}">
+                                                {{ form.hidden_tag() }}
+                                                <div class="modal-body">
+                                                    Opravdu chcete <strong>zažádat o výjimku</strong> pro žádost
+                                                    č. {{ application.id }}?
+                                                    <p>Pokud jsou nějaké jiné žádosti o komorní
+                                                        hru související, žádost se vygeneruje jedna, ale při
+                                                        schvalovacím
+                                                        procesu budou schváleny všechny dotčené ansámbly.</p>
+                                                    <div class="mt-3">
+                                                        {{ exception_form.reason.label }}
+                                                        {{ exception_form.reason }}
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+
+                                                    <button type="button" class="btn btn-secondary"
+                                                            data-bs-dismiss="modal">Zrušit
+                                                    </button>
+                                                    <button type="submit" class="btn btn-info">
+                                                        <i class="fas fa-paper-plane"></i><span
+                                                            class="ms-2">Zažádat</span>
+                                                    </button>
+                                                </div>
+                                            </form>
+
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         {% endif %}

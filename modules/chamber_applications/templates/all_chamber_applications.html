@@ -152,28 +152,48 @@
                             žádostí
                         </div>
                         <nav aria-label="Stránkování">
-                            <ul class="pagination pagination-sm mb-0 mt-3 mt-md-0">
+                            <ul class="pagination">
                                 {% if pagination.has_prev %}
                                     <li class="page-item">
                                         <a class="page-link"
-                                           href="{{ url_for('chamber_applications.index', page=pagination.prev_num) }}"
-                                           aria-label="Předchozí">
-                                            <span aria-hidden="true">&laquo;</span>
+                                           href="{{ url_for('chamber_applications.index',
+                                page=pagination.prev_num,
+                                q=q,
+                                status=status_filter,
+                                health=health_filter,
+                                instrument_ids=instrument_filter,
+                                hide_approved=hide_approved) }}">
+                                            Předchozí
                                         </a>
                                     </li>
                                 {% endif %}
+
                                 {% for p in range(1, pagination.pages + 1) %}
-                                    <li class="page-item {% if pagination.page == p %}active{% endif %}">
+                                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
                                         <a class="page-link"
-                                           href="{{ url_for('chamber_applications.index', page=p) }}">{{ p }}</a>
+                                           href="{{ url_for('chamber_applications.index',
+                                page=p,
+                                q=q,
+                                status=status_filter,
+                                health=health_filter,
+                                instrument_ids=instrument_filter,
+                                hide_approved=hide_approved) }}">
+                                            {{ p }}
+                                        </a>
                                     </li>
                                 {% endfor %}
+
                                 {% if pagination.has_next %}
                                     <li class="page-item">
                                         <a class="page-link"
-                                           href="{{ url_for('chamber_applications.index', page=pagination.next_num) }}"
-                                           aria-label="Další">
-                                            <span aria-hidden="true">&raquo;</span>
+                                           href="{{ url_for('chamber_applications.index',
+                                page=pagination.next_num,
+                                q=q,
+                                status=status_filter,
+                                health=health_filter,
+                                instrument_ids=instrument_filter,
+                                hide_approved=hide_approved) }}">
+                                            Další
                                         </a>
                                     </li>
                                 {% endif %}

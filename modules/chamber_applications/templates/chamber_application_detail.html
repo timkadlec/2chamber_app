@@ -41,7 +41,11 @@
                             <ul class="list-group list-group-flush">
                                 {% for entry in application.players %}
                                     <li class="list-group-item">
-                                        {{ entry.player.student.full_name if entry.player.student else entry.player.full_name }}
+                                        {% if entry.player.student %}
+                                            {{ entry.player.student.full_name }}
+                                        {% else %}
+                                            {{ entry.player.full_name }}, j.h.
+                                        {% endif %}
                                         <span class="text-muted">({{ entry.player.instrument.name }})</span>
                                     </li>
                                 {% endfor %}
@@ -91,6 +95,22 @@
                         </p>
                     </section>
 
+                    <!-- Health Check -->
+                    <section class="mb-4">
+                        <h5 class="fw-bold">Kontrola složení souboru</h5>
+                        {% if application.health_check == "OK" %}
+                            <span class="badge bg-success">
+            <i class="fas fa-check-circle me-1"></i> {{ application.health_check }}
+        </span>
+                        {% else %}
+                            <div class="alert alert-danger mb-0 small d-flex align-items-center">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                {{ application.health_check }}
+                            </div>
+                        {% endif %}
+                    </section>
+
+
                     <!-- Metadata -->
                     <section class="border-top pt-3">
                         <p class="small text-muted mb-1">
@@ -102,6 +122,7 @@
                     </section>
 
                 </div>
+
                 <!-- Card Footer -->
                 <div class="card-footer d-flex justify-content-between align-items-center">
                     <!-- Left side: Decision buttons -->
@@ -110,7 +131,8 @@
                         <button type="button"
                                 class="btn btn-success"
                                 data-bs-toggle="modal"
-                                data-bs-target="#approveAppModal{{ application.id }}">
+                                data-bs-target="#approveAppModal{{ application.id }}"
+                                {% if application.health_check != "OK" or (application.status and application.status.code == "approved") %}disabled{% endif %}>
                             <i class="fas fa-check"></i>
                             <span class="d-none d-md-inline ms-1">Schválit</span>
                         </button>
@@ -119,7 +141,8 @@
                         <button type="button"
                                 class="btn btn-warning"
                                 data-bs-toggle="modal"
-                                data-bs-target="#rejectAppModal{{ application.id }}">
+                                data-bs-target="#rejectAppModal{{ application.id }}"
+                                {% if application.health_check != "OK" or (application.status and application.status.code == "approved") %}disabled{% endif %}>
                             <i class="fas fa-times"></i>
                             <span class="d-none d-md-inline ms-1">Zamítnout</span>
                         </button>
@@ -137,7 +160,8 @@
 
                     <!-- Right side: Edit/Delete -->
                     <div class="btn-group btn-group-sm" role="group" aria-label="App actions">
-                        <a href="#" class="btn btn-outline-primary">
+                        <a href="{{ url_for('chamber_applications.edit', application_id=application.id) }}"
+                           class="btn btn-outline-primary">
                             <i class="fas fa-edit"></i>
                             <span class="d-none d-md-inline ms-1">Upravit</span>
                         </a>
@@ -234,6 +258,7 @@
                     </div>
                 </div>
 
+                <!-- Reset Modal -->
                 <div class="modal fade" id="resetAppModal{{ application.id }}" tabindex="-1"
                      aria-labelledby="resetAppLabel{{ application.id }}" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered">
@@ -264,7 +289,6 @@
                         </div>
                     </div>
                 </div>
-
 
                 <!-- Delete Modal -->
                 <div class="modal fade" id="deleteAppModal{{ application.id }}" tabindex="-1"

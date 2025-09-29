@@ -10,6 +10,7 @@ from sqlalchemy import or_
 import unicodedata
 from sqlalchemy import func, or_
 
+
 def normalize(s: str) -> str:
     if not s:
         return ""
@@ -25,26 +26,60 @@ def index():
     page = request.args.get("page", 1, type=int)
     per_page = 20
     q = request.args.get("q", "").strip()
+    hide_approved = request.args.get("hide_approved")
 
-    # always filter by semester in SQL
-    base_query = StudentChamberApplication.query \
-        .join(Student) \
-        .filter(StudentChamberApplication.semester_id == session.get("semester_id")) \
-        .order_by(StudentChamberApplication.created_at.desc())
+    # base query: filter by semester
+    base_query = (
+        StudentChamberApplication.query
+        .join(Student)
+        .filter(StudentChamberApplication.semester_id == session.get("semester_id"))
+    )
+
+    # hide approved if requested
+    if hide_approved:
+        base_query = (
+            base_query.join(StudentChamberApplicationStatus)
+            .filter(StudentChamberApplicationStatus.code != "approved")
+        )
+
+    # sort by submission date (newest first)
+    base_query = base_query.order_by(StudentChamberApplication.submission_date.desc())
 
     all_apps = base_query.all()
 
+    # --- Search ---
     if q:
         norm_q = normalize(q)
-        filtered = [
-            app for app in all_apps
-            if norm_q in normalize(app.student.first_name)
-            or norm_q in normalize(app.student.last_name)
-        ]
+        filtered = []
+        for app in all_apps:
+            # applicant name
+            if (
+                    norm_q in normalize(app.student.first_name)
+                    or norm_q in normalize(app.student.last_name)
+            ):
+                filtered.append(app)
+                continue
+
+            # co-players
+            for entry in app.players:
+                pl = entry.player
+                if not pl:
+                    continue
+                if pl.student:  # linked student
+                    if (
+                            norm_q in normalize(pl.student.first_name)
+                            or norm_q in normalize(pl.student.last_name)
+                    ):
+                        filtered.append(app)
+                        break
+                else:  # external player
+                    if norm_q in normalize(pl.full_name):
+                        filtered.append(app)
+                        break
     else:
         filtered = all_apps
 
-    # manual pagination
+    # --- Manual pagination ---
     total = len(filtered)
     start = (page - 1) * per_page
     end = start + per_page
@@ -83,7 +118,8 @@ def index():
         "all_chamber_applications.html",
         applications=items,
         pagination=pagination,
-        q=q
+        q=q,
+        hide_approved=hide_approved,
     )
 
 

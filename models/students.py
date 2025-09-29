@@ -159,6 +159,31 @@ class StudentChamberApplication(db.Model):
 
         return related
 
+    @property
+    def student_count(self):
+        """Applicant + co-players that are real students."""
+        count = 1 if self.student and self.student.player else 0
+        count += sum(1 for p in self.players if p.player and p.player.student)
+        return count
+
+    @property
+    def external_count(self):
+        """Applicant + co-players that are externals (no linked Student)."""
+        count = 1 if self.student and (self.student.player and not self.student.player.student) else 0
+        count += sum(1 for p in self.players if not (p.player and p.player.student))
+        return count
+
+    @property
+    def health_check(self):
+        total = self.student_count + self.external_count
+        if total <= 2:
+            return "Soubor nesplňuje kritérium minima hráčů."
+        percentage_students = round((self.student_count / total) * 100, 2)
+        if percentage_students > 50:
+            return "OK"
+        else:
+            return "Soubor obsahuje vysoké procento hostů."
+
 
 class StudentChamberApplicationPlayers(db.Model):
     __tablename__ = 'student_chamber_application_players'

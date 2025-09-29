@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block content %}
+    <main class="py-4">
+        <div class="container-xl">
+            <!-- Back Link -->
+            <div class="mb-4">
+                <a href="{{ url_for('chamber_applications.index') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-2"></i> Zpět na žádosti
+                </a>
+            </div>
+            <!-- Document Card -->
+            <div class="card shadow-lg border border-2">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 text-uppercase fw-bold">Žádost o komorní hru</h4>
+                    <small class="text-muted">
+                        Číslo žádosti: {{ application.id }}
+                    </small>
+                </div>
+
+                <div class="card-body">
+
+                    <!-- Applicant -->
+                    <section class="mb-4">
+                        <h5 class="fw-bold">Žadatel</h5>
+                        <p class="mb-1">
+                            <strong>Student:</strong> {{ application.student.full_name }}
+                        </p>
+                        <p class="mb-1">
+                            <strong>Semestr:</strong> {{ application.semester.name if application.semester else "-" }}
+                        </p>
+                        <p class="mb-1">
+                            <strong>Datum
+                                podání:</strong> {{ application.submission_date.strftime("%d.%m.%Y") if application.submission_date else "-" }}
+                        </p>
+                    </section>
+
+                    <!-- Players -->
+                    <section class="mb-4">
+                        <h5 class="fw-bold">Spoluhráči</h5>
+                        {% if application.players %}
+                            <ul class="list-group list-group-flush">
+                                {% for entry in application.players %}
+                                    <li class="list-group-item">
+                                        {{ entry.player.student.full_name if entry.player.student else entry.player.full_name }}
+                                        <span class="text-muted">({{ entry.player.instrument.name }})</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted">Žádní spoluhráči nebyli uvedeni.</p>
+                        {% endif %}
+                    </section>
+
+                    <!-- Notes -->
+                    <section class="mb-4">
+                        <h5 class="fw-bold">Poznámky</h5>
+                        <p>{{ application.notes or "—" }}</p>
+                    </section>
+
+                    <!-- Status -->
+                    <section class="mb-4">
+                        <h5 class="fw-bold">Stav žádosti</h5>
+                        <p class="mb-0">
+                        <span class="badge bg-primary">
+                            {{ application.status.name if application.status else "Neurčeno" }}
+                        </span>
+                        </p>
+                    </section>
+
+                    <!-- Metadata -->
+                    <section class="border-top pt-3">
+                        <p class="small text-muted mb-1">
+                            Vytvořil: {{ application.created_by.display_name if application.created_by else "-" }}
+                        </p>
+                        <p class="small text-muted">
+                            Vytvořeno: {{ application.created_at.strftime("%d.%m.%Y %H:%M") if application.created_at else "-" }}
+                        </p>
+                    </section>
+
+                </div>
+                <!-- Card Footer -->
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <!-- Left side: Decision buttons -->
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Decision actions">
+                        <button type="button"
+                                class="btn btn-success"
+                                data-bs-toggle="modal"
+                                data-bs-target="#approveAppModal{{ application.id }}">
+                            <i class="fas fa-check"></i>
+                            <span class="d-none d-md-inline ms-1">Schválit</span>
+                        </button>
+                        <button type="button"
+                                class="btn btn-warning"
+                                data-bs-toggle="modal"
+                                data-bs-target="#rejectAppModal{{ application.id }}">
+                            <i class="fas fa-times"></i>
+                            <span class="d-none d-md-inline ms-1">Zamítnout</span>
+                        </button>
+                    </div>
+
+                    <!-- Right side: Edit/Delete -->
+                    <div class="btn-group btn-group-sm" role="group" aria-label="App actions">
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="fas fa-edit"></i>
+                            <span class="d-none d-md-inline ms-1">Upravit</span>
+                        </a>
+                        <button type="button"
+                                class="btn btn-outline-danger"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteAppModal{{ application.id }}">
+                            <i class="fas fa-trash"></i>
+                            <span class="d-none d-md-inline ms-1">Smazat</span>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Modals -->
+                <!-- Approve Modal -->
+                <div class="modal fade" id="approveAppModal{{ application.id }}" tabindex="-1"
+                     aria-labelledby="approveAppLabel{{ application.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="approveAppLabel{{ application.id }}">
+                                    <i class="fas fa-check me-2"></i> Schválit žádost
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white"
+                                        data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                Opravdu chcete <strong>schválit</strong> tuto žádost (č. {{ application.id }})?
+                            </div>
+                            <div class="modal-footer">
+                                <form method="POST"
+                                      action="{{ url_for('chamber_applications.approve', id=application.id) }}">
+                                    {{ csrf_token() }}
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit
+                                    </button>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-check"></i> Schválit
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reject Modal -->
+                <div class="modal fade" id="rejectAppModal{{ application.id }}" tabindex="-1"
+                     aria-labelledby="rejectAppLabel{{ application.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-warning">
+                                <h5 class="modal-title" id="rejectAppLabel{{ application.id }}">
+                                    <i class="fas fa-times me-2"></i> Zamítnout žádost
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                Opravdu chcete <strong>zamítnout</strong> tuto žádost (č. {{ application.id }})?
+                                <div class="mt-3">
+                                    <label for="rejectionReason{{ application.id }}" class="form-label">Důvod zamítnutí
+                                        (volitelně)</label>
+                                    <textarea class="form-control" id="rejectionReason{{ application.id }}"
+                                              name="reason" rows="3"></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <form method="POST"
+                                      action="{{ url_for('chamber_applications.reject', id=application.id) }}">
+                                    {{ csrf_token() }}
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit
+                                    </button>
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="fas fa-times"></i> Zamítnout
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delete Modal -->
+                <div class="modal fade" id="deleteAppModal{{ application.id }}" tabindex="-1"
+                     aria-labelledby="deleteAppLabel{{ application.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title" id="deleteAppLabel{{ application.id }}">
+                                    <i class="fas fa-trash me-2"></i> Smazat žádost
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white"
+                                        data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                Tato akce je <strong>nevratná</strong>. Opravdu chcete smazat žádost
+                                (č. {{ application.id }})?
+                            </div>
+                            <div class="modal-footer">
+                                <form method="POST"
+                                      action="{{ url_for('chamber_applications.delete', application_id=application.id) }}">
+                                    {{ csrf_token() }}
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit
+                                    </button>
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fas fa-trash"></i> Smazat
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    </main>
+{% endblock %}

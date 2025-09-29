@@ -47,18 +47,22 @@
                                     {{ app.submission_date.strftime('%d.%m.%Y') }}
                                 </td>
                                 <td class="text-end">
-                                    <a href="#"
-                                       class="btn btn-link btn-sm text-primary me-1">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="#"
-                                       class="btn btn-link btn-sm text-primary me-1">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button type="button" class="btn btn-link btn-sm text-danger" data-bs-toggle="modal"
-                                            data-bs-target="#deleteAppModal{{ app.id }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="App actions">
+                                        <a href="{{ url_for("chamber_applications.application_detail", application_id=app.id) }}" class="btn btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button"
+                                                class="btn btn-outline-danger"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteAppModal{{ app.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+
+
                                     <!-- Delete modal -->
                                     <div class="modal fade" id="deleteAppModal{{ app.id }}" tabindex="-1"
                                          aria-labelledby="deleteAppModal{{ app.id }}Label" aria-hidden="true">
@@ -76,7 +80,7 @@
                                                     <b>{{ app.student.full_name }}</b>?
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <form action="#"
+                                                    <form action="{{ url_for("chamber_applications.delete_application", application_id=app.id) }}"
                                                           method="post" class="d-inline">
                                                         <button type="button" class="btn btn-secondary"
                                                                 data-bs-dismiss="modal">Zavřít

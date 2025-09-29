@@ -143,4 +143,5 @@ class StudentChamberApplicationStatus(db.Model):
     __tablename__ = 'student_chamber_application_statuses'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    code = db.Column(db.String(50), unique=True, nullable=True)
     description = db.Column(db.String(255))

@@ -68,7 +68,7 @@ def create_app():
     with app.app_context():
         db.create_all(bind_key=None)
         seed_instruments()
-        seed_chamber_application_statuses()
+        #seed_chamber_application_statuses()
         # seed_roles_and_admin()
         # seed_composers()
         # seed_basic_compositions()

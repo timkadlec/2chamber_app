@@ -68,6 +68,7 @@
                         <tbody>
                         {% for player in available_players %}
                             {% set count = player.ensemble_count_in_semester(current_semester.id) %}
+
                             {% if count == 0 %}
                                 {% set percent, color, label = (0, "bg-danger", "0") %}
                             {% elif count == 1 %}
@@ -80,14 +81,19 @@
                                 {% set percent, color, label = (100, "bg-danger", count|string) %}
                             {% endif %}
 
-                            <tr>
+                            {% set is_erasmus = player.student and player.student.has_erasmus_in_semester(current_semester.id) %}
+
+                            <tr class="{% if is_erasmus %}table-secondary text-muted{% endif %}">
                                 <!-- Player info -->
                                 <td>
-                                    <div class="fw-semibold text-dark">{{ player.last_name }} {{ player.first_name }}</div>
+                                    <div class="fw-semibold">{{ player.last_name }} {{ player.first_name }}</div>
                                     {% if player.instrument %}
                                         <span class="badge bg-light text-dark border">
-                <i class="fas fa-music me-1"></i>{{ player.instrument.name }}
-              </span>
+                    <i class="fas fa-music me-1"></i>{{ player.instrument.name }}
+                </span>
+                                    {% endif %}
+                                    {% if is_erasmus %}
+                                        <span class="badge bg-info ms-2">Erasmus</span>
                                     {% endif %}
                                 </td>
 
@@ -107,13 +113,15 @@
                                 <td class="text-end">
                                     <button class="btn btn-sm btn-primary select-player-btn"
                                             data-player-id="{{ player.id }}"
-                                            data-player-name="{{ player.last_name }} {{ player.first_name }}">
+                                            data-player-name="{{ player.last_name }} {{ player.first_name }}"
+                                            {% if is_erasmus %}disabled{% endif %}>
                                         <i class="fas fa-user-plus me-1"></i> Vybrat
                                     </button>
                                 </td>
                             </tr>
                         {% endfor %}
                         </tbody>
+
                     </table>
                 </div>
             </div>

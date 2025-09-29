@@ -33,7 +33,13 @@
                         {% for student in students %}
                             <tr>
                                 <td>
-                                    <div class="fw-semibold text-dark">{{ student.full_name }}</div>
+                                    <div class="fw-semibold text-dark">
+                                        <a href="{{ url_for('students.student_detail', student_id=student.id) }}">{{ student.full_name }}</a> ({{ (semester_id) }})
+                                        {% if student.has_erasmus_in_semester(session['semester_id']|int) %}
+                                            <img src="{{ url_for('static', filename='images/Erasmus_Logo.svg') }}"
+                                                 alt="Erasmus+ logo" style="max-width:5em; height:auto;">
+                                        {% endif %}
+                                    </div>
                                 </td>
                                 <td class="d-none d-md-table-cell">
                                     {{ student.osobni_cislo or "—" }}

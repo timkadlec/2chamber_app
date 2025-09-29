@@ -1,6 +1,7 @@
 from sqlalchemy import UniqueConstraint, Index
 from sqlalchemy.orm import relationship
 from models import db
+from sqlalchemy.ext.hybrid import hybrid_method
 
 
 class Student(db.Model):
@@ -46,6 +47,21 @@ class Student(db.Model):
 
     @property
     def main_instrument(self): return self.instrument
+
+    @hybrid_method
+    def has_erasmus_in_semester(self, semester_id):
+        return any(
+            se.erasmus and se.semester_id == semester_id
+            for se in self.subject_enrollments
+        )
+
+    @has_erasmus_in_semester.expression
+    def has_erasmus_in_semester(cls, semester_id):
+        return db.session.query(StudentSubjectEnrollment.id).filter(
+            StudentSubjectEnrollment.student_id == cls.id,
+            StudentSubjectEnrollment.semester_id == semester_id,
+            StudentSubjectEnrollment.erasmus.is_(True)
+        ).exists()
 
 
 class StudentSemesterEnrollment(db.Model):

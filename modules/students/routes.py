@@ -4,6 +4,7 @@ from models import Student, StudentSubjectEnrollment, Instrument, Subject, Playe
     EnsembleSemester, db
 from modules.students import students_bp
 from sqlalchemy import and_
+from .forms import EnrollmentForm
 
 from sqlalchemy import or_
 
@@ -86,3 +87,22 @@ def index():
         selected_has_ensemble=has_ensemble,
         search_query=search_query,
     )
+
+
+@students_bp.route("/detail/<int:student_id>", methods=["GET"])
+def student_detail(student_id):
+    student = Student.query.get_or_404(student_id)
+    form = EnrollmentForm()  # basic form object
+    return render_template("student_detail.html", student=student, form=form)
+
+
+@students_bp.route("/edit-enrollment/<int:enrollment_id>", methods=["POST"])
+def edit_enrollment(enrollment_id):
+    enrollment = StudentSubjectEnrollment.query.get_or_404(enrollment_id)
+    form = EnrollmentForm(obj=enrollment)
+
+    if form.validate_on_submit():
+        enrollment.erasmus = form.erasmus.data
+        db.session.commit()
+        flash("Zápis předmětu byl aktualizován.", "success")
+        return redirect(url_for("students.student_detail", student_id=enrollment.student_id))

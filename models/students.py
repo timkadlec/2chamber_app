@@ -116,8 +116,20 @@ class StudentChamberApplication(db.Model):
     notes = db.Column(db.Text)
     submission_date = db.Column(db.Date)
 
+    review_comment = db.Column(db.Text)
+
+    reviewed_by_id = db.Column(db.String, db.ForeignKey('users.id', ondelete='SET NULL'))
+    reviewed_by = relationship(
+        'User',
+        foreign_keys=[reviewed_by_id]
+    )
+    reviewed_at = db.Column(db.DateTime)
+
     created_by_id = db.Column(db.String, db.ForeignKey('users.id', ondelete='SET NULL'))
-    created_by = relationship('User')
+    created_by = relationship(
+        'User',
+        foreign_keys=[created_by_id]
+    )
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     players = relationship(

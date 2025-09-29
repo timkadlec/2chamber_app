@@ -8,6 +8,7 @@ from flask_login import current_user
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
 import unicodedata
+from datetime import datetime
 from sqlalchemy import func, or_
 
 
@@ -288,6 +289,9 @@ def approve(application_id):
     # Set status = approved for all
     for a in all_apps:
         a.status = approved_status
+        a.reviewed_at = datetime.now()
+        a.reviewed_by = current_user
+        a.review_comment = request.form.get("comment")
 
     # Create one ensemble from the "main" application
     new_ensemble = create_ensemble_from_application(app)
@@ -313,17 +317,31 @@ def reject(application_id):
         flash("Chybí status 'rejected' v databázi!", "danger")
         return redirect(url_for("chamber_applications.detail", application_id=application_id))
 
+    # Collect this application + all related ones
+    related_apps = app.related_applications
+    all_apps = [app] + related_apps
+
     reason = request.form.get("reason")
-    app.status = rejected_status
-    if reason:  # optional note
-        if app.notes:
-            app.notes += f"\n\n[Důvod zamítnutí] {reason}"
-        else:
-            app.notes = f"[Důvod zamítnutí] {reason}"
+
+    for a in all_apps:
+        a.status = rejected_status
+        a.reviewed_by = current_user
+        a.reviewed_at = datetime.now()
+        a.review_comment = reason
+
+        # Optional: also append to notes for traceability
+        if reason:
+            if a.notes:
+                a.notes += f"\n\n[Důvod zamítnutí] {reason}"
+            else:
+                a.notes = f"[Důvod zamítnutí] {reason}"
 
     db.session.commit()
 
-    flash(f"Žádost č. {app.id} byla zamítnuta.", "warning")
+    flash(
+        f"Žádosti {[a.id for a in all_apps]} byly zamítnuty.",
+        "warning"
+    )
     return redirect(url_for("chamber_applications.detail", application_id=application_id))
 
 

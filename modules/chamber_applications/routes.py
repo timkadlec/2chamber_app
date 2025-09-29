@@ -2,10 +2,21 @@ from flask import render_template, request, flash, redirect, url_for, session
 from utils.nav import navlink
 from modules.chamber_applications import chamber_applications_bp
 from models import db, Ensemble, EnsembleSemester, EnsemblePlayer, EnsembleInstrumentation, Semester, \
-    StudentChamberApplication, StudentChamberApplicationPlayers, StudentChamberApplicationStatus
+    StudentChamberApplication, StudentChamberApplicationPlayers, StudentChamberApplicationStatus, Student
 from .forms import StudentChamberApplicationForm, EmptyForm
 from flask_login import current_user
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import or_
+import unicodedata
+from sqlalchemy import func, or_
+
+def normalize(s: str) -> str:
+    if not s:
+        return ""
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", s)
+        if not unicodedata.combining(c)
+    ).lower()
 
 
 @chamber_applications_bp.route("/")
@@ -13,17 +24,66 @@ from sqlalchemy.exc import IntegrityError
 def index():
     page = request.args.get("page", 1, type=int)
     per_page = 20
+    q = request.args.get("q", "").strip()
 
-    pagination = StudentChamberApplication.query \
-        .order_by(StudentChamberApplication.created_at.desc()) \
-        .filter_by(semester_id=session.get("semester_id")) \
-        .paginate(page=page, per_page=per_page, error_out=False)
+    # always filter by semester in SQL
+    base_query = StudentChamberApplication.query \
+        .join(Student) \
+        .filter(StudentChamberApplication.semester_id == session.get("semester_id")) \
+        .order_by(StudentChamberApplication.created_at.desc())
 
-    applications = pagination.items
+    all_apps = base_query.all()
+
+    if q:
+        norm_q = normalize(q)
+        filtered = [
+            app for app in all_apps
+            if norm_q in normalize(app.student.first_name)
+            or norm_q in normalize(app.student.last_name)
+        ]
+    else:
+        filtered = all_apps
+
+    # manual pagination
+    total = len(filtered)
+    start = (page - 1) * per_page
+    end = start + per_page
+    items = filtered[start:end]
+
+    class Pagination:
+        def __init__(self, page, per_page, total, items):
+            self.page = page
+            self.per_page = per_page
+            self.total = total
+            self.items = items
+
+        @property
+        def pages(self):
+            return (self.total + self.per_page - 1) // self.per_page
+
+        @property
+        def has_prev(self):
+            return self.page > 1
+
+        @property
+        def has_next(self):
+            return self.page < self.pages
+
+        @property
+        def prev_num(self):
+            return self.page - 1
+
+        @property
+        def next_num(self):
+            return self.page + 1
+
+    pagination = Pagination(page, per_page, total, items)
+
     return render_template(
         "all_chamber_applications.html",
-        applications=applications,
-        pagination=pagination
+        applications=items,
+        pagination=pagination,
+        q=q
     )
 
 

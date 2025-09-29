@@ -74,6 +74,8 @@ class StudentSubjectEnrollment(db.Model):
     semester = relationship('Semester', back_populates='subject_enrollments')
     subject = relationship('Subject', back_populates='student_enrollments')
 
+    erasmus = db.Column(db.Boolean, default=False)
+
     __table_args__ = (
         UniqueConstraint('student_id', 'semester_id', 'subject_id', name='uq_student_semester_subject'),
         Index('ix_sse_subject_semester', 'subject_id', 'semester_id'),

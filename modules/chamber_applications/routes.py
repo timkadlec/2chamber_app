@@ -35,7 +35,10 @@ def new_application():
         application = StudentChamberApplication(
             student=form.student.data,
             semester_id=session.get("semester_id"),
-            created_by=current_user
+            created_by=current_user,
+            submission_date=form.submission_date.data,
+            notes=form.notes.data,
+            status_id=1,
         )
 
         for player in form.players.data:

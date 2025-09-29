@@ -29,6 +29,17 @@
                         {% endif %}
                     </div>
 
+                    <!-- Notes -->
+                    <div class="mb-3">
+                        {{ form.notes.label(class="form-label") }}
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger">
+                                {{ form.notes.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+
 
                     <!-- Multiple players -->
                     <div class="mb-3">
@@ -37,6 +48,17 @@
                         {% if form.players.errors %}
                             <div class="text-danger">
                                 {{ form.players.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Submission date -->
+                    <div class="mb-3">
+                        {{ form.submission_date.label(class="form-label") }}
+                        {{ form.submission_date(class="form-control", type="date") }}
+                        {% if form.submission_date.errors %}
+                            <div class="text-danger">
+                                {{ form.submission_date.errors[0] }}
                             </div>
                         {% endif %}
                     </div>

@@ -3,7 +3,7 @@ from flask_migrate import Migrate
 from config import ProductionConfig
 from models import db, User, Student, KomorniHraStud
 import locale
-from db_core_entries import seed_instruments, seed_composers, seed_basic_compositions
+from db_core_entries import seed_instruments, seed_composers, seed_basic_compositions, seed_chamber_application_statuses
 import os
 import oracledb
 from extensions import login_manager, oauth, migrate
@@ -68,6 +68,7 @@ def create_app():
     with app.app_context():
         db.create_all(bind_key=None)
         seed_instruments()
+        seed_chamber_application_statuses()
         # seed_roles_and_admin()
         # seed_composers()
         # seed_basic_compositions()

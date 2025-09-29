@@ -20,9 +20,9 @@
                         <thead class="table-light text-uppercase small text-muted">
                         <tr>
                             <th>Student</th>
-                            <th>Členové</th>
+                            <th>Spoluhráči</th>
                             <th>Stav</th>
-                            <th>Vytvořeno</th>
+                            <th>Podáno</th>
                             <th class="text-end">Akce</th>
                         </tr>
                         </thead>
@@ -36,7 +36,7 @@
                                 </td>
                                 <td class="d-none d-sm-table-cell">
                                     {% for pl in app.players %}
-                                        {{ pl.player.student.full_name if pl.player.student else 'Prázdný hráč' }}
+                                        {{ pl.player.student.full_name if pl.player.student else pl.player.full_name }}
                                         {% if not loop.last %}, {% endif %}
                                     {% endfor %}
                                 </td>
@@ -44,7 +44,7 @@
                                     {{ app.status.name if app.status else "N/A" }}
                                 </td>
                                 <td>
-                                    {{ app.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                    {{ app.submission_date.strftime('%d.%m.%Y') }}
                                 </td>
                                 <td class="text-end">
                                     <a href="#"

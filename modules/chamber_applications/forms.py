@@ -16,6 +16,13 @@ def ensemble_query():
 def player_query():
     return Player.query.order_by(Player.last_name, Player.first_name)
 
+def player_label(p):
+    base = p.student.full_name if p.student else p.full_name
+    label = f"{base} ({p.instrument.name})"
+    if not p.student_id:
+        label = f"[Host] {label}"
+    return label
+
 
 class StudentChamberApplicationForm(FlaskForm):
     student = QuerySelectField(
@@ -29,12 +36,18 @@ class StudentChamberApplicationForm(FlaskForm):
     players = QuerySelectMultipleField(
         "Spoluhráči",
         query_factory=player_query,
-        get_label=lambda p: f"{p.student.full_name if p.student else p.full_name}",
+        get_label=player_label,
         validators=[Optional()]
     )
 
-    notes = TextAreaField("Poznámky")
+    notes = TextAreaField("Poznámky",
+                          render_kw={"rows": 3, "class": "form-control"},
+                          validators=[Optional()]
+                          )
 
-    submission_date = DateField("Datum podání")
+    submission_date = DateField("Datum podání",
+                                format="%Y-%m-%d",
+                                validators=[Optional()],
+                                )
 
     submit = SubmitField("Založi žádost")

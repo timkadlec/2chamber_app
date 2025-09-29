@@ -1,5 +1,5 @@
 from models.core import db, InstrumentSection, InstrumentGroup, Instrument, ProjectState, EventType
-from models import User
+from models import User, StudentChamberApplicationStatus
 from models import Composition, Composer, CompositionInstrumentation
 from werkzeug.security import generate_password_hash
 
@@ -247,3 +247,21 @@ def seed_basic_compositions():
     db.session.bulk_save_objects(compositions)
     db.session.commit()
     print("✅ Compositions seeded.")
+
+
+
+def seed_chamber_application_statuses():
+    if StudentChamberApplicationStatus.query.first():
+        print("Application statuses already exist. Skipping seeding.")
+        return
+
+    statuses = [
+        StudentChamberApplicationStatus(name='Založeno', description='Žádost byla založena.'),
+        StudentChamberApplicationStatus(name='Schváleno', description='Žádost posouzena a schválena.'),
+        StudentChamberApplicationStatus(name='Zamítnuto', description='Žádost byla zamítnuta.')
+
+    ]
+
+    db.session.bulk_save_objects(statuses)
+    db.session.commit()
+    print("Application statuses seeded.")

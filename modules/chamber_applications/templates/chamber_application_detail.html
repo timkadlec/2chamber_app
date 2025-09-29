@@ -129,6 +129,30 @@
                         <p class="small text-muted">
                             Vytvořeno: {{ application.created_at.strftime("%d.%m.%Y %H:%M") if application.created_at else "-" }}
                         </p>
+                        {% if application.reviewed_at %}
+                            <p class="small text-muted mb-1">
+                                Posuzoval: {{ application.reviewed_by.display_name if application.reviewed_by else "-" }}
+                            </p>
+                            <p class="small text-muted mb-1">
+                                Rozhodnutí:
+                                {% if application.status %}
+                                    {{ application.status.name }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </p>
+                            <p class="small text-muted mb-1">
+                                Vyjádření:
+                                {% if application.review_comment %}
+                                    {{ application.review_comment }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </p>
+                            <p class="small text-muted">
+                                Datum rozhodnutí: {{ application.reviewed_at.strftime("%d.%m.%Y %H:%M") }}
+                            </p>
+                        {% endif %}
                     </section>
 
                 </div>

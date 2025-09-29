@@ -43,6 +43,10 @@
                                     <li class="list-group-item">
                                         {% if entry.player.student %}
                                             {{ entry.player.student.full_name }}
+                                            {% if entry.player.student.has_erasmus_in_semester(session['semester_id']|int) %}
+                                                <img src="{{ url_for('static', filename='images/Erasmus_Logo.svg') }}"
+                                                     alt="Erasmus+ logo" style="max-width:5em; height:auto;">
+                                            {% endif %}
                                         {% else %}
                                             {{ entry.player.full_name }}, j.h.
                                         {% endif %}

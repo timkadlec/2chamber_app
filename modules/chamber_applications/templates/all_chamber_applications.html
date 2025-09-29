@@ -51,7 +51,7 @@
                                         <a href="{{ url_for("chamber_applications.detail", application_id=app.id) }}" class="btn btn-outline-primary">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="#" class="btn btn-outline-primary">
+                                        <a href="{{url_for('chamber_applications.edit', application_id=app.id)}}" class="btn btn-outline-primary">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <button type="button"

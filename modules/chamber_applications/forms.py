@@ -59,6 +59,18 @@ class StudentChamberApplicationForm(FlaskForm):
 
     submit = SubmitField("Založi žádost")
 
+    def __init__(self, *args, **kwargs):
+        # Use "mode" to control the submit label
+        self.mode = kwargs.pop("mode", "add")
+        super().__init__(*args, **kwargs)
+
+        if self.mode == "add":
+            self.submit.label.text = "Založit žádost"
+            self.form_title = "Přidat"
+        elif self.mode == "edit":
+            self.submit.label.text = "Uložit změny"
+            self.form_title = "Upravit stávající žádost"
+
 
 class EmptyForm(FlaskForm):
     pass

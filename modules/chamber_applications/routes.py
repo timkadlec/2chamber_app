@@ -58,7 +58,33 @@ def new():
         flash("Žádost byla úspěšně vytvořena!", "success")
         return redirect(url_for("chamber_applications.index"))
 
-    return render_template("new_chamber_application.html", form=form)
+    return render_template("chamber_application_form.html", form=form)
+
+
+@chamber_applications_bp.route("/<int:application_id>/edit", methods=["GET", "POST"])
+def edit(application_id):
+    application = StudentChamberApplication.query.get_or_404(application_id)
+    form = StudentChamberApplicationForm(obj=application, mode="edit")
+
+    # Ensure players populate correctly
+    if request.method == "GET":
+        form.players.data = [link.player for link in application.players]
+
+    if form.validate_on_submit():
+        application.notes = form.notes.data
+        application.submission_date = form.submission_date.data
+
+        # Update players
+        application.players.clear()
+        for player in form.players.data:
+            link = StudentChamberApplicationPlayers(player=player, application=application)
+            application.players.append(link)
+
+        db.session.commit()
+        flash(f"Žádost č. {application.id} byla upravena.", "success")
+        return redirect(url_for("chamber_applications.detail", application_id=application.id))
+
+    return render_template("chamber_application_form.html", form=form, application=application)
 
 
 def get_status_by_code(code: str):

@@ -18,28 +18,28 @@
                 <!-- Card header with search -->
                 <div class="card-header bg-white d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
                     <form method="get" class="d-flex w-100 w-md-auto align-items-center">
-    <input type="text"
-           name="q"
-           class="form-control form-control-sm me-2"
-           placeholder="Hledat hráče..."
-           value="{{ q or '' }}">
+                        <input type="text"
+                               name="q"
+                               class="form-control form-control-sm me-2"
+                               placeholder="Hledat hráče..."
+                               value="{{ q or '' }}">
 
-    <div class="form-check me-2">
-        <input class="form-check-input"
-               type="checkbox"
-               name="hide_approved"
-               value="1"
-               id="hideApproved"
-               {% if request.args.get('hide_approved') %}checked{% endif %}>
-        <label class="form-check-label small" for="hideApproved">
-            Nezobrazovat schválené
-        </label>
-    </div>
+                        <div class="form-check me-2">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="hide_approved"
+                                   value="1"
+                                   id="hideApproved"
+                                   {% if request.args.get('hide_approved') %}checked{% endif %}>
+                            <label class="form-check-label small" for="hideApproved">
+                                Nezobrazovat schválené
+                            </label>
+                        </div>
 
-    <button type="submit" class="btn btn-sm btn-outline-primary">
-        <i class="fas fa-search"></i> Hledat
-    </button>
-</form>
+                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-search"></i> Hledat
+                        </button>
+                    </form>
 
                 </div>
                 <div class="table-responsive">
@@ -48,7 +48,8 @@
                         <tr>
                             <th>Student</th>
                             <th>Spoluhráči</th>
-                            <th>Stav</th>
+                            <th>Stav žádosti</th>
+                            <th>Health check</th>
                             <th>Podáno</th>
                             <th class="text-end">Akce</th>
                         </tr>
@@ -68,8 +69,44 @@
                                     {% endfor %}
                                 </td>
                                 <td>
-                                    {{ app.status.name if app.status else "N/A" }}
+                                    {% if app.status %}
+                                        {% if app.status.code == "pending" %}
+                                            <span class="badge bg-secondary" title="{{ app.status.description or '' }}">
+                {{ app.status.name }}
+            </span>
+                                        {% elif app.status.code == "approved" %}
+                                            <span class="badge bg-success" title="{{ app.status.description or '' }}">
+                {{ app.status.name }}
+            </span>
+                                        {% elif app.status.code == "rejected" %}
+                                            <span class="badge bg-danger" title="{{ app.status.description or '' }}">
+                {{ app.status.name }}
+            </span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark"
+                                                  title="{{ app.status.description or '' }}">
+                {{ app.status.name }}
+            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">N/A</span>
+                                    {% endif %}
                                 </td>
+
+                                <td>
+                                    {% set hc = app.health_check %}
+                                    {% if "OK" in hc %}
+                                        <i class="fas fa-check-circle text-success"
+                                           title="{{ hc }}"></i>
+                                    {% elif "minimum" in hc %}
+                                        <i class="fas fa-exclamation-triangle text-danger"
+                                           title="{{ hc }}"></i>
+                                    {% else %}
+                                        <i class="fas fa-exclamation-circle text-warning"
+                                           title="{{ hc }}"></i>
+                                    {% endif %}
+                                </td>
+
                                 <td>
                                     {{ app.submission_date.strftime('%d.%m.%Y') }}
                                 </td>

@@ -38,6 +38,10 @@
                                 <td>
                                     <div class="fw-semibold text-dark">
                                         {{ app.student.full_name }} ({{ app.student.instrument.name }})
+                                        {% if app.student.has_erasmus_in_semester(session['semester_id']|int) %}
+                                            <img src="{{ url_for('static', filename='images/Erasmus_Logo.svg') }}"
+                                                 alt="Erasmus+ logo" style="max-width:5em; height:auto;">
+                                        {% endif %}
                                     </div>
                                 </td>
                                 <td class="d-none d-sm-table-cell">

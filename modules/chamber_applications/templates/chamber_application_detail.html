@@ -109,13 +109,15 @@
                     <section class="mb-4">
                         <h5 class="fw-bold">Kontrola složení souboru</h5>
                         {% if application.health_check == "OK" %}
-                            <span class="badge bg-success">
-            <i class="fas fa-check-circle me-1"></i> {{ application.health_check }}
-        </span>
+                            <span class="badge bg-success"><i
+                                    class="fas fa-check-circle me-1"></i> {{ application.health_check }}</span>
                         {% else %}
                             <div class="alert alert-danger mb-0 small d-flex align-items-center">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
                                 {{ application.health_check }}
+                                <div class="d-inline align-content-end">
+                                    <button class="btn btn-sm btn-info">Zažádat o výjimku</button>
+                                </div>
                             </div>
                         {% endif %}
                     </section>

@@ -113,6 +113,10 @@ class StudentChamberApplication(db.Model):
     semester_id = db.Column(db.Integer, db.ForeignKey('semesters.id', ondelete='SET NULL'))
     semester = relationship('Semester')
 
+    exception = relationship("StudentChamberApplicationException", uselist=False,
+                             back_populates="application",
+                             cascade="all, delete-orphan")
+
     notes = db.Column(db.Text)
     submission_date = db.Column(db.Date)
 
@@ -195,6 +199,29 @@ class StudentChamberApplication(db.Model):
             return "OK"
         else:
             return "Soubor obsahuje vysoké procento hostů."
+
+
+class StudentChamberApplicationException(db.Model):
+    __tablename__ = 'student_chamber_application_exceptions'
+    id = db.Column(db.Integer, primary_key=True)
+    application_id = db.Column(db.Integer, db.ForeignKey('student_chamber_applications.id', ondelete='CASCADE'))
+    application = relationship("StudentChamberApplication", back_populates="exception")
+    reason = db.Column(db.String(255))
+    comment = db.Column(db.String(255))
+    status = db.Column(db.String(255))
+
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    created_by_id = db.Column(db.String, db.ForeignKey('users.id', ondelete='SET NULL'))
+    created_by = relationship(
+        'User',
+        foreign_keys=[created_by_id]
+    )
+    reviewed_at = db.Column(db.DateTime)
+    reviewed_by_id = db.Column(db.String, db.ForeignKey('users.id', ondelete='SET NULL'))
+    reviewed_by = relationship(
+        'User',
+        foreign_keys=[reviewed_by_id]
+    )
 
 
 class StudentChamberApplicationPlayers(db.Model):

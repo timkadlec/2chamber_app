@@ -29,10 +29,8 @@ def is_safe_url(target):
     return test_url.scheme in ("http", "https") and ref_url.netloc == test_url.netloc
 
 
-
 @auth_bp.route("/callback")
 def auth_callback():
-
     token = oauth.entra.authorize_access_token()
 
     claims = token.get("id_token_claims") or token.get("userinfo") or {}
@@ -88,4 +86,3 @@ def logout():
     logout_user()  # let Flask-Login handle session + remember cookie
     post_logout = url_for("library.composers", _external=True)
     return redirect(f"{AUTH_BASE}/logout?post_logout_redirect_uri={post_logout}")
-

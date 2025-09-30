@@ -1,4 +1,7 @@
 {% extends 'base.html' %}
+{% block title %}
+    Komorní soubory
+{% endblock %}
 {% block content %}
     <main>
         <div class="container-xl">
@@ -6,7 +9,7 @@
             <div class="container-xl pb-4">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
 
-                    <h1 class="text-secondary">Soubory</h1>
+                    <h1 class="text-secondary">Komorní soubory</h1>
 
                     <a href="{{ url_for("ensemble.ensemble_add") }}" class="btn btn-primary d-flex align-items-center">
                         <i class="fas fa-plus me-2"></i> Přidat soubor

@@ -30,7 +30,7 @@ class PlayerForm(FlaskForm):
 
         if self.mode == "add":
             self.submit.label.text = "Vytvořit hráče"
-            self.form_title = "Přidat nového hráče"
+            self.title = "Přidat nového hráče"
         elif self.mode == "edit":
             self.submit.label.text = "Uložit změny"
-            self.form_title = "Úprava stávajícího hráče"
+            self.title = "Úprava stávajícího hráče"

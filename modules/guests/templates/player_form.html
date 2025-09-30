@@ -7,11 +7,9 @@
         <div class="container-xl">
 
             <!-- Back link -->
-            <div class="mb-4">
-                <a href="{{ url_for('guests.index') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-arrow-left me-2"></i> Zpět na přehled hráčů
-                </a>
-            </div>
+            {% from "macros/_back_button.html" import back_link %}
+
+            {{ back_link("guests.index", "Zpět na přehled hostů", request.args) }}
 
             <!-- Player Form Card -->
             <div class="card shadow-sm">

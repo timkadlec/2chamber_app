@@ -7,11 +7,9 @@
         <div class="container-xl">
 
             <!-- Back Link -->
-            <div class="mb-4">
-                <a href="{{ url_for('library.composers') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-arrow-left me-2"></i> Zpět na přehled skladatelů
-                </a>
-            </div>
+        {% from "macros/_back_button.html" import back_link %}
+
+            {{ back_link("library.composers", "Zpět na přehled skladatelů", request.args) }}
 
             <!-- Composer Detail Card -->
             <div class="card shadow-sm">

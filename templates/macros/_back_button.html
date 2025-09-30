@@ -1,0 +1,7 @@
+{% macro back_link(endpoint, label, args=None, icon="fas fa-arrow-left") %}
+<div class="mb-4">
+  <a href="{{ url_for(endpoint, **(args or {})) }}" class="btn btn-outline-secondary btn-sm">
+    <i class="{{ icon }} me-2"></i> {{ label }}
+  </a>
+</div>
+{% endmacro %}

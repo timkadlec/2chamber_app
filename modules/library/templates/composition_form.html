@@ -1,7 +1,4 @@
 {% extends "base.html" %}
-{% block title %}
-    {{ form.form_title }}
-{% endblock %}
 {% block content %}
     <main class="py-4">
         <div class="container-xl">
@@ -18,12 +15,6 @@
                        class="btn btn-outline-secondary btn-sm">
                         <i class="fas fa-arrow-left me-2"></i> Zpět na detail skladatele
                     </a>
-                {% elif request.args.get("nav_type") == "from_composition" and form.mode != "add" %}
-                    <a href="{{ url_for('library.composition_detail', composition_id=composition.id) }}"
-                       class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-arrow-left me-2"></i> Zpět na detail skladby
-                    </a>
-
                 {% else %}
                     <a href="{{ url_for('library.compositions') }}" class="btn btn-outline-secondary btn-sm">
 

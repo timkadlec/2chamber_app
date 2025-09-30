@@ -1,24 +1,20 @@
 {% extends "base.html" %}
 {% block title %}
-{{ form.form_title}}
+    {{ form.form_title }}
 {% endblock %}
 {% block content %}
     <main class="py-4">
         <div class="container-xl">
 
             <!-- Back link -->
-            <div class="mb-4">
-                {% if request.args.get("nav_type") == "from_composer" and form.mode != "add" %}
-                    <a href="{{ url_for('library.composer_detail', composer_id=composer.id) }}"
-                       class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-arrow-left me-2"></i> Zpět na detail skladatele
-                    </a>
-                {% else %}
-                    <a href="{{ url_for('library.composers') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-arrow-left me-2"></i> Zpět na přehled skladatelů
-                    </a>
-                {% endif %}
-            </div>
+            {% from "macros/_back_button.html" import back_link %}
+            {% if request.args.get("nav_type") == "from_composer" and form.mode != "add" %}
+                {{ back_link("library.composer_detail", "Zpět na detail skladatele", {"composer_id": composer.id}) }}
+            {% else %}
+                {{ back_link("library.composers", "Zpět na přehled skladatelů", request.args) }}
+            {% endif %}
+
+
 
             <!-- Composer Form Card -->
             <div class="card shadow-sm">

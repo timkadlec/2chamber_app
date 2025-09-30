@@ -7,21 +7,12 @@
         <div class="container-xl">
 
             <!-- Back link -->
-            <div class="mb-4">
-                {% if request.args.get('nav_type') == "from_composer" %}
-                    <a href="{{ url_for('library.composer_detail', composer_id=composition.composer.id) }}"
-                       class="btn btn-outline-secondary btn-sm">
-
-                        <i class="fas fa-arrow-left me-2"></i> Zpět na detail skladatele
-                    </a>
-                {% else %}
-                    <a href="{{ url_for('library.compositions') }}" class="btn btn-outline-secondary btn-sm">
-
-                        <i class="fas fa-arrow-left me-2"></i> Zpět na přehled skladeb
-                    </a>
-                {% endif %}
-
-            </div>
+            {% from "macros/_back_button.html" import back_link %}
+            {% if request.args.get("nav_type") == "from_composer" %}
+                {{ back_link("library.composer_detail", "Zpět na detail skladatele", {"composer_id": composition.composer.id}) }}
+            {% else %}
+                {{ back_link("library.compositions", "Zpět na přehled skladeb", request.args) }}
+            {% endif %}
 
             <!-- Composition Card -->
             <div class="card shadow-sm">
@@ -79,7 +70,8 @@
                             </div>
                             <div class="mt-2">
                                 {% for instrumentation in composition.instrumentation_entries %}
-                                    <span class="badge rounded-pill text-bg-light text-decoration-none">{% if instrumentation.position %}{{ instrumentation.position }}. {% endif %}{{ instrumentation.instrument.name }}
+                                    <span class="badge rounded-pill text-bg-light text-decoration-none">{% if instrumentation.position %}
+                                        {{ instrumentation.position }}. {% endif %}{{ instrumentation.instrument.name }}
                                     </span>{% endfor %}
                             </div>
                         </div>

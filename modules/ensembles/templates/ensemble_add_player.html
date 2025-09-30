@@ -7,12 +7,9 @@
         <div class="container-xl">
 
             <!-- Back Link -->
-            <div class="mb-4">
-                <a href="{{ url_for('ensemble.ensemble_detail', ensemble_id=ensemble.id) }}"
-                   class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-arrow-left me-2"></i> Zpět na detail souboru
-                </a>
-            </div>
+            {% from "macros/_back_button.html" import back_link %}
+
+            {{ back_link("ensemble.ensemble_detail", "Zpět na detail souboru", {"ensemble_id": ensemble.id}) }}
 
             {% if current_semester.id not in ensemble.semester_ids %}
                 <div class="alert alert-warning" role="alert">

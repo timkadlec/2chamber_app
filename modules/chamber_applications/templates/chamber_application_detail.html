@@ -5,12 +5,11 @@
 {% block content %}
     <main class="py-4">
         <div class="container-xl">
-            <!-- Back Link -->
-            <div class="mb-4">
-                <a href="{{ url_for('chamber_applications.index', **request.args) }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-arrow-left me-2"></i> Zpět na žádosti
-                </a>
-            </div>
+
+            {% from "macros/_back_button.html" import back_link %}
+
+            {{ back_link("chamber_applications.index", "Zpět na žádosti", request.args) }}
+
             <!-- Document Card -->
             <div class="card shadow-lg border border-2">
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">

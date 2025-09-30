@@ -2,6 +2,7 @@ from sqlalchemy import UniqueConstraint, Index
 from sqlalchemy.orm import relationship, object_session
 from models import db
 from sqlalchemy.ext.hybrid import hybrid_method
+from flask import session
 
 
 class Student(db.Model):
@@ -63,6 +64,21 @@ class Student(db.Model):
             StudentSubjectEnrollment.semester_id == semester_id,
             StudentSubjectEnrollment.erasmus.is_(True)
         ).exists()
+
+    @property
+    def ensembles_in_semester(self):
+        from models import Ensemble, EnsemblePlayer, EnsembleSemester
+        sid = session.get("semester_id")
+        if not sid:
+            return []
+        return (
+            Ensemble.query
+            .join(EnsemblePlayer, EnsemblePlayer.ensemble_id == Ensemble.id)
+            .join(EnsembleSemester, EnsembleSemester.ensemble_id == Ensemble.id)
+            .filter(EnsemblePlayer.player_id == self.player.id)
+            .filter(EnsembleSemester.semester_id == sid)
+            .all()
+        )
 
 
 class StudentSemesterEnrollment(db.Model):

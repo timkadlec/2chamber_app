@@ -1,5 +1,4 @@
 from flask import Blueprint
-from utils.decorators import admin_required
 from flask_login import login_required
 
 teachers_bp = Blueprint(

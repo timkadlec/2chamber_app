@@ -1,8 +1,8 @@
 import click
 from flask.cli import with_appcontext
-from models import db, KomorniHraStud, StudentSubjectEnrollment
+from models import db, KomorniHraStud, StudentSubjectEnrollment, KomorniHraUcitel
 from utils.import_oracle import get_or_create_academic_year, get_or_create_semester, get_or_create_subject, \
-    get_or_create_student, get_or_create_player_from_student, student_subject_enrollment
+    get_or_create_student, get_or_create_player_from_student, student_subject_enrollment, get_or_create_teacher
 from sqlalchemy.exc import IntegrityError, DBAPIError
 
 
@@ -157,3 +157,12 @@ def cli_oracle_semesters():
     click.echo("📚 Semesters present in Oracle view:")
     for sem_id, in semesters:
         click.echo(f" - {sem_id}")
+
+@click.command("oracle-teachers")
+@with_appcontext
+def cli_oracle_teachers():
+    """Show distinct teachers currently present in Oracle view."""
+    oracle_teachers = db.session.query(KomorniHraUcitel).all()
+    for teacher in oracle_teachers:
+        new_teacher = get_or_create_teacher(teacher)
+    db.session.commit()

@@ -8,6 +8,7 @@ class Teacher(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(100))  # fixed typo
     last_name = db.Column(db.String(100))
+    osobni_cislo = db.Column(db.Integer)
 
     full_name = db.Column(db.String(200))
 

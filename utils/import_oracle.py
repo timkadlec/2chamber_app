@@ -1,5 +1,5 @@
 from sqlalchemy.exc import IntegrityError
-from models import Semester, db, AcademicYear, StudentSubjectEnrollment, Subject, Instrument, Student, Player
+from models import Semester, db, AcademicYear, StudentSubjectEnrollment, Subject, Instrument, Student, Player, Teacher
 import re
 
 
@@ -141,3 +141,21 @@ def student_subject_enrollment(student_id: int, subject_id: int, semester_id: st
     db.session.flush()  # assigns PKs if any
     return sse
 
+
+def get_or_create_teacher(oracle_teacher_model):
+    lookup = Teacher.query.filter_by(osobni_cislo=oracle_teacher_model.OSOBNI_CISLO).first()
+    if lookup:
+        return lookup
+    try:
+        new_teacher = Teacher(
+            osobni_cislo=oracle_teacher_model.OSOBNI_CISLO,
+            last_name=oracle_teacher_model.PRIJMENI,
+            first_name=oracle_teacher_model.JMENO,
+            full_name=oracle_teacher_model.JMENO_UCITELE,
+        )
+        db.session.add(new_teacher)
+        db.session.flush()
+        return new_teacher
+    except IntegrityError:
+        db.session.rollback()
+        return None

@@ -175,6 +175,8 @@ class EnsembleTeacher(db.Model):
     hour_donation = db.Column(db.Integer)
     teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id', ondelete='CASCADE'), nullable=True, index=True)
     ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete='CASCADE'), nullable=False, index=True)
+    semester_id = db.Column(db.Integer, db.ForeignKey('semesters.id', ondelete='CASCADE'), nullable=False, index=True)
 
     teacher = db.relationship("Teacher", back_populates="ensemble_links")
     ensemble = db.relationship("Ensemble", back_populates="teacher_links")
+    semester = db.relationship("Semester")

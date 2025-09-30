@@ -81,18 +81,24 @@
                                 </td>
 
                                 <td class="text-end">
-                                    <a href="{{ url_for('students.student_detail', student_id=student.id, **request.args) }}"
-                                       class="btn btn-link btn-sm text-primary me-1">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="#"
-                                       class="btn btn-link btn-sm text-primary me-1">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button type="button" class="btn btn-link btn-sm text-danger" data-bs-toggle="modal"
-                                            data-bs-target="#deleteStudentModal{{ student.id }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for('students.student_detail', student_id=student.id, **request.args) }}"
+                                           class="btn btn-outline-primary" title="Detail">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="#"
+                                           class="btn btn-outline-primary" title="Upravit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button"
+                                                class="btn btn-outline-danger"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteStudentModal{{ student.id }}"
+                                                title="Smazat">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+
                                     <!-- Delete modal -->
                                     <div class="modal fade" id="deleteStudentModal{{ student.id }}" tabindex="-1"
                                          aria-labelledby="deleteStudentModal{{ student.id }}Label"

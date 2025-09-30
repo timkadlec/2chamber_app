@@ -9,11 +9,12 @@
 
         <div class="container-xl">
 
-            <!-- Filters (optional, create _student_filters.html if needed) -->
-            {% include "partials/_player_filters.html" ignore missing %}
-
             <!-- Table Wrapper -->
             <div class="card shadow-sm mb-4">
+
+                <!-- Filters (optional, create _student_filters.html if needed) -->
+                {% include "partials/_player_filters.html" ignore missing %}
+
                 <div class="table-responsive">
                     <table class="table align-middle mb-0">
                         <thead class="table-light text-uppercase small text-muted">
@@ -41,18 +42,22 @@
                                     {{ player.phone_number if player.phone_number else player.student.phone_number }}
                                 </td>
                                 <td class="text-end">
-                                    <a href="#"
-                                       class="btn btn-link btn-sm text-primary me-1">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{{ url_for("guests.player_edit", player_id=player.id) }}"
-                                       class="btn btn-link btn-sm text-primary me-1">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button type="button" class="btn btn-link btn-sm text-danger" data-bs-toggle="modal"
-                                            data-bs-target="#deleteStudentModal{{ player.id }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for('guests.player_edit', player_id=player.id) }}"
+                                           class="btn btn-outline-primary"
+                                           title="Upravit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+
+                                        <button type="button"
+                                                class="btn btn-outline-danger"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteStudentModal{{ player.id }}"
+                                                title="Smazat">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+
                                     <!-- Delete modal -->
                                     <div class="modal fade" id="deleteStudentModal{{ player.id }}" tabindex="-1"
                                          aria-labelledby="deleteStudentModal{{ player.id }}Label"

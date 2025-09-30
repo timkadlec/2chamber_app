@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+    <main>
+        <div class="container-xl">
+
+
+            <!-- Table Wrapper -->
+            <div class="card shadow-sm mb-4">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light text-uppercase small text-muted">
+                        <tr>
+                            <th>Příjmení</th>
+                            <th>Jméno</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for teacher in teachers %}
+                            <tr>
+                                <td>{{ teacher.last_name }}</td>
+                                <td>{{ teacher.first_name }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+{% endblock %}

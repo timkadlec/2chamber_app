@@ -38,11 +38,19 @@
                                     <div class="fw-semibold text-dark">{{ ensemble.name }}</div>
                                 </td>
                                 <td>{{ ensemble.instrumentation }}</td>
-                                <td></td>
+                                <td>
+                                    {% set teacher_assignment = ensemble.semester_teacher(session["semester_id"]) %}
+                                    {% if teacher_assignment %}
+                                        {{ teacher_assignment.teacher.full_name }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% for pl in ensemble.player_links %}
                                         {% if pl.player.first_name or pl.player.last_name %}
-                                            <em>{{ pl.player.instrument.abbreviation }}.</em> {{ pl.player.first_name[0] }}. {{ pl.player.last_name }}
+                                            <em>{{ pl.player.instrument.abbreviation }}.</em>
+                                            {{ pl.player.first_name[0] }}. {{ pl.player.last_name }}
                                         {% else %}
                                             Prázdný hráč
                                         {% endif %}

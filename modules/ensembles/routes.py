@@ -2,26 +2,69 @@ from flask import render_template, flash, redirect, url_for, session, request, j
 from .forms import EnsembleForm, TeacherForm
 from utils.nav import navlink
 from models import db, Ensemble, EnsembleSemester, Player, Student, EnsemblePlayer, EnsembleInstrumentation, \
-    KomorniHraStud, Instrument, StudentSubjectEnrollment, Semester, EnsembleTeacher
+    KomorniHraStud, Instrument, StudentSubjectEnrollment, Semester, EnsembleTeacher, Teacher
 from . import ensemble_bp
 from sqlalchemy.orm import selectinload
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, func
 from sqlalchemy.exc import IntegrityError
 
 
 @ensemble_bp.route("/all")
 @navlink("Soubory", weight=10)
-def all_ensembles():
+def index():
     current_semester = session["semester_id"]
     page = request.args.get('page', 1, type=int)
     per_page = 10
-    pagination = Ensemble.query.filter(
-        Ensemble.semester_links.any(EnsembleSemester.semester_id == current_semester)).order_by(Ensemble.name).paginate(
+
+    # --- filters from GET ---
+    instrument_ids = request.args.getlist("instrument_id", type=int)
+    teacher_ids = request.args.getlist("teacher_id", type=int)
+    search_query = request.args.get("q", "").strip()
+    search = search_query.lower()
+
+    # --- base query restricted to current semester ---
+    ensembles = Ensemble.query.filter(
+        Ensemble.semester_links.any(EnsembleSemester.semester_id == current_semester)
+    )
+
+    # --- instrument filter ---
+    if instrument_ids:
+        ensembles = ensembles.join(Ensemble.instrumentation_entries).filter(
+            EnsembleInstrumentation.instrument_id.in_(instrument_ids)
+        )
+
+    # --- teacher filter ---
+    if teacher_ids:
+        ensembles = ensembles.join(Ensemble.teacher_links).filter(
+            EnsembleTeacher.teacher_id.in_(teacher_ids),
+            EnsembleTeacher.semester_id == current_semester  # only current semester teachers
+        )
+
+    # --- player search ---
+    if search_query:
+        ensembles = ensembles.join(Ensemble.player_links).join(EnsemblePlayer.player).filter(
+            func.unaccent(func.lower(Player.first_name)).like(f"%{search}%") |
+            func.unaccent(func.lower(Player.last_name)).like(f"%{search}%")
+        )
+
+    # --- distinct + order + pagination ---
+    pagination = ensembles.distinct().order_by(Ensemble.name).paginate(
         page=page,
         per_page=per_page,
-        error_out=False)
+        error_out=False
+    )
     ensembles = pagination.items
-    return render_template("all_ensembles.html", ensembles=ensembles, pagination=pagination)
+
+    return render_template(
+        "all_ensembles.html",
+        ensembles=ensembles,
+        pagination=pagination,
+        instruments=Instrument.query.order_by(Instrument.name).filter_by(is_primary=True).all(),
+        teachers=Teacher.query.order_by(Teacher.last_name, Teacher.first_name).all(),
+        selected_instrument_ids=instrument_ids,
+        selected_teacher_ids=teacher_ids,
+        search_query=search_query
+    )
 
 
 @ensemble_bp.route("/add", methods=["GET", "POST"])
@@ -40,7 +83,7 @@ def ensemble_add():
         db.session.add(ensemble_semester)
         db.session.commit()
         flash("Byl úspěšně přidán soubor.", "success")
-        return redirect(url_for("ensemble.all_ensembles"))
+        return redirect(url_for("ensemble.index"))
     return render_template("ensemble_form.html", form=form)
 
 
@@ -288,7 +331,7 @@ def ensemble_delete(ensemble_id):
     db.session.delete(ensemble_to_delete)
     db.session.commit()
     flash("Soubor byl úspěšně smazán.", "success")
-    return redirect(url_for("ensemble.all_ensembles"))
+    return redirect(url_for("ensemble.index"))
 
 
 def count_hour_donation(ensemble):

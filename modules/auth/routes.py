@@ -50,7 +50,7 @@ def auth_callback():
 
     if not oid or not tid:
         flash("Přihlášení selhalo: chyba oid/tid.", "danger")
-        return redirect(url_for("ensemble.all_ensembles"))
+        return redirect(url_for("ensemble.index"))
 
     user = User.query.filter_by(oid=oid).first()
     if user:
@@ -80,7 +80,7 @@ def auth_callback():
     }
 
     flash("Úspěšně přihlášený.", "success")
-    return redirect(url_for("ensemble.all_ensembles"))
+    return redirect(url_for("ensemble.index"))
 
 
 @auth_bp.route("/logout")

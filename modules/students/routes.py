@@ -3,7 +3,7 @@ from utils.nav import navlink
 from models import Student, StudentSubjectEnrollment, Instrument, Subject, Player, EnsemblePlayer, Ensemble, \
     EnsembleSemester, db
 from modules.students import students_bp
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 from .forms import EnrollmentForm
 
 from sqlalchemy import or_
@@ -36,12 +36,15 @@ def index():
             query = query.filter(StudentSubjectEnrollment.subject_id.in_(subject_ids))
 
     # Search filter (by first_name OR last_name)
+
     search_query = request.args.get("q", "").strip()
+    search = search_query.lower()
+
     if search_query:
         query = query.filter(
             or_(
-                Student.first_name.ilike(f"%{search_query}%"),
-                Student.last_name.ilike(f"%{search_query}%"),
+                func.unaccent(func.lower(Student.first_name)).like(f"%{search}%"),
+                func.unaccent(func.lower(Student.last_name)).like(f"%{search}%"),
             )
         )
 

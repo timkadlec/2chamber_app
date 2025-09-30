@@ -2,14 +2,14 @@ from flask import render_template, request, flash, redirect, url_for, session
 from utils.nav import navlink
 from modules.chamber_applications import chamber_applications_bp
 from models import db, Ensemble, EnsembleSemester, EnsemblePlayer, EnsembleInstrumentation, Semester, \
-    StudentChamberApplication, StudentChamberApplicationPlayers, StudentChamberApplicationStatus, Student, Instrument, StudentChamberApplicationException
+    StudentChamberApplication, StudentChamberApplicationPlayers, StudentChamberApplicationStatus, Student, Instrument, \
+    StudentChamberApplicationException, Player
 from .forms import StudentChamberApplicationForm, EmptyForm, ExceptionRequestForm
 from flask_login import current_user
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 import unicodedata
 from datetime import datetime
-from sqlalchemy import func, or_
 
 
 def normalize(s: str) -> str:
@@ -19,6 +19,10 @@ def normalize(s: str) -> str:
         c for c in unicodedata.normalize("NFKD", s)
         if not unicodedata.combining(c)
     ).lower()
+
+
+from sqlalchemy.orm import aliased
+from sqlalchemy import or_, func
 
 
 @chamber_applications_bp.route("/")
@@ -32,101 +36,70 @@ def index():
     health_filter = request.args.get("health")
     instrument_filter = request.args.getlist("instrument_ids", type=int)
 
-    # base query: always filter by semester
-    base_query = (
+    # Aliases
+    ApplicantStudent = Student  # the main applicant
+    PlayerStudent = aliased(Student, name="player_student")  # students behind players
+
+    # base query
+    query = (
         StudentChamberApplication.query
-        .join(Student)
+        .join(ApplicantStudent, StudentChamberApplication.student)  # applicant
+        .outerjoin(StudentChamberApplication.players)  # link table
+        .outerjoin(Player)  # players
+        .outerjoin(PlayerStudent, Player.student)  # alias here
         .filter(StudentChamberApplication.semester_id == session.get("semester_id"))
+        .group_by(StudentChamberApplication.id)
     )
 
-    # hide approved toggle
+    # hide approved
     if hide_approved:
-        base_query = (
-            base_query.join(StudentChamberApplicationStatus)
-            .filter(StudentChamberApplicationStatus.code != "approved")
+        query = query.join(StudentChamberApplicationStatus).filter(
+            StudentChamberApplicationStatus.code != "approved"
         )
 
-    # filter by instrument (SQL-level, not Python)
+    # instrument filter → apply to applicant’s instrument
     if instrument_filter:
-        base_query = base_query.filter(Student.instrument_id.in_(instrument_filter))
+        query = query.filter(ApplicantStudent.instrument_id.in_(instrument_filter))
 
-    # sort newest first
-    base_query = base_query.order_by(StudentChamberApplication.submission_date.desc())
-    all_apps = base_query.all()
-
-    # --- Status filter ---
+    # status filter
     if status_filter:
-        all_apps = [
-            app for app in all_apps
-            if app.status and app.status.code == status_filter
-        ]
+        query = query.join(StudentChamberApplicationStatus).filter(
+            StudentChamberApplicationStatus.code == status_filter
+        )
 
-    # --- Health filter ---
-    if health_filter:
-        all_apps = [
-            app for app in all_apps
-            if (
-                (health_filter == "ok" and "OK" in app.health_check)
-                or (health_filter == "minimum" and "minimum" in app.health_check)
-                or (health_filter == "guests" and "vysoké procento hostů" in app.health_check)
-            )
-        ]
-
-    # --- Search filter ---
+    # search filter (search both applicant + player students)
     if q:
-        norm_q = normalize(q)
-        filtered = []
-        for app in all_apps:
-            if norm_q in normalize(app.student.first_name) or norm_q in normalize(app.student.last_name):
-                filtered.append(app)
-                continue
-            for entry in app.players:
-                pl = entry.player
-                if not pl:
-                    continue
-                if pl.student:
-                    if norm_q in normalize(pl.student.first_name) or norm_q in normalize(pl.student.last_name):
-                        filtered.append(app)
-                        break
-                else:
-                    if norm_q in normalize(pl.full_name):
-                        filtered.append(app)
-                        break
-        all_apps = filtered
+        search = q.lower()
+        query = query.filter(
+            or_(
+                func.unaccent(func.lower(ApplicantStudent.first_name)).like(f"%{search}%"),
+                func.unaccent(func.lower(ApplicantStudent.last_name)).like(f"%{search}%"),
+                func.unaccent(func.lower(PlayerStudent.first_name)).like(f"%{search}%"),
+                func.unaccent(func.lower(PlayerStudent.last_name)).like(f"%{search}%"),
+            )
+        )
 
-    # manual pagination
-    total = len(all_apps)
-    start = (page - 1) * per_page
-    end = start + per_page
-    items = all_apps[start:end]
+    # sort
+    query = query.order_by(StudentChamberApplication.submission_date.desc())
 
-    class Pagination:
-        def __init__(self, page, per_page, total, items):
-            self.page, self.per_page, self.total, self.items = page, per_page, total, items
-        @property
-        def pages(self): return (self.total + self.per_page - 1) // self.per_page
-        @property
-        def has_prev(self): return self.page > 1
-        @property
-        def has_next(self): return self.page < self.pages
-        @property
-        def prev_num(self): return self.page - 1
-        @property
-        def next_num(self): return self.page + 1
+    # paginate
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
-    pagination = Pagination(page, per_page, total, items)
-
-    # load instruments for dropdown
-    instruments = db.session.query(Instrument).filter_by(is_primary=True).order_by(Instrument.weight).all()
+    instruments = (
+        db.session.query(Instrument)
+        .filter_by(is_primary=True)
+        .order_by(Instrument.weight)
+        .all()
+    )
 
     return render_template(
         "all_chamber_applications.html",
-        applications=items,
+        applications=pagination.items,
         pagination=pagination,
         q=q,
         hide_approved=hide_approved,
         status_filter=status_filter,
-        health_filter=health_filter,
+        health_filter=health_filter,  # still Python-level unless pushed to DB
         instrument_filter=instrument_filter,
         instruments=instruments,
     )
@@ -139,7 +112,7 @@ def detail(application_id):
     exception_form = ExceptionRequestForm()
     return render_template("chamber_application_detail.html", application=application,
                            form=form,
-                           exception_form=exception_form,)
+                           exception_form=exception_form, )
 
 
 @chamber_applications_bp.route("/new", methods=["GET", "POST"])

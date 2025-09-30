@@ -1,0 +1,70 @@
+<div class="card-header bg-white">
+    <form method="get" class="p-3 mb-4">
+        <div class="row g-3 align-items-end">
+
+            <!-- Instrument filter -->
+            <div class="col-md-3">
+                <label for="instrument_id" class="form-label">Nástroj</label>
+                <select class="form-select form-select-sm" id="instrument_id" name="instrument_id" multiple>
+                    {% for inst in instruments %}
+                        <option value="{{ inst.id }}"
+                                {% if inst.id in (selected_instrument_ids or []) %}selected{% endif %}>
+                            {{ inst.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Teacher filter -->
+            <div class="col-md-3">
+                <label for="teacher_id" class="form-label">Pedagog</label>
+                <select class="form-select form-select-sm" id="teacher_id" name="teacher_id" multiple>
+                    {% for teacher in teachers %}
+                        <option value="{{ teacher.id }}"
+                                {% if teacher.id in (selected_teacher_ids or []) %}selected{% endif %}>
+                            {{ teacher.full_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Search field -->
+            <div class="col-md-3">
+                <label for="filter-q" class="form-label">Hledat hráče</label>
+                <input type="text"
+                       id="filter-q"
+                       class="form-control form-control-sm"
+                       name="q"
+                       value="{{ search_query or '' }}"
+                       placeholder="Jméno hráče...">
+            </div>
+
+            <!-- Actions -->
+            <div class="col-12 d-flex gap-2 justify-content-end">
+                <button type="submit" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-filter me-1"></i> Filtrovat
+                </button>
+
+                {% if selected_instrument_ids or selected_teacher_ids or search_query %}
+                    <a href="{{ url_for('ensemble.index') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i> Reset
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            new TomSelect("#instrument_id", {
+                plugins: {remove_button: {title: "Odebrat"}},
+                placeholder: "Vyberte nástroj(e)"
+            });
+
+            new TomSelect("#teacher_id", {
+                plugins: {remove_button: {title: "Odebrat"}},
+                placeholder: "Vyberte pedagoga"
+            });
+        });
+    </script>
+</div>

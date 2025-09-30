@@ -1,4 +1,4 @@
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, column_property
 from models import db
 from models.core import Instrumentation, Semester
 from datetime import date
@@ -185,3 +185,4 @@ class EnsembleTeacher(db.Model):
     teacher = db.relationship("Teacher", back_populates="ensemble_links")
     ensemble = db.relationship("Ensemble", back_populates="teacher_links")
     semester = db.relationship("Semester")
+

@@ -291,6 +291,11 @@ def ensemble_delete(ensemble_id):
     return redirect(url_for("ensemble.all_ensembles"))
 
 
+def count_hour_donation(ensemble):
+    count_of_teachers = len(ensemble.teacher_links)
+    return 1 / (count_of_teachers)
+
+
 @ensemble_bp.route("/<int:ensemble_id>/teacher/assign", methods=["POST"])
 def ensemble_assign_teacher(ensemble_id):
     ensemble = Ensemble.query.get_or_404(ensemble_id)
@@ -298,23 +303,46 @@ def ensemble_assign_teacher(ensemble_id):
     current_semester = Semester.query.filter_by(id=session.get("semester_id")).first()
 
     if teacher_form.validate_on_submit():
-        assignment = EnsembleTeacher(
-            hour_donation=1,
+        # Check if assignment already exists
+        existing = EnsembleTeacher.query.filter_by(
             teacher_id=teacher_form.teacher.data.id,
             ensemble_id=ensemble.id,
             semester_id=current_semester.id
-        )
+        ).first()
 
-        db.session.add(assignment)
-        db.session.commit()
-        flash("Pedagog byl úspěšně přiřazen k souboru", "success")
+        if existing:
+            flash("Tento pedagog je již přiřazen k souboru v aktuálním semestru.", "warning")
+        else:
+            assignment = EnsembleTeacher(
+                teacher_id=teacher_form.teacher.data.id,
+                ensemble_id=ensemble.id,
+                semester_id=current_semester.id
+            )
+            db.session.add(assignment)
+            db.session.flush()  # ensure new assignment is included in teacher_links
+
+            # update all teachers
+            for teacher in ensemble.teacher_links:
+                teacher.hour_donation = count_hour_donation(ensemble)
+
+            db.session.commit()
+            flash("Pedagog byl úspěšně přiřazen k souboru", "success")
+
     return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
 
 
-@ensemble_bp.route("/teacher_assignemnt/<int:assignment_id>/remove", methods=["POST"])
+@ensemble_bp.route("/teacher_assignment/<int:assignment_id>/remove", methods=["POST"])
 def ensemble_remove_teacher(assignment_id):
-    assignment = EnsembleTeacher.query.filter_by(id=assignment_id).first()
+    assignment = EnsembleTeacher.query.get_or_404(assignment_id)
+    ensemble = Ensemble.query.get_or_404(assignment.ensemble_id)
+
     db.session.delete(assignment)
+    db.session.flush()
+
+    # update all remaining teachers
+    for teacher in ensemble.teacher_links:
+        teacher.hour_donation = count_hour_donation(ensemble)
+
     db.session.commit()
     flash("Pedagog byl úspěšně odebrán ze souboru", "success")
-    return redirect(url_for("ensemble.ensemble_detail", ensemble_id=assignment.ensemble_id))
+    return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))

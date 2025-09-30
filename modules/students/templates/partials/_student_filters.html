@@ -1,8 +1,10 @@
-<div class="card mb-3">
-    <div class="card-body py-2">
-        <form method="get" class="row g-2 align-items-center">
+<div class="card-header bg-white">
+    <form method="get" class="p-3 mb-4">
+        <div class="row g-3 align-items-end">
+
             <!-- Instrument filter -->
-            <div class="col-sm-4 col-md-3">
+            <div class="col-md-3">
+                <label for="instrument_id" class="form-label">Nástroj</label>
                 <select class="form-select form-select-sm" id="instrument_id" name="instrument_id" multiple>
                     {% for inst in instruments %}
                         <option value="{{ inst.id }}"
@@ -14,7 +16,8 @@
             </div>
 
             <!-- Subject filter -->
-            <div class="col-sm-4 col-md-3">
+            <div class="col-md-3">
+                <label for="subject_id" class="form-label">Předmět</label>
                 <select class="form-select form-select-sm" id="subject_id" name="subject_id" multiple>
                     {% for subj in subjects %}
                         <option value="{{ subj.id }}"
@@ -26,7 +29,8 @@
             </div>
 
             <!-- Has Ensemble filter -->
-            <div class="col-sm-4 col-md-3">
+            <div class="col-md-3">
+                <label for="has_ensemble" class="form-label">Soubor</label>
                 <select class="form-select form-select-sm" id="has_ensemble" name="has_ensemble">
                     <option value="">-- Má / nemá soubor --</option>
                     <option value="1" {% if selected_has_ensemble == '1' %}selected{% endif %}>Má soubor</option>
@@ -34,38 +38,49 @@
                 </select>
             </div>
 
-
             <!-- Search field -->
-            <div class="col-sm-6 col-md-3">
-                <input type="text" class="form-control form-control-sm"
+            <div class="col-md-3">
+                <label for="filter-q" class="form-label">Hledat studenta</label>
+                <input type="text"
+                       id="filter-q"
+                       class="form-control form-control-sm"
                        name="q"
                        value="{{ search_query or '' }}"
-                       placeholder="Hledat jméno studenta...">
+                       placeholder="Jméno studenta...">
             </div>
 
-            <!-- Submit + Reset -->
-            <div class="col-auto">
-                <button type="submit" class="btn btn-sm btn-primary">Filtrovat</button>
-                <a href="{{ url_for('students.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+            <!-- Actions -->
+            <div class="col-12 d-flex gap-2 justify-content-end">
+                <button type="submit" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-filter me-1"></i> Filtrovat
+                </button>
+
+                {% if selected_instrument_ids or selected_subject_ids or selected_has_ensemble or search_query %}
+                    <a href="{{ url_for('students.index') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i> Reset
+                    </a>
+                {% endif %}
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            new TomSelect("#instrument_id", {
+                plugins: {remove_button: {title: "Odebrat"}},
+                placeholder: "Vyberte nástroj(e)"
+            });
+
+            new TomSelect("#subject_id", {
+                plugins: {remove_button: {title: "Odebrat"}},
+                placeholder: "Vyberte předmět(y)"
+            });
+
+            new TomSelect("#has_ensemble", {
+                maxItems: 1,
+                plugins: {remove_button: {title: "Odebrat"}},
+                placeholder: "Má / nemá soubor"
+            });
+        });
+    </script>
 </div>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        new TomSelect("#instrument_id", {
-            plugins: ['remove_button'],
-            placeholder: "Vyberte nástroj(e)",
-        });
-        new TomSelect("#subject_id", {
-            plugins: ['remove_button'],
-            placeholder: "Vyberte předmět(y)",
-        });
-        new TomSelect("#has_ensemble", {
-            plugins: ['remove_button'],
-            placeholder: "Má / nemá soubor",
-            maxItems: 1
-        });
-    });
-</script>

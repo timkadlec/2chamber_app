@@ -4,7 +4,7 @@
         <div class="container-xl">
             <!-- Back Link -->
             <div class="mb-4">
-                <a href="{{ url_for('chamber_applications.index') }}" class="btn btn-outline-secondary btn-sm">
+                <a href="{{ url_for('chamber_applications.index', **request.args) }}" class="btn btn-outline-secondary btn-sm">
                     <i class="fas fa-arrow-left me-2"></i> Zpět na žádosti
                 </a>
             </div>

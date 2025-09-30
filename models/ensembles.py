@@ -67,6 +67,7 @@ class Ensemble(db.Model):
         back_populates="ensemble",
         cascade="all, delete-orphan",
         passive_deletes=True,
+        order_by="EnsembleTeacher.semester_id"
     )
 
     @property
@@ -77,6 +78,10 @@ class Ensemble(db.Model):
     @property
     def semester_ids(self):
         return [link.semester_id for link in self.semester_links]
+
+    def semester_teacher(self, semester_id):
+        teacher = EnsembleTeacher.query.filter_by(ensemble_id=self.id, semester_id=semester_id).first()
+        return teacher if teacher else None
 
     @property
     def players(self):

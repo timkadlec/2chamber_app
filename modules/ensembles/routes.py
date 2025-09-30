@@ -1,8 +1,8 @@
 from flask import render_template, flash, redirect, url_for, session, request, jsonify
-from .forms import EnsembleForm
+from .forms import EnsembleForm, TeacherForm
 from utils.nav import navlink
 from models import db, Ensemble, EnsembleSemester, Player, Student, EnsemblePlayer, EnsembleInstrumentation, \
-    KomorniHraStud, Instrument, StudentSubjectEnrollment, Semester
+    KomorniHraStud, Instrument, StudentSubjectEnrollment, Semester, EnsembleTeacher
 from . import ensemble_bp
 from sqlalchemy.orm import selectinload
 from sqlalchemy import or_, select
@@ -62,6 +62,8 @@ def ensemble_edit(ensemble_id):
 def ensemble_detail(ensemble_id):
     ensemble = Ensemble.query.filter_by(id=ensemble_id).first_or_404()
 
+    teacher_form = TeacherForm()
+
     instrumentations = ensemble.instrumentation_entries
     player_links = sorted(
         ensemble.player_links,
@@ -94,7 +96,8 @@ def ensemble_detail(ensemble_id):
         instrumentations=instrumentations,
         player_links=player_links,
         available_students=available_students,
-        available_instruments=available_instruments
+        available_instruments=available_instruments,
+        teacher_form=teacher_form,
     )
 
 
@@ -286,3 +289,32 @@ def ensemble_delete(ensemble_id):
     db.session.commit()
     flash("Soubor byl úspěšně smazán.", "success")
     return redirect(url_for("ensemble.all_ensembles"))
+
+
+@ensemble_bp.route("/<int:ensemble_id>/teacher/assign", methods=["POST"])
+def ensemble_assign_teacher(ensemble_id):
+    ensemble = Ensemble.query.get_or_404(ensemble_id)
+    teacher_form = TeacherForm()
+    current_semester = Semester.query.filter_by(id=session.get("semester_id")).first()
+
+    if teacher_form.validate_on_submit():
+        assignment = EnsembleTeacher(
+            hour_donation=1,
+            teacher_id=teacher_form.teacher.data.id,
+            ensemble_id=ensemble.id,
+            semester_id=current_semester.id
+        )
+
+        db.session.add(assignment)
+        db.session.commit()
+        flash("Pedagog byl úspěšně přiřazen k souboru", "success")
+    return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
+
+
+@ensemble_bp.route("/teacher_assignemnt/<int:assignment_id>/remove", methods=["POST"])
+def ensemble_remove_teacher(assignment_id):
+    assignment = EnsembleTeacher.query.filter_by(id=assignment_id).first()
+    db.session.delete(assignment)
+    db.session.commit()
+    flash("Pedagog byl úspěšně odebrán ze souboru", "success")
+    return redirect(url_for("ensemble.ensemble_detail", ensemble_id=assignment.ensemble_id))

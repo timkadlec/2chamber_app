@@ -72,7 +72,7 @@ def create_app():
     app.cli.add_command(cli_oracle_teachers)
     with app.app_context():
         db.create_all(bind_key=None)
-        #seed_instruments()
+        # seed_instruments()
         # seed_chamber_application_statuses()
         # seed_roles_and_admin()
         # seed_composers()
@@ -107,7 +107,15 @@ def create_app():
         for rule in app.url_map.iter_rules():
             view_func = app.view_functions[rule.endpoint]
 
-            if hasattr(view_func, "_nav_title") and is_allowed(view_func):
+            if hasattr(view_func, "_nav_title"):
+                # role-based filtering
+                required_role = getattr(view_func, "_required_role", None)
+                if required_role and (not current_user.is_authenticated or not current_user.has_role(required_role)):
+                    continue  # skip this nav item
+
+                if not is_allowed(view_func):
+                    continue
+
                 entry = {
                     "name": view_func._nav_title,
                     "url": url_for(rule.endpoint),
@@ -121,12 +129,11 @@ def create_app():
                     flat_links.append(entry)
 
         nav_links = []
-
         for group_name, children in groups.items():
             nav_links.append({
                 "name": group_name,
                 "url": "#",
-                "weight": min(child["weight"] for child in children),  # For sorting parent
+                "weight": min(child["weight"] for child in children),
                 "children": sorted(children, key=lambda x: x["weight"])
             })
 

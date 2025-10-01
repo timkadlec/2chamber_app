@@ -72,18 +72,14 @@
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">
                                         <a href="{{ url_for('exceptions.detail', exception_id=exception.id) }}"
-                                           class="btn btn-outline-primary" title="Detail">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="#"
-                                           class="btn btn-outline-primary" title="Upravit">
-                                            <i class="fas fa-edit"></i>
+                                           class="btn btn-outline-primary" title="Posoudit žádost">
+                                            <i class="fas fa-gavel"></i>
                                         </a>
                                         <button type="button"
                                                 class="btn btn-outline-danger"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#deleteExceptionModal{{ exception.id }}"
-                                                title="Smazat">
+                                                title="Smazat" disabled>
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>

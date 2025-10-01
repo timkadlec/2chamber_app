@@ -7,7 +7,7 @@ from models import db, StudentChamberApplicationException
 
 
 @exceptions_bp.route("/", methods=["GET"])
-@navlink("Výjimky", weight=100)
+@navlink("Výjimky", weight=100, roles=["admin"])
 @role_required("admin")
 def index():
     # Get page from querystring (default = 1)

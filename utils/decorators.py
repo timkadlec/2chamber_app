@@ -36,6 +36,8 @@ def role_required(role_name):
                 abort(403)
             return f(*args, **kwargs)
 
+        # attach metadata for nav filtering
+        f._required_role = role_name
         return decorated_function
-
     return decorator
+

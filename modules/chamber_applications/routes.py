@@ -248,34 +248,51 @@ def create_ensemble_from_application(application):
     return ensemble
 
 
-@chamber_applications_bp.route("/<int:application_id>/approve", methods=["POST"])
-def approve(application_id):
-    app = StudentChamberApplication.query.get_or_404(application_id)
-    current_semester = Semester.query.get(session.get("semester_id"))
+def approve_applications(application, reviewer, comment=None):
+    """
+    Approve a StudentChamberApplication and its related applications.
+    Creates an Ensemble from the main application.
 
+    Args:
+        application: StudentChamberApplication (the main one)
+        reviewer: User who approves
+        comment: Optional reviewer comment
+    """
     approved_status = get_status_by_code("approved")
     if not approved_status:
-        flash("Chybí status 'approved' v databázi!", "danger")
-        return redirect(url_for("chamber_applications.detail", application_id=application_id))
+        raise ValueError("Status 'approved' missing in database")
 
-    # Collect this application + all related ones
-    related_apps = app.related_applications
-    all_apps = [app] + related_apps
+    # Collect main + related
+    related_apps = application.related_applications
+    all_apps = [application] + related_apps
 
-    # Set status = approved for all
+    # Update all statuses
     for a in all_apps:
         a.status = approved_status
         a.reviewed_at = datetime.now()
-        a.reviewed_by = current_user
-        a.review_comment = request.form.get("comment")
+        a.reviewed_by = reviewer
+        a.review_comment = comment
 
-    # Create one ensemble from the "main" application
-    new_ensemble = create_ensemble_from_application(app)
+    # Create the ensemble (only from the main application)
+    new_ensemble = create_ensemble_from_application(application)
 
-    # Optional: link ensemble_id back to applications if you want traceability
-    # (Add ensemble_id FK to StudentChamberApplication if not already there)
-
+    # Save changes
+    db.session.add_all(all_apps)
     db.session.commit()
+
+    return new_ensemble, all_apps
+
+
+@chamber_applications_bp.route("/<int:application_id>/approve", methods=["POST"])
+def approve(application_id):
+    app = StudentChamberApplication.query.get_or_404(application_id)
+    comment = request.form.get("comment")
+
+    try:
+        new_ensemble, all_apps = approve_applications(app, current_user, comment)
+    except ValueError as e:
+        flash(str(e), "danger")
+        return redirect(url_for("chamber_applications.detail", application_id=application_id))
 
     flash(
         f"Žádosti {[a.id for a in all_apps]} byly schváleny a vytvořen soubor č. {new_ensemble.id}.",

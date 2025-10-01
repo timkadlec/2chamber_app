@@ -34,7 +34,7 @@
                             <tr>
                                 <td>{{ exception.id }}</td>
                                 <td>
-                                    <a href="#">
+                                    <a href="{{ url_for('chamber_applications.detail', application_id=exception.application.id) }}">
                                         Žádost #{{ exception.application_id }}
                                     </a>
                                 </td>

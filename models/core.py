@@ -144,6 +144,7 @@ class Instrument(db.Model):
     __tablename__ = 'instruments'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    name_en = db.Column(db.String(100), nullable=True)
     is_primary = db.Column(db.Boolean, default=False)
     abbreviation = db.Column(db.String(20))
 

@@ -43,6 +43,8 @@ class KomorniHraStud(_ReadOnly, db.Model):
     PREDMET_KOD = db.Column(db.String(32), primary_key=True)
     PREDMET_NAZEV = db.Column(db.String(256))
 
+    EMAIL = db.Column(db.String(256))
+
     def __repr__(self):
         return f"<KomorniHraStud {self.ID_STUDIA} {self.PREDMET_KOD} {self.SEMESTR_ID}>"
 

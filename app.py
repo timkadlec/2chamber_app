@@ -72,7 +72,7 @@ def create_app():
     app.cli.add_command(cli_oracle_teachers)
     with app.app_context():
         db.create_all(bind_key=None)
-        seed_instruments()
+        # seed_instruments()
         # seed_chamber_application_statuses()
         # seed_roles_and_admin()
         # seed_composers()

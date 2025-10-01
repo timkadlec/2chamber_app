@@ -1,7 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 from models import Semester, db, AcademicYear, StudentSubjectEnrollment, Subject, Instrument, Student, Player, Teacher
 import re
-
+import click
 
 def get_or_create_academic_year(semester_id: str):
     year = int(semester_id[:4])  # e.g., "2025"
@@ -52,55 +52,80 @@ def get_or_create_semester(semester_id: str):
             return None
 
 
-from sqlalchemy.exc import IntegrityError
-
-
 def get_or_create_subject(subject_name: str, subject_code: str):
-    # Look up by code only (code should be unique)
-    subj = Subject.query.filter_by(code=subject_code).first()
-    if subj:
-        # Optionally keep the local name in sync with Oracle
-        if subj.name != subject_name and subject_name:
-            subj.name = subject_name
-            try:
-                db.session.commit()
-            except IntegrityError:
-                db.session.rollback()
-                # keep old name if update fails
-        return subj
-
-    # Not found → create
     try:
+        subj = Subject.query.filter_by(code=subject_code).first()
+        if subj:
+            if subj.name != subject_name and subject_name:
+                old = subj.name
+                subj.name = subject_name
+                try:
+                    db.session.commit()
+                    click.echo(f"🔄 Updated subject name {old} -> {subject_name} (code={subject_code})", err=True)
+                except IntegrityError as e:
+                    db.session.rollback()
+                    click.echo(f"⚠️ Failed to update subject {subject_code}: {e}", err=True)
+            return subj
+
         subj = Subject(name=subject_name, code=subject_code)
         db.session.add(subj)
         db.session.flush()
+        click.echo(f"✅ Created new subject {subject_name} ({subject_code})", err=True)
         return subj
-    except IntegrityError:
+
+    except IntegrityError as e:
         db.session.rollback()
+        click.echo(f"❌ IntegrityError creating subject {subject_code}: {e}", err=True)
         return None
 
 
 def get_or_create_student(oracle_student_model):
+    # First try lookup by study ID
     lookup = Student.query.filter_by(id_studia=oracle_student_model.ID_STUDIA).first()
-    if lookup:
-        return lookup
-    try:
-        instrument = Instrument.query.filter_by(name=oracle_student_model.KATEDRA_NAZEV).first()
-        if not instrument:
-            return None  # instrument unknown; caller should log/skip
+    if not lookup:
+        # If not found, try lookup by osobni_cislo (personal number)
+        lookup = Student.query.filter_by(osobni_cislo=str(oracle_student_model.CISLO_OSOBY)).first()
 
+    instrument = Instrument.query.filter_by(name=oracle_student_model.KATEDRA_NAZEV).first()
+    if not instrument:
+        click.echo(
+            f"⚠️ No instrument found for student {oracle_student_model.JMENO} {oracle_student_model.PRIJMENI} "
+            f"(osobni_cislo={oracle_student_model.CISLO_OSOBY}, id_studia={oracle_student_model.ID_STUDIA}, "
+            f"katedra={oracle_student_model.KATEDRA_NAZEV})",
+            err=True,
+        )
+        return None
+
+    if lookup:
+        # update existing record
+        lookup.osobni_cislo = oracle_student_model.CISLO_OSOBY
+        lookup.id_studia = oracle_student_model.ID_STUDIA
+        lookup.last_name = oracle_student_model.PRIJMENI
+        lookup.first_name = oracle_student_model.JMENO
+        lookup.instrument_id = instrument.id
+        lookup.email = oracle_student_model.EMAIL
+        return lookup
+
+    try:
+        # create new
         new_student = Student(
             osobni_cislo=oracle_student_model.CISLO_OSOBY,
             id_studia=oracle_student_model.ID_STUDIA,
             last_name=oracle_student_model.PRIJMENI,
             first_name=oracle_student_model.JMENO,
             instrument_id=instrument.id,
+            email=oracle_student_model.EMAIL,
         )
         db.session.add(new_student)
         db.session.flush()
         return new_student
-    except IntegrityError:
+    except IntegrityError as e:
         db.session.rollback()
+        click.echo(
+            f"❌ IntegrityError creating student (osobni_cislo={oracle_student_model.CISLO_OSOBY}, "
+            f"id_studia={oracle_student_model.ID_STUDIA}): {e}",
+            err=True,
+        )
         return None
 
 

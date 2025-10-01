@@ -108,7 +108,8 @@ def cli_oracle_students_update():
             created_enrollments += 1
             click.echo(f"📝 Enrollment created: student={student.id}, subject={subj.id}, semester={sem.id}", err=True)
         else:
-            click.echo(f"ℹ️ Enrollment already exists for student={student.id}, subject={subj.id}, semester={sem.id}", err=True)
+            click.echo(f"ℹ️ Enrollment already exists for student={student.id}, subject={subj.id}, semester={sem.id}",
+                       err=True)
 
     # ⚡ Remove enrollments of students that disappeared from the view
     click.echo("\n🔄 Checking for stale enrollments to remove...", err=True)
@@ -139,6 +140,7 @@ def cli_oracle_students_update():
         err=True
     )
 
+
 @click.command("oracle-semesters")
 @with_appcontext
 def cli_oracle_semesters():
@@ -157,6 +159,7 @@ def cli_oracle_semesters():
     click.echo("📚 Semesters present in Oracle view:")
     for sem_id, in semesters:
         click.echo(f" - {sem_id}")
+
 
 @click.command("oracle-teachers")
 @with_appcontext

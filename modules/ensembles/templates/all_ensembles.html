@@ -61,7 +61,11 @@
                                     {% endfor %}
                                 </td>
                                 <td>
-                                    {% if ensemble.health_check == "OK" %}
+                               {% if ensemble.exception.status == "approved" %}
+                                   <span class="badge bg-info">
+                                <i class="fas fa-circle-user me-1"></i> Výjimka
+                            </span>
+                                    {% elif ensemble.health_check == "OK" %}
                                         <span class="badge bg-success">
                                 <i class="fas fa-check-circle me-1"></i> OK
                             </span>

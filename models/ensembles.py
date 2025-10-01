@@ -40,6 +40,9 @@ class Ensemble(db.Model):
     name = db.Column(db.String(160), nullable=False, unique=False)
     active = db.Column(db.Boolean, default=True)
 
+    exception_id = db.Column(db.Integer, db.ForeignKey('student_chamber_application_exceptions.id', ondelete="CASCADE"))
+    exception = relationship("StudentChamberApplicationException", back_populates="ensemble", uselist=False)
+
     semester_links = db.relationship(
         "EnsembleSemester",
         back_populates="ensemble",
@@ -185,4 +188,3 @@ class EnsembleTeacher(db.Model):
     teacher = db.relationship("Teacher", back_populates="ensemble_links")
     ensemble = db.relationship("Ensemble", back_populates="teacher_links")
     semester = db.relationship("Semester")
-

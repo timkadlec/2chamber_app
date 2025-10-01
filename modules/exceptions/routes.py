@@ -1,9 +1,11 @@
 from . import exceptions_bp
-from flask_login import login_required
+from flask_login import login_required, current_user
 from utils.nav import navlink
-from flask import render_template, request
+from flask import render_template, request, flash, redirect, url_for
 from utils.decorators import role_required
 from models import db, StudentChamberApplicationException
+from modules.chamber_applications.routes import approve_applications
+from datetime import datetime
 
 
 @exceptions_bp.route("/", methods=["GET"])
@@ -29,3 +31,104 @@ def index():
 def detail(exception_id):
     exception = StudentChamberApplicationException.query.get_or_404(exception_id)
     return render_template("exception_detail.html", exception=exception)
+
+
+@exceptions_bp.route("/<int:exception_id>/view")
+def view(exception_id):
+    exception = StudentChamberApplicationException.query.get_or_404(exception_id)
+    return render_template("exception_view.html", exception=exception)
+
+
+def approve_exception(exc: StudentChamberApplicationException, reviewer, comment=None):
+    """
+    Approve a StudentChamberApplicationException and run normal application approval.
+    """
+    if exc.status == "approved":
+        raise ValueError("Exception is already approved.")
+
+    # update exception
+    exc.status = "approved"
+    exc.reviewer_comment = comment
+    exc.reviewed_at = datetime.utcnow()
+    exc.reviewed_by = reviewer
+
+    # approve the related application(s) using your existing logic
+    new_ensemble, all_apps = approve_applications(exc.application, reviewer, comment)
+
+    # 🔗 link the ensemble back to the exception
+    new_ensemble.exception = exc
+    db.session.add(new_ensemble)
+
+    db.session.add(exc)
+    db.session.commit()
+
+    return exc, new_ensemble, all_apps
+
+
+from modules.chamber_applications.routes import get_status_by_code
+
+
+def reject_applications(application, reviewer, comment=None):
+    """
+    Reject a StudentChamberApplication and all its related applications.
+    """
+    rejected_status = get_status_by_code("rejected")
+    if not rejected_status:
+        raise ValueError("Status 'rejected' missing in database")
+
+    related_apps = application.related_applications
+    all_apps = [application] + related_apps
+
+    for a in all_apps:
+        a.status = rejected_status
+        a.reviewed_at = datetime.utcnow()
+        a.reviewed_by = reviewer
+        a.review_comment = comment
+
+    db.session.add_all(all_apps)
+    db.session.commit()
+    return all_apps
+
+
+@exceptions_bp.route("/<int:exception_id>/decision", methods=["POST"])
+@login_required
+@role_required("admin")
+def exception_decision(exception_id):
+    exc = StudentChamberApplicationException.query.get_or_404(exception_id)
+    decision = request.form.get("decision")
+    comment = request.form.get("comment")
+
+    if decision not in ["approved", "rejected"]:
+        flash("Neplatné rozhodnutí.", "danger")
+        return redirect(url_for("exceptions.detail", exception_id=exception_id))
+
+    if decision == "approved":
+        try:
+            exc, new_ensemble, all_apps = approve_exception(exc, current_user, comment)
+            flash(
+                f"Výjimka č. {exc.id} byla schválena. "
+                f"Žádosti {[a.id for a in all_apps]} schváleny a vytvořen soubor č. {new_ensemble.id}.",
+                "success"
+            )
+            return redirect(url_for("ensemble.ensemble_detail", ensemble_id=new_ensemble.id))
+        except ValueError as e:
+            flash(str(e), "danger")
+            return redirect(url_for("exceptions.detail", exception_id=exception_id))
+
+
+    elif decision == "rejected":
+        exc.status = "rejected"
+        exc.reviewer_comment = comment
+        exc.reviewed_at = datetime.utcnow()
+        exc.reviewed_by = current_user
+        try:
+            all_apps = reject_applications(exc.application, current_user, comment)
+        except ValueError as e:
+            flash(str(e), "danger")
+            return redirect(url_for("exceptions.detail", exception_id=exception_id))
+        flash(
+            f"Výjimka č. {exc.id} byla zamítnuta. "
+            f"Žádosti {[a.id for a in all_apps]} byly označeny jako zamítnuté.",
+            "warning"
+        )
+        return redirect(url_for("exceptions.detail", exception_id=exception_id))

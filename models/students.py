@@ -226,6 +226,8 @@ class StudentChamberApplicationException(db.Model):
 
     status = db.Column(db.String(255), default="pending")
 
+    ensemble = relationship("Ensemble", back_populates="exception", uselist=False)
+
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     created_by_id = db.Column(db.String, db.ForeignKey('users.id', ondelete='SET NULL'))
     created_by = relationship(

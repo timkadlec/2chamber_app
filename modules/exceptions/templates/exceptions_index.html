@@ -71,10 +71,17 @@
 
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">
+                                        {% if not exception.status == "approved" or exception.status == "rejected" %}
                                         <a href="{{ url_for('exceptions.detail', exception_id=exception.id) }}"
                                            class="btn btn-outline-primary" title="Posoudit žádost">
                                             <i class="fas fa-gavel"></i>
                                         </a>
+                                        {% else %}
+                                            <a href="{{ url_for('exceptions.view', exception_id=exception.id) }}"
+                                           class="btn btn-outline-info" title="Náhlédnout">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% endif %}
                                         <button type="button"
                                                 class="btn btn-outline-danger"
                                                 data-bs-toggle="modal"

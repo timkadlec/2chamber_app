@@ -69,7 +69,13 @@
 
                     <!-- Výsledek kontroly -->
                     <div class="mt-2">
-                        {% if ensemble.health_check == "OK" %}
+                        {% if ensemble.exception %}
+                            <div class="alert alert-info py-2 px-3 mb-0 d-flex align-items-center">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span>Výsledek kontroly: <strong>Soubor schválený na základě <a
+                                        href="{{ url_for('exceptions.detail', exception_id=ensemble.exception.id) }}">Výjimky č. {{ ensemble.exception.id }}</a></strong></span>
+                            </div>
+                        {% elif ensemble.health_check == "OK" %}
                             <div class="alert alert-success py-2 px-3 mb-0 d-flex align-items-center">
                                 <i class="fas fa-check-circle me-2"></i>
                                 <span>Výsledek kontroly: <strong>{{ ensemble.health_check }}</strong></span>

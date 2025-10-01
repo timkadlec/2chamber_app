@@ -26,6 +26,7 @@
                             <th>Nástroj žadatele</th>
                             <th>Spoluhráči</th>
                             <th>Důvod</th>
+                            <th>Stav</th>
                             <th class="text-end">Akce</th>
                         </tr>
                         </thead>
@@ -55,12 +56,22 @@
                                         {% if not loop.last %}, {% endif %}
                                     {% endfor %}
                                 </td>
-                            <td>
-                                {{ exception.reason }}
-                            </td>
+                                <td>
+                                    {{ exception.reason }}
+                                </td>
+                                <td>
+                                    {% if exception.status == 'pending' %}
+                                        <span class="badge rounded-pill bg-warning text-dark">Čeká na schválení</span>
+                                    {% elif exception.status == 'rejected' %}
+                                        <span class="badge rounded-pill bg-danger">Zamítnuto</span>
+                                    {% elif exception.status == 'approved' %}
+                                        <span class="badge rounded-pill bg-success">Schváleno</span>
+                                    {% endif %}
+                                </td>
+
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm" role="group">
-                                        <a href="#"
+                                        <a href="{{ url_for('exceptions.detail', exception_id=exception.id) }}"
                                            class="btn btn-outline-primary" title="Detail">
                                             <i class="fas fa-eye"></i>
                                         </a>

@@ -1,7 +1,9 @@
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import or_
 from models import Semester, db, AcademicYear, StudentSubjectEnrollment, Subject, Instrument, Student, Player, Teacher
 import re
 import click
+
 
 def get_or_create_academic_year(semester_id: str):
     year = int(semester_id[:4])  # e.g., "2025"
@@ -86,7 +88,12 @@ def get_or_create_student(oracle_student_model):
         # If not found, try lookup by osobni_cislo (personal number)
         lookup = Student.query.filter_by(osobni_cislo=str(oracle_student_model.CISLO_OSOBY)).first()
 
-    instrument = Instrument.query.filter_by(name=oracle_student_model.KATEDRA_NAZEV).first()
+    instrument = Instrument.query.filter(
+        or_(
+            Instrument.name == oracle_student_model.KATEDRA_NAZEV,
+            Instrument.name_en == oracle_student_model.KATEDRA_NAZEV
+        )
+    ).first()
     if not instrument:
         click.echo(
             f"⚠️ No instrument found for student {oracle_student_model.JMENO} {oracle_student_model.PRIJMENI} "

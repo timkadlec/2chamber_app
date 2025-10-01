@@ -23,3 +23,9 @@ def index():
         exceptions=pagination.items,
         pagination=pagination
     )
+
+
+@exceptions_bp.route("/<int:exception_id>")
+def detail(exception_id):
+    exception = StudentChamberApplicationException.query.get_or_404(exception_id)
+    return render_template("exception_detail.html", exception=exception)

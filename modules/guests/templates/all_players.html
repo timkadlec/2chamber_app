@@ -30,6 +30,7 @@
                         </tr>
                         </thead>
                         <tbody>
+                        {% if players %}
                         {% for player in players %}
                             <tr>
                                 <td>
@@ -94,6 +95,7 @@
                                 </td>
                             </tr>
                         {% endfor %}
+                        {% endif %}
                         </tbody>
                     </table>
                 </div>

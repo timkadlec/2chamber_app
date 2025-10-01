@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Detail výjimky #{{ exception.id }}{% endblock %}
+
+{% block content %}
+    <main class="py-4">
+        <div class="container-xl">
+            {% from "macros/_back_button.html" import back_link %}
+
+            {{ back_link("exceptions.index", "Zpět na výjimky", request.args) }}
+            <!-- Official-style card -->
+            <div class="card shadow-sm">
+
+                <div class="card-header text-center">
+                    <h4 class="mb-0 fw-bold">Akademie múzických umění v Praze</h4>
+                    <small class="text-muted">Žádost o výjimku v rámci předmětu Komorní hra</small>
+                </div>
+                <div class="card-body p-5">
+
+
+                    <!-- Document heading -->
+                    <h5 class="text-center mb-4 text-uppercase">Protokol o výjimce</h5>
+
+                    <!-- Exception Metadata -->
+                    <table class="table table-borderless mb-4">
+                        <tr>
+                            <th scope="row" style="width: 25%">Číslo výjimky:</th>
+                            <td>#{{ exception.id }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Žádost:</th>
+                            <td>
+                                <a href="{{ url_for('chamber_applications.detail', application_id=exception.application.id) }}">
+                                    Žádost #{{ exception.application.id }}
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Datum podání:</th>
+                            <td>{{ exception.created_at.strftime("%d.%m.%Y %H:%M") }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Podal:</th>
+                            <td>{{ exception.created_by.display_name if exception.created_by else "—" }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Stav:</th>
+                            <td>
+                                {% if exception.status == 'pending' %}
+                                    <span class="badge rounded-pill bg-warning text-dark">Čeká na schválení</span>
+                                {% elif exception.status == 'approved' %}
+                                    <span class="badge rounded-pill bg-success">Schváleno</span>
+                                {% elif exception.status == 'rejected' %}
+                                    <span class="badge rounded-pill bg-danger">Zamítnuto</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+
+                    <!-- Reason -->
+                    <h6 class="fw-bold mt-4">Odůvodnění žádosti:</h6>
+                    <p class="border rounded p-3 bg-light">{{ exception.reason }}</p>
+
+                    <!-- Reviewer -->
+                    {% if exception.reviewed_by %}
+                        <h6 class="fw-bold mt-4">Rozhodnutí:</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <th scope="row" style="width: 25%">Posuzoval:</th>
+                                <td>{{ exception.reviewed_by.display_name }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Datum rozhodnutí:</th>
+                                <td>{{ exception.reviewed_at.strftime("%d.%m.%Y %H:%M") }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Komentář:</th>
+                                <td>{{ exception.reviewer_comment or "—" }}</td>
+                            </tr>
+                        </table>
+                    {% endif %}
+
+                    <!-- Footer (decision area) -->
+                    <div class="mt-5">
+                        <h6 class="fw-bold mb-3">Rozhodnutí:</h6>
+                        <div class="d-flex gap-3">
+                            <!-- Approve button -->
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal">
+                                <i class="fas fa-check me-2"></i> Schválit
+                            </button>
+
+                            <!-- Reject button -->
+                            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                                <i class="fas fa-times me-2"></i> Zamítnout
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Approve Modal -->
+                    <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <form method="post" action="#">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="approveModalLabel">Potvrdit schválení</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Zavřít"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Opravdu chcete schválit tuto výjimku?</p>
+                                        <div class="mb-3">
+                                            <label for="approveComment" class="form-label">Komentář (volitelný)</label>
+                                            <textarea class="form-control" id="approveComment" name="comment"
+                                                      rows="3"></textarea>
+                                        </div>
+                                        <input type="hidden" name="decision" value="approved">
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit
+                                        </button>
+                                        <button type="submit" class="btn btn-success">Potvrdit schválení</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Reject Modal -->
+                    <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <form method="post" action="#">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="rejectModalLabel">Potvrdit zamítnutí</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Zavřít"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Opravdu chcete zamítnout tuto výjimku?</p>
+                                        <div class="mb-3">
+                                            <label for="rejectComment" class="form-label">Komentář (volitelný)</label>
+                                            <textarea class="form-control" id="rejectComment" name="comment"
+                                                      rows="3"></textarea>
+                                        </div>
+                                        <input type="hidden" name="decision" value="rejected">
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit
+                                        </button>
+                                        <button type="submit" class="btn btn-danger">Potvrdit zamítnutí</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </main>
+{% endblock %}

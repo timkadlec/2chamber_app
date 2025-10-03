@@ -28,6 +28,24 @@
                 </select>
             </div>
 
+            <!-- Health check filter -->
+            <div class="col-md-3">
+                <label for="health" class="form-label">Stav souboru</label>
+                <select class="form-select form-select-sm" id="health" name="health">
+                    <option value="">Všechny</option>
+                    <option value="OK" {{ 'selected' if health_filter == 'OK' else '' }}>OK</option>
+                    <option value="Soubor nesplňuje kritérium minima hráčů."
+                            {{ 'selected' if health_filter == 'Soubor nesplňuje kritérium minima hráčů.' else '' }}>
+                        Nesplňuje minimum hráčů
+                    </option>
+                    <option value="Soubor obsahuej vysoké procento hostů."
+                            {{ 'selected' if health_filter == 'Soubor obsahuej vysoké procento hostů.' else '' }}>
+                        Vysoké procento hostů
+                    </option>
+                </select>
+            </div>
+
+
             <!-- Search field -->
             <div class="col-md-3">
                 <label for="filter-q" class="form-label">Hledat hráče nebo soubor</label>
@@ -64,6 +82,10 @@
             new TomSelect("#teacher_id", {
                 plugins: {remove_button: {title: "Odebrat"}},
                 placeholder: "Vyberte pedagoga"
+            });
+            new TomSelect("#health", {
+                placeholder: "Vyberte stav",
+                allowEmptyOption: true
             });
         });
     </script>

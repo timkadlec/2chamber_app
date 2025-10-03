@@ -21,6 +21,7 @@ def index():
     instrument_ids = request.args.getlist("instrument_id", type=int)
     teacher_ids = request.args.getlist("teacher_id", type=int)
     search_query = request.args.get("q", "").strip()
+    health_filter = request.args.get("health", "").strip()
 
     def strip_diacritics(s: str) -> str:
         # Normalize to NFD (decomposed form), then remove combining marks
@@ -52,11 +53,10 @@ def index():
     # --- player or ensemble search ---
     if search_query:
         search_pattern = f"%{search}%"
-
         ensembles = (
             ensembles
-            .join(Ensemble.player_links)
-            .join(EnsemblePlayer.player)
+            .outerjoin(Ensemble.player_links)
+            .outerjoin(EnsemblePlayer.player)
             .filter(
                 or_(
                     func.unaccent(func.lower(Player.first_name)).like(search_pattern),
@@ -65,6 +65,10 @@ def index():
                 )
             )
         )
+
+    # --- health check filter ---
+    if health_filter:
+        ensembles = ensembles.filter(Ensemble.health_check_label == health_filter)
 
     # --- distinct + order + pagination ---
     pagination = ensembles.distinct().order_by(Ensemble.name).paginate(
@@ -82,7 +86,8 @@ def index():
         teachers=Teacher.query.order_by(Teacher.last_name, Teacher.first_name).all(),
         selected_instrument_ids=instrument_ids,
         selected_teacher_ids=teacher_ids,
-        search_query=search_query
+        search_query=search_query,
+        health_filter=health_filter,   # <-- pass to template
     )
 
 

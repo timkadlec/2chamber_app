@@ -4,6 +4,7 @@ from models.core import Instrumentation, Semester
 from datetime import date
 from collections import defaultdict
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import case, func
 
 
 def format_ensemble_instrumentation(instrumentation_entries):
@@ -114,6 +115,43 @@ class Ensemble(db.Model):
             return "OK"
         else:
             return "Soubor obsahuej vysoké procento hostů."
+
+    @hybrid_property
+    def health_check_label(self):
+        return self.health_check
+
+    @health_check_label.expression
+    def health_check_label(cls):
+        from models import Player
+        # count all players
+        total = (
+            db.select(func.count(EnsemblePlayer.id))
+            .where(EnsemblePlayer.ensemble_id == cls.id)
+            .correlate(cls)
+            .scalar_subquery()
+        )
+
+        # count student players (player.student_id not null)
+        student_count = (
+            db.select(func.count(EnsemblePlayer.id))
+            .join(Player, EnsemblePlayer.player_id == Player.id)
+            .where(EnsemblePlayer.ensemble_id == cls.id)
+            .where(Player.student_id.isnot(None))
+            .correlate(cls)
+            .scalar_subquery()
+        )
+
+        return case(
+            (
+                total <= 2,
+                "Soubor nesplňuje kritérium minima hráčů."
+            ),
+            (
+                (student_count * 100.0 / func.nullif(total, 0)) > 50,
+                "OK"
+            ),
+            else_="Soubor obsahuej vysoké procento hostů."
+        )
 
 
 class EnsembleInstrumentation(Instrumentation):

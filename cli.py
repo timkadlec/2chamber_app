@@ -1,9 +1,12 @@
 import click
 from flask.cli import with_appcontext
-from models import db, KomorniHraStud, StudentSubjectEnrollment, KomorniHraUcitel
-from utils.import_oracle import get_or_create_academic_year, get_or_create_semester, get_or_create_subject, \
-    get_or_create_student, get_or_create_player_from_student, student_subject_enrollment, get_or_create_teacher
+from models import db, KomorniHraStud, StudentSubjectEnrollment, KomorniHraUcitel, Subject
+from utils.import_oracle import (get_or_create_academic_year, get_or_create_semester, get_or_create_subject, \
+                                 get_or_create_student, get_or_create_player_from_student, student_subject_enrollment,
+                                 get_or_create_teacher,
+                                 status_allows_enrollment, student_semester_enrollment)
 from sqlalchemy.exc import IntegrityError, DBAPIError
+from collections import defaultdict
 
 
 @click.command("format-academic-year")
@@ -55,88 +58,187 @@ def cli_oracle_ping():
 
 
 @click.command("oracle-student-update")
+@click.option("--dry-run", is_flag=True, help="Simulate the import without committing any DB changes.")
 @with_appcontext
-def cli_oracle_students_update():
-    created_students = created_players = created_enrollments = 0
-    skipped = 0
+def cli_oracle_students_update(dry_run):
+    """
+    Sync students & enrollments from Oracle view, enrolling only statuses S/K,
+    skipping P, and cleaning up stale enrollments per (semester, subject).
+    """
+    created_students = 0
+    created_players = 0
+    created_sse = 0  # StudentSemesterEnrollment (per-semester)
+    created_sse_subject = 0  # StudentSubjectEnrollment (per-subject)
+    skipped_no_instrument = 0
+    skipped_status_p = 0
+    row_errors = 0
 
     click.echo("🔍 Fetching Oracle students...", err=True)
-    oracle_students = db.session.query(KomorniHraStud).all()
-    click.echo(f"Found {len(oracle_students)} rows in Oracle view.", err=True)
+    oracle_rows = db.session.query(KomorniHraStud).all()
+    click.echo(f"Found {len(oracle_rows)} rows in Oracle view.", err=True)
 
-    # semester -> set(student_id) that should stay
-    active_students_by_semester = {}
+    # (sem_id, subj_id) -> set(student_id) that MUST remain enrolled
+    active_by_sem_subj: dict[tuple[int, int], set[int]] = defaultdict(set)
 
-    for idx, ors in enumerate(oracle_students, start=1):
-        click.echo(f"\n➡️ Processing row {idx}: {ors}", err=True)
+    # De-dup rows (some views return duplicates)
+    seen = set()  # key = (ID_STUDIA, SEMESTR_ID, PREDMET_KOD)
 
-        # student
-        student = get_or_create_student(ors)
-        db.session.flush()
-        if not student:
-            skipped += 1
-            click.echo(f"⚠️ Skipped (no instrument or error) for row {idx}: {ors}", err=True)
+    for idx, ors in enumerate(oracle_rows, start=1):
+        key = (ors.ID_STUDIA, ors.SEMESTR_ID, ors.PREDMET_KOD)
+        if key in seen:
+            click.echo(f"↩️  [{idx}] Duplicate row skipped: {ors}", err=True)
             continue
-        else:
+        seen.add(key)
+
+        try:
+            status = (ors.STUDUJE or "").strip().upper()
+            click.echo(f"\n➡️ [{idx}] {ors} | status={status}", err=True)
+
+            # 1) Ensure Semester + Subject exist (log exact failures)
+            sem = get_or_create_semester(ors.SEMESTR_ID)
+            subj = get_or_create_subject(ors.PREDMET_NAZEV, ors.PREDMET_KOD)
+            if not sem or not subj:
+                click.echo(f"⚠️ [{idx}] Skipped: semester/subject missing (sem={sem}, subj={subj})", err=True)
+                row_errors += 1
+                continue
+
+            # 2) Create/update Student (also sets active based on status)
+            student = get_or_create_student(ors)
+            db.session.flush()
+            if not student:
+                skipped_no_instrument += 1
+                click.echo(f"⚠️ [{idx}] Skipped: student unresolved (likely instrument mapping).", err=True)
+                continue
+
             created_students += 1
-            click.echo(f"✅ Student mapped/created: {student}", err=True)
+            click.echo(f"✅ [{idx}] Student mapped: id={student.id} name={student.full_name}", err=True)
 
-        # track this student as active for this semester
-        active_students_by_semester.setdefault(ors.SEMESTR_ID, set()).add(student.id)
+            # 3) Ensure Player
+            player = get_or_create_player_from_student(student)
+            db.session.flush()
+            if player:
+                created_players += 1
+                click.echo(f"🎻 [{idx}] Player mapped: id={player.id}", err=True)
+            else:
+                click.echo(f"ℹ️ [{idx}] Player not created (already exists or error).", err=True)
 
-        # player
-        player = get_or_create_player_from_student(student)
-        db.session.flush()
-        if player:
-            created_players += 1
-            click.echo(f"🎻 Player created/mapped: {player}", err=True)
-        else:
-            click.echo(f"⚠️ No player created for student {student}", err=True)
+            # 4) Track active enrollment intent only for S/K (not P)
+            if status_allows_enrollment(status):
+                active_by_sem_subj[(sem.id, subj.id)].add(student.id)
+            else:
+                skipped_status_p += 1
+                click.echo(f"🚫 [{idx}] Status=P (aborted) — will not enroll; may be removed in cleanup.", err=True)
 
-        # semester + subject
-        ay = get_or_create_academic_year(ors.SEMESTR_ID)
-        sem = get_or_create_semester(ors.SEMESTR_ID)
-        subj = get_or_create_subject(ors.PREDMET_NAZEV, ors.PREDMET_KOD)
-        click.echo(f"📚 Semester {sem}, Subject {subj}", err=True)
+            # 5) Ensure StudentSemesterEnrollment (optional but useful)
+            sse, sse_created = student_semester_enrollment(student.id, sem.id)
+            if sse_created:
+                created_sse += 1
+                click.echo(f"🗓️  [{idx}] SemesterEnrollment created (student={student.id}, sem={sem.id})", err=True)
 
-        if not (ay and sem and subj):
-            skipped += 1
-            click.echo(f"⚠️ Skipped (semester/subject error) for student {student}", err=True)
-            continue
+            # 6) Ensure StudentSubjectEnrollment only for S/K
+            if status_allows_enrollment(status):
+                existing = StudentSubjectEnrollment.query.filter_by(
+                    student_id=student.id, subject_id=subj.id, semester_id=sem.id
+                ).first()
+                if not existing:
+                    new_enr = StudentSubjectEnrollment(
+                        student_id=student.id,
+                        subject_id=subj.id,
+                        semester_id=sem.id,
+                        erasmus=False,  # adjust if you propagate this
+                    )
+                    db.session.add(new_enr)
+                    db.session.flush()
+                    created_sse_subject += 1
+                    click.echo(f"📝 [{idx}] SubjectEnrollment created "
+                               f"(student={student.id}, subject={subj.id}, sem={sem.id})", err=True)
+                else:
+                    click.echo(f"✔️  [{idx}] SubjectEnrollment already exists "
+                               f"(student={student.id}, subject={subj.id}, sem={sem.id})", err=True)
+            else:
+                click.echo(f"⏭️ [{idx}] SubjectEnrollment skipped due to status={status}", err=True)
 
-        if student_subject_enrollment(student.id, subj.id, sem.id):
-            created_enrollments += 1
-            click.echo(f"📝 Enrollment created: student={student.id}, subject={subj.id}, semester={sem.id}", err=True)
-        else:
-            click.echo(f"ℹ️ Enrollment already exists for student={student.id}, subject={subj.id}, semester={sem.id}",
-                       err=True)
+        except IntegrityError as e:
+            db.session.rollback()
+            row_errors += 1
+            click.echo(f"❌ [{idx}] IntegrityError; rolled back: {e}", err=True)
+        except Exception as e:
+            db.session.rollback()
+            row_errors += 1
+            click.echo(f"💥 [{idx}] Unexpected error; rolled back: {e}", err=True)
 
-    # ⚡ Remove enrollments of students that disappeared from the view
-    click.echo("\n🔄 Checking for stale enrollments to remove...", err=True)
-    for sem_id, active_student_ids in active_students_by_semester.items():
-        existing_enrollments = (
+    # 7) Cleanup: remove stale enrollments ONLY for (semester, subject) pairs reported by Oracle
+    removal_stats = defaultdict(lambda: {"kept": 0, "removed": 0})
+    click.echo("\n🔄 Cleanup: removing stale enrollments per (semester, subject)…", err=True)
+
+    for (sem_id, subj_id), active_student_ids in active_by_sem_subj.items():
+        existing = (
             db.session.query(StudentSubjectEnrollment)
-            .filter(StudentSubjectEnrollment.semester_id == sem_id)
+            .filter(
+                StudentSubjectEnrollment.semester_id == sem_id,
+                StudentSubjectEnrollment.subject_id == subj_id,
+            )
             .all()
         )
-        for enr in existing_enrollments:
-            if enr.student_id not in active_student_ids:
+        for enr in existing:
+            if enr.student_id in active_student_ids:
+                removal_stats[(sem_id, subj_id)]["kept"] += 1
+            else:
+                removal_stats[(sem_id, subj_id)]["removed"] += 1
+                if not dry_run:
+                    db.session.delete(enr)
                 click.echo(
-                    f"❌ Removing stale enrollment: student {enr.student_id}, semester {sem_id}",
+                    f"{'❌' if not dry_run else '🟡 DRY-RUN'} "
+                    f"Enrollment: student={enr.student_id}, subject={subj_id}, semester={sem_id}",
                     err=True,
                 )
-                db.session.delete(enr)
 
-    try:
-        db.session.commit()
-        click.echo("💾 Commit successful.", err=True)
-    except IntegrityError as e:
+    # 8) Commit (or rollback in dry-run)
+    if dry_run:
         db.session.rollback()
-        click.echo(f"❌ Commit failed, rolled back. Error: {e}", err=True)
-        raise SystemExit(1)
+        click.echo("\n🟡 Dry-run mode: no changes committed.", err=True)
+    else:
+        try:
+            db.session.commit()
+            click.echo("💾 Commit successful.", err=True)
+        except IntegrityError as e:
+            db.session.rollback()
+            click.echo(f"❌ Commit failed, rolled back. Error: {e}", err=True)
+            raise SystemExit(1)
+
+    # 9) Summaries
+    removed_enrollments = sum(d["removed"] for d in removal_stats.values())
+
+    # Resolve subject names for nicer printing (cache)
+    subj_name_cache: dict[int, str] = {}
+
+    def subj_label(sid: int) -> str:
+        if sid not in subj_name_cache:
+            s = Subject.query.get(sid)
+            subj_name_cache[sid] = f"{s.name} ({s.code})" if s else f"Subject {sid}"
+        return subj_name_cache[sid]
+
+    click.echo("\n📊 Enrollment cleanup summary:", err=True)
+    if removal_stats:
+        for (sem_id, subj_id), stats in sorted(removal_stats.items()):
+            click.echo(
+                f"   Semester={sem_id}, Subject={subj_id} {subj_label(subj_id)}: "
+                f"kept={stats['kept']}, removed={stats['removed']}",
+                err=True,
+            )
+    else:
+        click.echo("   (no (semester,subject) pairs were processed from Oracle)", err=True)
 
     click.echo(
-        f"\n✅ Done. Created students: {created_students}, players: {created_players}, enrollments: {created_enrollments}, skipped: {skipped}",
+        "\n✅ Done.\n"
+        f"   Students mapped/created: {created_students}\n"
+        f"   Players mapped/created:  {created_players}\n"
+        f"   Semester enrollments:    +{created_sse}\n"
+        f"   Subject enrollments:     +{created_sse_subject}\n"
+        f"   Removed enrollments:     -{removed_enrollments}\n"
+        f"   Skipped (no instrument): {skipped_no_instrument}\n"
+        f"   Skipped (status P):      {skipped_status_p}\n"
+        f"   Row errors:              {row_errors}",
         err=True
     )
 

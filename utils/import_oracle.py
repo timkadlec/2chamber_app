@@ -34,24 +34,24 @@ def _get_semester_name(semester_id: str):
 
 
 def get_or_create_semester(semester_id: str):
-    lookup = Semester.query.filter_by(id=semester_id).first()
+    sem_id = int(semester_id)
+    lookup = Semester.query.get(sem_id)
     if lookup:
         return lookup
-    else:
-        try:
-            academic_year = get_or_create_academic_year(semester_id)
-            name = _get_semester_name(semester_id)
-            new_semester = Semester(
-                id=semester_id,
-                name=name,
-                academic_year_id=academic_year.id,
-            )
-            db.session.add(new_semester)
-            db.session.commit()
-            return new_semester
-        except IntegrityError:
-            db.session.rollback()
-            return None
+    try:
+        academic_year = get_or_create_academic_year(semester_id)
+        name = _get_semester_name(semester_id)
+        new_semester = Semester(
+            id=sem_id,
+            name=name,
+            academic_year_id=academic_year.id if academic_year else None,
+        )
+        db.session.add(new_semester)
+        db.session.commit()
+        return new_semester
+    except IntegrityError:
+        db.session.rollback()
+        return None
 
 
 def get_or_create_subject(subject_name: str, subject_code: str):
@@ -80,23 +80,40 @@ def get_or_create_subject(subject_name: str, subject_code: str):
         click.echo(f"❌ IntegrityError creating subject {subject_code}: {e}", err=True)
         return None
 
+def find_instrument_by_name(name: str):
+    if not name:
+        return None
 
-def get_or_create_student(oracle_student_model):
-    # First try lookup by study ID
-    lookup = Student.query.filter_by(id_studia=oracle_student_model.ID_STUDIA).first()
-    if not lookup:
-        # If not found, try lookup by osobni_cislo (personal number)
-        lookup = Student.query.filter_by(osobni_cislo=str(oracle_student_model.CISLO_OSOBY)).first()
-
-    instrument = Instrument.query.filter(
+    # try exact matches (CZ or EN)
+    instr = Instrument.query.filter(
         or_(
-            Instrument.name == oracle_student_model.KATEDRA_NAZEV,
-            Instrument.name_en == oracle_student_model.KATEDRA_NAZEV
+            Instrument.name.ilike(name.strip()),
+            Instrument.name_en.ilike(name.strip())
         )
     ).first()
+    if instr:
+        return instr
+
+    # fallback: basic normalization (e.g. singular/plural, capitalization)
+    name_lower = name.lower().strip()
+    return Instrument.query.filter(
+        or_(
+            Instrument.name.ilike(f"%{name_lower}%"),
+            Instrument.name_en.ilike(f"%{name_lower}%")
+        )
+    ).first()
+
+
+def get_or_create_student(oracle_student_model):
+    # lookup…
+    lookup = Student.query.filter_by(id_studia=oracle_student_model.ID_STUDIA).first()
+    if not lookup:
+        lookup = Student.query.filter_by(osobni_cislo=str(oracle_student_model.CISLO_OSOBY)).first()
+
+    instrument = find_instrument_by_name(oracle_student_model.KATEDRA_NAZEV)
     if not instrument:
         click.echo(
-            f"⚠️ No instrument found for student {oracle_student_model.JMENO} {oracle_student_model.PRIJMENI} "
+            f"⚠️ No instrument found for {oracle_student_model.JMENO} {oracle_student_model.PRIJMENI} "
             f"(osobni_cislo={oracle_student_model.CISLO_OSOBY}, id_studia={oracle_student_model.ID_STUDIA}, "
             f"katedra={oracle_student_model.KATEDRA_NAZEV})",
             err=True,
@@ -104,17 +121,20 @@ def get_or_create_student(oracle_student_model):
         return None
 
     if lookup:
-        # update existing record
         lookup.osobni_cislo = oracle_student_model.CISLO_OSOBY
         lookup.id_studia = oracle_student_model.ID_STUDIA
         lookup.last_name = oracle_student_model.PRIJMENI
         lookup.first_name = oracle_student_model.JMENO
         lookup.instrument_id = instrument.id
         lookup.email = oracle_student_model.EMAIL
+        # Optional: reflect aborted status
+        if getattr(oracle_student_model, "STUDUJE", None) == "P":
+            lookup.active = False
+        else:
+            lookup.active = True
         return lookup
 
     try:
-        # create new
         new_student = Student(
             osobni_cislo=oracle_student_model.CISLO_OSOBY,
             id_studia=oracle_student_model.ID_STUDIA,
@@ -122,6 +142,7 @@ def get_or_create_student(oracle_student_model):
             first_name=oracle_student_model.JMENO,
             instrument_id=instrument.id,
             email=oracle_student_model.EMAIL,
+            active=(getattr(oracle_student_model, "STUDUJE", None) != "P"),
         )
         db.session.add(new_student)
         db.session.flush()
@@ -153,6 +174,22 @@ def get_or_create_player_from_student(student_model):
     except IntegrityError:
         db.session.rollback()
         return None
+
+def student_semester_enrollment(student_id: int, semester_id: int):
+    from models import StudentSemesterEnrollment
+    sse = StudentSemesterEnrollment.query.filter_by(
+        student_id=student_id, semester_id=semester_id
+    ).first()
+    if sse:
+        return sse, False
+    sse = StudentSemesterEnrollment(student_id=student_id, semester_id=semester_id)
+    db.session.add(sse)
+    db.session.flush()
+    return sse, True
+
+def status_allows_enrollment(status: str) -> bool:
+    # S = studying, K = finished (keep), P = aborted (exclude)
+    return status in ("S", "K")
 
 
 def student_subject_enrollment(student_id: int, subject_id: int, semester_id: str):

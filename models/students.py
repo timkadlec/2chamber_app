@@ -123,6 +123,9 @@ class StudentChamberApplication(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
     student = relationship('Student', back_populates='chamber_applications')
 
+    teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id', ondelete='SET NULL'))
+    teacher = relationship('Teacher', foreign_keys=[teacher_id])
+
     status_id = db.Column(db.Integer, db.ForeignKey('student_chamber_application_statuses.id', ondelete='SET NULL'))
     status = relationship('StudentChamberApplicationStatus')
 

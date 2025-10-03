@@ -7,6 +7,7 @@ from . import ensemble_bp
 from sqlalchemy.orm import selectinload
 from sqlalchemy import or_, select, func
 from sqlalchemy.exc import IntegrityError
+import unicodedata
 
 
 @ensemble_bp.route("/all")
@@ -20,7 +21,15 @@ def index():
     instrument_ids = request.args.getlist("instrument_id", type=int)
     teacher_ids = request.args.getlist("teacher_id", type=int)
     search_query = request.args.get("q", "").strip()
-    search = search_query.lower()
+
+    def strip_diacritics(s: str) -> str:
+        # Normalize to NFD (decomposed form), then remove combining marks
+        return ''.join(
+            c for c in unicodedata.normalize("NFD", s)
+            if unicodedata.category(c) != "Mn"
+        )
+
+    search = strip_diacritics(search_query).lower()
 
     # --- base query restricted to current semester ---
     ensembles = Ensemble.query.filter(
@@ -40,11 +49,21 @@ def index():
             EnsembleTeacher.semester_id == current_semester  # only current semester teachers
         )
 
-    # --- player search ---
+    # --- player or ensemble search ---
     if search_query:
-        ensembles = ensembles.join(Ensemble.player_links).join(EnsemblePlayer.player).filter(
-            func.unaccent(func.lower(Player.first_name)).like(f"%{search}%") |
-            func.unaccent(func.lower(Player.last_name)).like(f"%{search}%")
+        search_pattern = f"%{search}%"
+
+        ensembles = (
+            ensembles
+            .join(Ensemble.player_links)
+            .join(EnsemblePlayer.player)
+            .filter(
+                or_(
+                    func.unaccent(func.lower(Player.first_name)).like(search_pattern),
+                    func.unaccent(func.lower(Player.last_name)).like(search_pattern),
+                    func.unaccent(func.lower(Ensemble.name)).like(search_pattern),
+                )
+            )
         )
 
     # --- distinct + order + pagination ---

@@ -76,6 +76,14 @@ class Ensemble(db.Model):
         order_by="EnsembleTeacher.semester_id"
     )
 
+    ensemble_notes = db.relationship(
+        "EnsembleNote",
+        back_populates="ensemble",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="EnsembleNote.created_at"
+    )
+
     @property
     def semesters(self):
         return sorted((link.semester for link in self.semester_links),
@@ -230,6 +238,28 @@ class EnsemblePlayer(db.Model):
             .correlate(cls)
             .scalar_subquery()
         )
+
+
+class EnsembleNote(db.Model):
+    __tablename__ = 'ensemble_notes'
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.Text, nullable=False)
+
+    ensemble_id = db.Column(
+        db.Integer,
+        db.ForeignKey('ensembles.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    ensemble = db.relationship("Ensemble", back_populates="ensemble_notes")
+
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
+
+    created_by_id = db.Column(db.String, db.ForeignKey('users.id', ondelete='SET NULL'))
+    created_by = db.relationship(
+        "User",
+        foreign_keys=[created_by_id]
+    )
+
 
 
 class EnsembleTeacher(db.Model):

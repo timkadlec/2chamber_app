@@ -3,6 +3,7 @@ from models import db
 from models.core import Instrumentation, Semester
 from datetime import date
 from collections import defaultdict
+from sqlalchemy.ext.hybrid import hybrid_property
 
 
 def format_ensemble_instrumentation(instrumentation_entries):
@@ -72,6 +73,10 @@ class Ensemble(db.Model):
         passive_deletes=True,
         order_by="EnsembleTeacher.semester_id"
     )
+
+    @hybrid_property
+    def player_sort_key(self):
+        return self.player.instrument.weight  # or self.player.name, etc.
 
     @property
     def semesters(self):

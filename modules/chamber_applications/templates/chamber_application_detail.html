@@ -209,7 +209,7 @@
                         </p>
                         {% if application.reviewed_at %}
                             <p class="small text-muted mb-1">
-                                Posuzoval: {{ application.reviewed_by.display_name if application.reviewed_by else "-" }}
+                                Posuzoval: {{ application.exception.reviewed_by.display_name if application.exception.reviewed_by else "-" }}
                             </p>
                             <p class="small text-muted mb-1">
                                 Rozhodnutí:

@@ -64,7 +64,6 @@ class Ensemble(db.Model):
         back_populates="ensemble",
         cascade="all, delete-orphan",
         passive_deletes=True,
-        order_by="EnsemblePlayer.player_sort_key"
     )
 
     teacher_links = db.relationship(
@@ -180,6 +179,7 @@ class EnsemblePlayer(db.Model):
     @hybrid_property
     def player_sort_key(self):
         return self.player.instrument.weight
+
 
 class EnsembleTeacher(db.Model):
     __tablename__ = 'ensemble_teachers'

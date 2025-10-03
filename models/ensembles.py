@@ -75,10 +75,6 @@ class Ensemble(db.Model):
         order_by="EnsembleTeacher.semester_id"
     )
 
-    @hybrid_property
-    def player_sort_key(self):
-        return self.player.instrument.weight  # or self.player.name, etc.
-
     @property
     def semesters(self):
         return sorted((link.semester for link in self.semester_links),
@@ -181,6 +177,9 @@ class EnsemblePlayer(db.Model):
     ensemble = db.relationship("Ensemble", back_populates="player_links")
     ensemble_instrumentation = db.relationship("EnsembleInstrumentation", back_populates="player_links")
 
+    @hybrid_property
+    def player_sort_key(self):
+        return self.player.instrument.weight
 
 class EnsembleTeacher(db.Model):
     __tablename__ = 'ensemble_teachers'

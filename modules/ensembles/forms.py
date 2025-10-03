@@ -22,6 +22,7 @@ def all_teachers_query():
     teachers = Teacher.query.order_by(Teacher.last_name).all()
     return teachers
 
+
 def teacher_label(teacher):
     return teacher.full_name
 
@@ -49,8 +50,13 @@ class TeacherForm(FlaskForm):
         query_factory=all_teachers_query,
         get_label=teacher_label,
         get_pk=lambda obj: obj.id,
-        allow_blank=True,              # <- allow empty selection
-        blank_text="",                 # <- no dummy text inside the list
-        default=None                   # <- start with nothing selected
+        allow_blank=True,  # <- allow empty selection
+        blank_text="",  # <- no dummy text inside the list
+        default=None  # <- start with nothing selected
     )
     submit = SubmitField("Přiřadit pedagoga")
+
+
+class NoteForm(FlaskForm):
+    text = TextAreaField("Text poznámky", validators=[DataRequired()])
+    submit = SubmitField("Uložit")

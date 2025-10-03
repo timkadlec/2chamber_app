@@ -1,8 +1,9 @@
 from flask import render_template, flash, redirect, url_for, session, request, jsonify
-from .forms import EnsembleForm, TeacherForm
+from flask_login import current_user
+from .forms import EnsembleForm, TeacherForm, NoteForm
 from utils.nav import navlink
 from models import db, Ensemble, EnsembleSemester, Player, Student, EnsemblePlayer, EnsembleInstrumentation, \
-    KomorniHraStud, Instrument, StudentSubjectEnrollment, Semester, EnsembleTeacher, Teacher
+    KomorniHraStud, Instrument, StudentSubjectEnrollment, Semester, EnsembleTeacher, Teacher, EnsembleNote
 from . import ensemble_bp
 from sqlalchemy.orm import selectinload
 from sqlalchemy import or_, select, func
@@ -87,7 +88,7 @@ def index():
         selected_instrument_ids=instrument_ids,
         selected_teacher_ids=teacher_ids,
         search_query=search_query,
-        health_filter=health_filter,   # <-- pass to template
+        health_filter=health_filter,  # <-- pass to template
     )
 
 
@@ -130,6 +131,7 @@ def ensemble_detail(ensemble_id):
     ensemble = Ensemble.query.filter_by(id=ensemble_id).first_or_404()
 
     teacher_form = TeacherForm()
+    note_form = NoteForm()
 
     instrumentations = ensemble.instrumentation_entries
     player_links = sorted(
@@ -165,6 +167,7 @@ def ensemble_detail(ensemble_id):
         available_students=available_students,
         available_instruments=available_instruments,
         teacher_form=teacher_form,
+        note_form=note_form,
     )
 
 
@@ -413,3 +416,29 @@ def ensemble_remove_teacher(assignment_id):
     db.session.commit()
     flash("Pedagog byl úspěšně odebrán ze souboru", "success")
     return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
+
+
+@ensemble_bp.route("/<int:ensemble_id>/add_note", methods=["POST"])
+def add_note(ensemble_id):
+    form = NoteForm()
+    if form.validate_on_submit():
+        note = EnsembleNote(
+            text=form.text.data,
+            ensemble_id=ensemble_id,
+            created_by=current_user
+        )
+        db.session.add(note)
+        db.session.commit()
+        flash("Poznámka byla přidána.", "success")
+    else:
+        flash("Nepodařilo se přidat poznámku.", "danger")
+    return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble_id))
+
+
+@ensemble_bp.route("/<int:ensemble_id>/notes/<int:note_id>/delete", methods=["POST"])
+def delete_note(ensemble_id, note_id):
+    note = EnsembleNote.query.filter_by(id=note_id, ensemble_id=ensemble_id).first_or_404()
+    db.session.delete(note)
+    db.session.commit()
+    flash("Poznámka byla smazána.", "info")
+    return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble_id))

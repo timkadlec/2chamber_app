@@ -80,6 +80,7 @@ def get_or_create_subject(subject_name: str, subject_code: str):
         click.echo(f"❌ IntegrityError creating subject {subject_code}: {e}", err=True)
         return None
 
+
 def find_instrument_by_name(name: str):
     if not name:
         return None
@@ -105,7 +106,6 @@ def find_instrument_by_name(name: str):
 
 
 def get_or_create_student(oracle_student_model):
-    # lookup…
     lookup = Student.query.filter_by(id_studia=oracle_student_model.ID_STUDIA).first()
     if not lookup:
         lookup = Student.query.filter_by(osobni_cislo=str(oracle_student_model.CISLO_OSOBY)).first()
@@ -177,6 +177,7 @@ def get_or_create_player_from_student(student_model):
         db.session.rollback()
         return None
 
+
 def student_semester_enrollment(student_id: int, semester_id: int):
     from models import StudentSemesterEnrollment
     sse = StudentSemesterEnrollment.query.filter_by(
@@ -188,6 +189,7 @@ def student_semester_enrollment(student_id: int, semester_id: int):
     db.session.add(sse)
     db.session.flush()
     return sse, True
+
 
 def status_allows_enrollment(status: str) -> bool:
     # S = studying, K = finished (keep), P = aborted (exclude)
@@ -209,7 +211,7 @@ def student_subject_enrollment(student_id: int, subject_id: int, semester_id: st
         semester_id=semester_id,
     )
     db.session.add(sse)
-    db.session.flush()  # assigns PKs if any
+    db.session.flush()
     return sse
 
 

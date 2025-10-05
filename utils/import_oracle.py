@@ -127,6 +127,7 @@ def get_or_create_student(oracle_student_model):
         lookup.first_name = oracle_student_model.JMENO
         lookup.instrument_id = instrument.id
         lookup.email = oracle_student_model.EMAIL
+        lookup.state = oracle_student_model.STUDUJE
         # Optional: reflect aborted status
         if getattr(oracle_student_model, "STUDUJE", None) == "P":
             lookup.active = False
@@ -143,6 +144,7 @@ def get_or_create_student(oracle_student_model):
             instrument_id=instrument.id,
             email=oracle_student_model.EMAIL,
             active=(getattr(oracle_student_model, "STUDUJE", None) != "P"),
+            state=oracle_student_model.STUDUJE,
         )
         db.session.add(new_student)
         db.session.flush()

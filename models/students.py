@@ -16,6 +16,8 @@ class Student(db.Model):
     active = db.Column(db.Boolean, default=True, index=True)
     id_studia = db.Column(db.Integer())
 
+    state = db.Column(db.String(256))
+
     instrument_id = db.Column(db.Integer, db.ForeignKey('instruments.id', ondelete='SET NULL'))
     instrument = relationship('Instrument')
 

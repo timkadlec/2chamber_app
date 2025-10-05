@@ -87,7 +87,6 @@ class Ensemble(db.Model):
     application_links = db.relationship(
         "EnsembleApplication",
         back_populates="ensemble",
-        uselist=False,
         cascade="all, delete-orphan",
         passive_deletes=True
     )
@@ -256,20 +255,20 @@ class EnsembleApplication(db.Model):
         db.Integer,
         db.ForeignKey("ensembles.id", ondelete="CASCADE"),
         nullable=False,
-        unique=True  # each ensemble only linked to one application
+        index=True   # no UNIQUE constraint anymore
     )
     application_id = db.Column(
         db.Integer,
         db.ForeignKey("student_chamber_applications.id", ondelete="CASCADE"),
         nullable=False,
-        unique=True  # each application produces only one ensemble
+        unique=True  # each application still only maps to one ensemble
     )
 
     created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
     created_by_id = db.Column(db.String, db.ForeignKey("users.id", ondelete="SET NULL"))
     created_by = db.relationship("User", foreign_keys=[created_by_id])
 
-    ensemble = db.relationship("Ensemble", back_populates="application_links", uselist=False)
+    ensemble = db.relationship("Ensemble", back_populates="application_links")
     application = db.relationship("StudentChamberApplication", back_populates="ensemble_link", uselist=False)
 
 

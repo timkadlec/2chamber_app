@@ -108,7 +108,7 @@ def ensemble_add():
         db.session.add(ensemble_semester)
         db.session.commit()
         flash("Byl úspěšně přidán soubor.", "success")
-        return redirect(url_for("ensemble.index"))
+        return redirect(url_for("ensemble.ensemble_detail", ensemble_id=new_ensemble.id,))
     return render_template("ensemble_form.html", form=form)
 
 
@@ -316,6 +316,70 @@ def add_empty_player(ensemble_id):
         return jsonify({"message": f"Chyba při přidávání hráče: {e.orig}"}), 409
 
     flash("Prázdný hráč byl úspěšně přidán", "success")
+    return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
+
+
+@ensemble_bp.route("/<int:ensemble_id>/add-preset", methods=["POST"])
+def add_preset_ensemble(ensemble_id):
+    """Quickly create a predefined ensemble structure."""
+    ensemble = Ensemble.query.get_or_404(ensemble_id)
+    preset_key = request.form.get("preset")
+
+    # Define instrument templates by name
+    presets = {
+        "2flutes_piano": ["Flétna", "Flétna", "Klavír"],
+        "wind_trio": ["Hoboj", "Klarinet", "Fagot"],
+        "wind_quintet": ["Flétna", "Hoboj", "Klarinet", "Fagot", "Lesní roh"],
+        "string_quartet": ["Housle", "Housle", "Viola", "Violoncello"],
+        "piano_trio": ["Housle", "Violoncello", "Klavír"],
+        "piano_quartet": ["Housle", "Viola", "Violoncello", "Klavír"],
+        "brass_quintet": ["Trubka", "Trubka", "Lesní roh", "Pozoun", "Tuba"],
+        "guitar_duo": ["Kytara", "Kytara"]
+    }
+
+    instruments = presets.get(preset_key)
+    if not instruments:
+        flash("Neznámý preset souboru.", "danger")
+        return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
+
+    created_names = []
+
+    # Create instrumentations + empty player slots
+    for position, name in enumerate(instruments, start=1):
+        instrument = db.session.query(
+            db.inspect(EnsembleInstrumentation).mapper.class_.instrument.property.mapper.class_).filter_by(
+            name=name).first()
+        # Or simpler if you have direct Instrument model import:
+        # from models import Instrument
+        # instrument = Instrument.query.filter_by(name=name).first()
+
+        if not instrument:
+            flash(f"Nástroj „{name}“ nebyl nalezen.", "warning")
+            continue
+
+        new_instr = EnsembleInstrumentation(
+            ensemble_id=ensemble.id,
+            instrument_id=instrument.id,
+            position=position
+        )
+        db.session.add(new_instr)
+        db.session.flush()
+
+        empty_slot = EnsemblePlayer(
+            ensemble_id=ensemble.id,
+            ensemble_instrumentation_id=new_instr.id,
+            player_id=None
+        )
+        db.session.add(empty_slot)
+        created_names.append(name)
+
+    db.session.commit()
+
+    if created_names:
+        flash(f"Přidán preset: {', '.join(created_names)}", "success")
+    else:
+        flash("Nebyl přidán žádný nástroj.", "warning")
+
     return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
 
 

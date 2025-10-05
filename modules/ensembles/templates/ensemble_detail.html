@@ -112,7 +112,7 @@
                         <i class="fas fa-plus me-1"></i>Přidat poznámku
                     </a>
                 </div>
-
+                <!-- Ensemble Notes List -->
                 <div class="card-body">
                     {% if ensemble.ensemble_notes %}
                         <ul class="list-group list-group-flush">
@@ -372,37 +372,75 @@
                             <i class="fas fa-plus"></i>
                             <span class="ms-2 d-none d-md-inline">Přidat hráče (prázdný)</span>
                         </a>
+
                         <!-- Add Empty Player Modal -->
                         <div class="modal fade" id="addPlayerModal" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered">
-                                <form action="{{ url_for("ensemble.add_empty_player", ensemble_id=ensemble.id) }}"
-                                      method="post" class="modal-content">
+                                <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title">Přidat prázdného hráče</h5>
+                                        <h5 class="modal-title">Přidat hráče nebo předdefinovaný soubor</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
+
                                     <div class="modal-body">
-                                        <div class="mb-3">
-                                            <label for="instrument_id" class="form-label">Nástroj</label>
-                                            <select id="instrument_id" name="instrument_id" class="form-select"
-                                                    required>
-                                                <option value="" disabled selected>— Vyberte nástroj —</option>
-                                                {% for i in available_instruments %}
-                                                    <option value="{{ i.id }}">{{ i.name }}</option>
-                                                {% endfor %}
-                                            </select>
+
+                                        <!-- Manual single-player form -->
+                                        <form action="{{ url_for('ensemble.add_empty_player', ensemble_id=ensemble.id) }}"
+                                              method="post" class="mb-3">
+                                            <div class="mb-3">
+                                                <label for="instrument_id" class="form-label">Nástroj</label>
+                                                <select id="instrument_id" name="instrument_id" class="form-select"
+                                                        required>
+                                                    <option value="" disabled selected>— Vyberte nástroj —</option>
+                                                    {% for i in available_instruments %}
+                                                        <option value="{{ i.id }}">{{ i.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+
+                                            <div class="text-end">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-plus me-1"></i> Přidat prázdného hráče
+                                                </button>
+                                            </div>
+                                        </form>
+
+                                        <hr class="my-3">
+
+                                        <p class="fw-bold mb-2">Předdefinované soubory:</p>
+
+                                        <!-- Preset ensemble buttons -->
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {% for key, label in {
+                        '2flutes_piano': '2 flétny + klavír',
+                        'wind_trio': 'Trio dřevěné',
+                        'wind_quintet': 'Dechové kvinteto',
+                        'string_quartet': 'Smyčcové kvarteto',
+                        'piano_trio': 'Klavírní trio',
+                        'piano_quartet': 'Klavírní kvarteto',
+                        'brass_quintet': 'Žesťové kvinteto',
+                        'guitar_duo': 'Kytarové duo'
+                    }.items() %}
+                                                <form method="post"
+                                                      action="{{ url_for('ensemble.add_preset_ensemble', ensemble_id=ensemble.id) }}">
+                                                    <input type="hidden" name="preset" value="{{ key }}">
+                                                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                                                        {{ label }}
+                                                    </button>
+                                                </form>
+                                            {% endfor %}
                                         </div>
+
                                     </div>
+
                                     <div class="modal-footer">
-                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Zrušit
-                                        </button>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-plus me-1"></i> Přidat
+                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Zavřít
                                         </button>
                                     </div>
-                                </form>
+                                </div>
                             </div>
                         </div>
+
 
                         <a href="#"
                            class="btn btn-sm btn-primary d-flex align-items-center">

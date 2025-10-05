@@ -192,4 +192,39 @@ def create_app():
     def index():
         return render_template("hero_page.html")
 
+    # ------------------------------
+    # LOGGING CONFIGURATION
+    # ------------------------------
+    import logging
+    from logging.handlers import RotatingFileHandler
+    from flask import got_request_exception
+
+    logs_dir = os.path.join(os.path.dirname(__file__), "logs")
+    os.makedirs(logs_dir, exist_ok=True)
+    log_path = os.path.join(logs_dir, "app.log")
+
+    # Log rotation: keeps last 10 logs of up to 1 MB
+    file_handler = RotatingFileHandler(log_path, maxBytes=1_000_000, backupCount=10)
+    formatter = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
+    file_handler.setFormatter(formatter)
+
+    # Set level (INFO in production, DEBUG for development)
+    file_handler.setLevel(logging.INFO)
+    app.logger.addHandler(file_handler)
+
+    # Also send Flask's own logs to this handler
+    werkzeug_logger = logging.getLogger("werkzeug")
+    werkzeug_logger.addHandler(file_handler)
+
+    app.logger.setLevel(logging.INFO)
+    app.logger.info("✅ Application startup complete.")
+
+    # Capture *all* unhandled exceptions and log them
+    def log_exception(sender, exception, **extra):
+        sender.logger.exception("Unhandled Exception: %s", exception)
+
+    got_request_exception.connect(log_exception, app)
+
     return app

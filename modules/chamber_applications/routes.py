@@ -124,7 +124,7 @@ def new():
             student=form.student.data,
             semester_id=session.get("semester_id"),
             created_by=current_user,
-            teacher=form.teacher.data,
+            teacher_id=form.teacher.data.id if form.teacher.data else None,
             submission_date=form.submission_date.data,
             notes=form.notes.data,
             status_id=1,
@@ -156,7 +156,7 @@ def edit(application_id):
     if form.validate_on_submit():
         application.notes = form.notes.data
         application.submission_date = form.submission_date.data
-        application.teacher = form.teacher.data
+        application.teacher_id = form.teacher.data.id if form.teacher.data else None
         # Update players
         application.players.clear()
         for player in form.players.data:

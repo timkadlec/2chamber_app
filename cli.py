@@ -1,6 +1,6 @@
 import click
 from flask.cli import with_appcontext
-from models import db, KomorniHraStud, StudentSubjectEnrollment, KomorniHraUcitel, Subject
+from models import db, KomorniHraStud, StudentSubjectEnrollment, KomorniHraUcitel, Subject, Student
 from utils.import_oracle import (get_or_create_academic_year, get_or_create_semester, get_or_create_subject, \
                                  get_or_create_student, get_or_create_player_from_student, student_subject_enrollment,
                                  get_or_create_teacher,
@@ -168,7 +168,7 @@ def cli_oracle_students_update(dry_run):
             click.echo(f"💥 [{idx}] Unexpected error; rolled back: {e}", err=True)
 
     # 7) Cleanup: remove stale enrollments ONLY for (semester, subject) pairs reported by Oracle
-    removal_stats = defaultdict(lambda: {"kept": 0, "removed": 0})
+    removal_stats = defaultdict(lambda: {"kept": 0, "removed": 0, "removed_students": []})
     click.echo("\n🔄 Cleanup: removing stale enrollments per (semester, subject)…", err=True)
 
     for (sem_id, subj_id), active_student_ids in active_by_sem_subj.items():
@@ -185,11 +185,13 @@ def cli_oracle_students_update(dry_run):
                 removal_stats[(sem_id, subj_id)]["kept"] += 1
             else:
                 removal_stats[(sem_id, subj_id)]["removed"] += 1
+                removal_stats[(sem_id, subj_id)]["removed_students"].append(enr.student_id)
                 if not dry_run:
                     db.session.delete(enr)
                 click.echo(
                     f"{'❌' if not dry_run else '🟡 DRY-RUN'} "
-                    f"Enrollment: student={enr.student_id}, subject={subj_id}, semester={sem_id}",
+                    f"Removed enrollment: student={enr.student_id}, "
+                    f"subject={subj_id}, semester={sem_id}",
                     err=True,
                 )
 
@@ -208,8 +210,6 @@ def cli_oracle_students_update(dry_run):
 
     # 9) Summaries
     removed_enrollments = sum(d["removed"] for d in removal_stats.values())
-
-    # Resolve subject names for nicer printing (cache)
     subj_name_cache: dict[int, str] = {}
 
     def subj_label(sid: int) -> str:
@@ -221,11 +221,18 @@ def cli_oracle_students_update(dry_run):
     click.echo("\n📊 Enrollment cleanup summary:", err=True)
     if removal_stats:
         for (sem_id, subj_id), stats in sorted(removal_stats.items()):
+            label = subj_label(subj_id)
             click.echo(
-                f"   Semester={sem_id}, Subject={subj_id} {subj_label(subj_id)}: "
+                f"\n   Semester={sem_id}, Subject={subj_id} {label}: "
                 f"kept={stats['kept']}, removed={stats['removed']}",
                 err=True,
             )
+            if stats["removed_students"]:
+                click.echo("      Removed students:", err=True)
+                for sid in stats["removed_students"]:
+                    st = Student.query.get(sid)
+                    name = st.full_name if st else f"ID {sid}"
+                    click.echo(f"         - {name} (id={sid})", err=True)
     else:
         click.echo("   (no (semester,subject) pairs were processed from Oracle)", err=True)
 

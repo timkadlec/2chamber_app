@@ -1,15 +1,21 @@
 {% extends "base.html" %}
-
 {% block content %}
 <div class="container text-center mt-5">
-    <h1 class="text-4xl font-bold text-red-600">500 – Vnitřní chyba serveru</h1>
+    <h1 class="text-4xl font-bold text-danger">500 – Vnitřní chyba serveru</h1>
     <p class="mt-3">Něco se pokazilo.</p>
 
-    {% if error %}
-        <div class="mt-4 text-start bg-light border rounded p-3 mx-auto" style="max-width: 800px;">
-            <h5 class="text-danger">Detail chyby:</h5>
-            <pre class="text-sm text-dark">{{ error }}</pre>
+    {% if config.DEBUG %}
+        <div class="mt-4 text-start bg-light border rounded p-3 mx-auto" style="max-width: 900px;">
+            <h5 class="text-danger mb-2">Error:</h5>
+            <pre class="small text-dark">{{ error }}</pre>
+
+            {% if traceback %}
+                <h5 class="text-danger mt-3 mb-2">Traceback:</h5>
+                <pre class="small text-dark">{{ traceback }}</pre>
+            {% endif %}
         </div>
+    {% else %}
+        <p class="text-muted mt-3">Kontaktujte administrátora, pokud chyba přetrvává.</p>
     {% endif %}
 </div>
 {% endblock %}

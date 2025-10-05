@@ -54,7 +54,7 @@ class StudentChamberApplicationForm(FlaskForm):
         validators=[Optional()]
     )
 
-    teacher = QuerySelectMultipleField(
+    teachers = QuerySelectMultipleField(
         "Pedagog",
         query_factory=teacher_query,
         get_label=teacher_label,

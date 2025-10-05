@@ -123,8 +123,11 @@ class StudentChamberApplication(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
     student = relationship('Student', back_populates='chamber_applications')
 
-    teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id', ondelete='SET NULL'))
-    teacher = relationship('Teacher', foreign_keys=[teacher_id])
+    teachers = relationship(
+        'StudentChamberApplicationTeacher',
+        back_populates='application',
+        cascade='all, delete-orphan'
+    )
 
     status_id = db.Column(db.Integer, db.ForeignKey('student_chamber_application_statuses.id', ondelete='SET NULL'))
     status = relationship('StudentChamberApplicationStatus')
@@ -257,6 +260,16 @@ class StudentChamberApplicationPlayers(db.Model):
 
     application = relationship('StudentChamberApplication', back_populates='players')
     player = relationship('Player')
+
+
+class StudentChamberApplicationTeacher(db.Model):
+    __tablename__ = 'student_chamber_application_teachers'
+    id = db.Column(db.Integer, primary_key=True)
+    application_id = db.Column(db.Integer, db.ForeignKey('student_chamber_applications.id', ondelete='CASCADE'),
+                               nullable=False)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id', ondelete='CASCADE'), nullable=False)
+    application = relationship('StudentChamberApplication', back_populates='teachers')
+    teacher = relationship('Teacher')
 
 
 class StudentChamberApplicationStatus(db.Model):

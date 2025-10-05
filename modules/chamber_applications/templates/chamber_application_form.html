@@ -28,7 +28,6 @@
                 </div>
             </div>
 
-            <!-- Include the filters component-->
             <!-- Table Wrapper -->
             <div class="card shadow-sm mb-4">
                 <form method="POST" class="p-4">
@@ -37,7 +36,7 @@
                     <!-- Student applicant -->
                     <div class="mb-3">
                         {{ form.student.label(class="form-label") }}
-                        {{ form.student(class="form-select") }}
+                        {{ form.student(class="form-select", multiple=False, size=8) }}
                         {% if form.student.errors %}
                             <div class="text-danger">
                                 {{ form.student.errors[0] }}
@@ -47,11 +46,11 @@
 
                     <!-- Teacher -->
                     <div class="mb-3">
-                        {{ form.teacher.label(class="form-label") }}
-                        {{ form.teacher(class="form-select") }}
-                        {% if form.teacher.errors %}
+                        {{ form.teachers.label(class="form-label") }}
+                        {{ form.teachers(class="form-select") }}
+                        {% if form.teachers.errors %}
                             <div class="text-danger">
-                                {{ form.teacher.errors[0] }}
+                                {{ form.teachers.errors[0] }}
                             </div>
                         {% endif %}
                     </div>
@@ -105,7 +104,7 @@
                     placeholder: 'Vyberte hráče...',
                     create: false,
                 });
-                new TomSelect('select[name="teacher"]', {
+                new TomSelect('select[name="teachers"]', {
                     plugins: ['remove_button'],
                     placeholder: 'Vyberte pedagoga...',
                     create: false,
@@ -113,9 +112,9 @@
                 new TomSelect('select[name="student"]', {
                     plugins: ['remove_button'],
                     placeholder: 'Vyberte studenta...',
-                    multiple: false,
                     create: false,
-                });
+                    multiple: false,
+                }).clear();
             });
         </script>
     </main>

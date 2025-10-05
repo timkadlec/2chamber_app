@@ -3,7 +3,7 @@ from utils.nav import navlink
 from modules.chamber_applications import chamber_applications_bp
 from models import db, Ensemble, EnsembleSemester, EnsemblePlayer, EnsembleInstrumentation, Semester, \
     StudentChamberApplication, StudentChamberApplicationPlayers, StudentChamberApplicationStatus, Student, Instrument, \
-    StudentChamberApplicationException, Player
+    StudentChamberApplicationException, Player, StudentChamberApplicationTeacher
 from .forms import StudentChamberApplicationForm, EmptyForm, ExceptionRequestForm
 from flask_login import current_user
 from sqlalchemy.exc import IntegrityError
@@ -124,7 +124,6 @@ def new():
             student=form.student.data,
             semester_id=session.get("semester_id"),
             created_by=current_user,
-            teacher=form.teacher.data[0] if form.teacher.data else None,
             submission_date=form.submission_date.data,
             notes=form.notes.data,
             status_id=1,
@@ -133,6 +132,10 @@ def new():
         for player in form.players.data:
             app_player = StudentChamberApplicationPlayers(player=player)
             application.players.append(app_player)
+
+        for teacher in form.teacher.data:
+            link = StudentChamberApplicationTeacher(teacher=teacher)
+            application.teachers.append(link)
 
         db.session.add(application)
         db.session.commit()
@@ -148,20 +151,25 @@ def edit(application_id):
     application = StudentChamberApplication.query.get_or_404(application_id)
     form = StudentChamberApplicationForm(obj=application, mode="edit")
 
-    # Ensure players populate correctly
     if request.method == "GET":
         form.players.data = [link.player for link in application.players]
-        form.teacher.data = application.teacher or []
+        form.teachers.data = [link.teacher for link in application.teachers]
 
     if form.validate_on_submit():
         application.notes = form.notes.data
         application.submission_date = form.submission_date.data
-        application.teacher = form.teacher.data[0] if form.teacher.data else None
+
         # Update players
         application.players.clear()
         for player in form.players.data:
-            link = StudentChamberApplicationPlayers(player=player, application=application)
+            link = StudentChamberApplicationPlayers(player=player)
             application.players.append(link)
+
+        # Update teachers
+        application.teachers.clear()
+        for teacher in form.teachers.data:
+            link = StudentChamberApplicationTeacher(teacher=teacher)
+            application.teachers.append(link)
 
         db.session.commit()
         flash(f"Žádost č. {application.id} byla upravena.", "success")

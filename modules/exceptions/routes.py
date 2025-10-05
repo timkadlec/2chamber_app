@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from utils.nav import navlink
 from flask import render_template, request, flash, redirect, url_for
 from utils.decorators import role_required
-from models import db, StudentChamberApplicationException
+from models import db, ChamberException
 from modules.chamber_applications.routes import approve_applications
 from datetime import datetime
 
@@ -16,8 +16,8 @@ def index():
     page = request.args.get("page", 1, type=int)
     per_page = 20  # adjust to your needs
 
-    pagination = StudentChamberApplicationException.query.order_by(
-        StudentChamberApplicationException.id.desc()
+    pagination = ChamberException.query.order_by(
+        ChamberException.id.desc()
     ).paginate(page=page, per_page=per_page, error_out=False)
 
     return render_template(
@@ -29,19 +29,19 @@ def index():
 
 @exceptions_bp.route("/<int:exception_id>")
 def detail(exception_id):
-    exception = StudentChamberApplicationException.query.get_or_404(exception_id)
+    exception = ChamberException.query.get_or_404(exception_id)
     return render_template("exception_detail.html", exception=exception)
 
 
 @exceptions_bp.route("/<int:exception_id>/view")
 def view(exception_id):
-    exception = StudentChamberApplicationException.query.get_or_404(exception_id)
+    exception = ChamberException.query.get_or_404(exception_id)
     return render_template("exception_view.html", exception=exception)
 
 
-def approve_exception(exc: StudentChamberApplicationException, reviewer, comment=None):
+def approve_exception(exc: ChamberException, reviewer, comment=None):
     """
-    Approve a StudentChamberApplicationException and run normal application approval.
+    Approve a ChamberException and run normal application approval.
     """
     if exc.status == "approved":
         raise ValueError("Exception is already approved.")
@@ -94,7 +94,7 @@ def reject_applications(application, reviewer, comment=None):
 @login_required
 @role_required("admin")
 def exception_decision(exception_id):
-    exc = StudentChamberApplicationException.query.get_or_404(exception_id)
+    exc = ChamberException.query.get_or_404(exception_id)
     decision = request.form.get("decision")
     comment = request.form.get("comment")
 

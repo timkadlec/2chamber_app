@@ -3,7 +3,7 @@ from utils.nav import navlink
 from modules.chamber_applications import chamber_applications_bp
 from models import db, Ensemble, EnsembleSemester, EnsemblePlayer, EnsembleInstrumentation, Semester, \
     StudentChamberApplication, StudentChamberApplicationPlayers, StudentChamberApplicationStatus, Student, Instrument, \
-    StudentChamberApplicationException, Player, StudentChamberApplicationTeacher
+    ChamberException, Player, StudentChamberApplicationTeacher
 from .forms import StudentChamberApplicationForm, EmptyForm, ExceptionRequestForm
 from flask_login import current_user
 from sqlalchemy.exc import IntegrityError
@@ -374,7 +374,7 @@ def delete(application_id):
 def exception_request(application_id: int):
     form = ExceptionRequestForm()
     if form.validate_on_submit():
-        new_request = StudentChamberApplicationException(
+        new_request = ChamberException(
             application_id=application_id,
             created_by=current_user,
             reason=form.reason.data,

@@ -135,7 +135,7 @@ class StudentChamberApplication(db.Model):
     semester_id = db.Column(db.Integer, db.ForeignKey('semesters.id', ondelete='SET NULL'))
     semester = relationship('Semester')
 
-    exception = relationship("StudentChamberApplicationException", uselist=False,
+    exception = relationship("ChamberException", uselist=False,
                              back_populates="application",
                              cascade="all, delete-orphan")
 
@@ -223,9 +223,10 @@ class StudentChamberApplication(db.Model):
             return "Soubor obsahuje vysoké procento hostů."
 
 
-class StudentChamberApplicationException(db.Model):
-    __tablename__ = 'student_chamber_application_exceptions'
+class ChamberException(db.Model):
+    __tablename__ = 'chamber_exceptions'
     id = db.Column(db.Integer, primary_key=True)
+
     application_id = db.Column(db.Integer, db.ForeignKey('student_chamber_applications.id', ondelete='CASCADE'))
     application = relationship("StudentChamberApplication", back_populates="exception")
     reason = db.Column(db.String(255))

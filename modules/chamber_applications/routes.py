@@ -150,6 +150,7 @@ def edit(application_id):
     # Ensure players populate correctly
     if request.method == "GET":
         form.players.data = [link.player for link in application.players]
+        form.teacher.data = application.teacher or []
 
     if form.validate_on_submit():
         application.notes = form.notes.data

@@ -9,13 +9,14 @@
             <!-- Back Link -->
             <div class="mb-4">
                 {% if form.mode == "add" %}
-                <a href="{{ url_for('chamber_applications.index') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-arrow-left me-2"></i> Zpět na žádosti
-                </a>
+                    <a href="{{ url_for('chamber_applications.index') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i> Zpět na žádosti
+                    </a>
                 {% else %}
-                    <a href="{{ url_for('chamber_applications.detail', application_id=application.id) }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-arrow-left me-2"></i> Zpět na detail žádosti
-                </a>
+                    <a href="{{ url_for('chamber_applications.detail', application_id=application.id) }}"
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i> Zpět na detail žádosti
+                    </a>
                 {% endif %}
             </div>
             <div class="container-xl pb-4">
@@ -40,6 +41,17 @@
                         {% if form.student.errors %}
                             <div class="text-danger">
                                 {{ form.student.errors[0] }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Teacher -->
+                    <div class="mb-3">
+                        {{ form.teacher.label(class="form-label") }}
+                        {{ form.teacher(class="form-select") }}
+                        {% if form.teacher.errors %}
+                            <div class="text-danger">
+                                {{ form.teacher.errors[0] }}
                             </div>
                         {% endif %}
                     </div>
@@ -90,7 +102,12 @@
             document.addEventListener("DOMContentLoaded", function () {
                 new TomSelect('select[name="players"]', {
                     plugins: ['remove_button'],
-                    placeholder: 'Select players...',
+                    placeholder: 'Vyberte hráče...',
+                    create: false,
+                });
+                new TomSelect('select[name="teacher"]', {
+                    plugins: ['remove_button'],
+                    placeholder: 'Vyberte pedagoga...',
                     create: false,
                 });
                 new TomSelect('select[name="student"]', {

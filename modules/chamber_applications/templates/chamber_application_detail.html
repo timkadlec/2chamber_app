@@ -36,6 +36,18 @@
                         </p>
                     </section>
 
+                <!-- Teacher -->
+                    <section class="mb-4">
+                        <h5 class="fw-bold">Pedagog</h5>
+                        <p class="mb-1">
+                            {% if application.teacher %}
+                            <strong>Pedagog:</strong> {{ application.teacher.full_name }}
+                            {% else %}
+                            Pedagog nebyl v žádosti vyplněn.
+                            {% endif %}
+                        </p>
+                    </section>
+
                     {% from "macros/workload_bar.html" import workload_bar %}
 
                     <!-- Players -->

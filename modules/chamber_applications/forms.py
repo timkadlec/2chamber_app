@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import SelectField, SelectMultipleField, SubmitField, DateField, TextAreaField, HiddenField
 from wtforms.validators import DataRequired, Optional
 from wtforms_sqlalchemy.fields import QuerySelectField, QuerySelectMultipleField
-from models import Student, Ensemble, Player
+from models import Student, Ensemble, Player, Teacher
 
 
 def student_query():
@@ -15,6 +15,10 @@ def ensemble_query():
 
 def player_query():
     return Player.query.order_by(Player.last_name, Player.first_name)
+
+
+def teacher_query():
+    return Teacher.query.order_by(Teacher.last_name)
 
 
 def player_label(p):
@@ -31,11 +35,14 @@ def student_label(s):
     return label
 
 
+def teacher_label(t):
+    return t.full_name
+
+
 class StudentChamberApplicationForm(FlaskForm):
     student = QuerySelectField(
         "Student (žadatel)",
         query_factory=student_query,
-        allow_blank=True,
         get_label=student_label,
         validators=[DataRequired()]
     )
@@ -44,6 +51,13 @@ class StudentChamberApplicationForm(FlaskForm):
         "Spoluhráči",
         query_factory=player_query,
         get_label=player_label,
+        validators=[Optional()]
+    )
+
+    teacher = QuerySelectMultipleField(
+        "Pedagog",
+        query_factory=teacher_query,
+        get_label=teacher_label,
         validators=[Optional()]
     )
 

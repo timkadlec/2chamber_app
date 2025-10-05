@@ -84,6 +84,14 @@ class Ensemble(db.Model):
         order_by="EnsembleNote.created_at"
     )
 
+    application_links = db.relationship(
+        "EnsembleApplication",
+        back_populates="ensemble",
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
+
     @property
     def semesters(self):
         return sorted((link.semester for link in self.semester_links),
@@ -240,6 +248,31 @@ class EnsemblePlayer(db.Model):
         )
 
 
+class EnsembleApplication(db.Model):
+    __tablename__ = "ensemble_applications"
+    id = db.Column(db.Integer, primary_key=True)
+
+    ensemble_id = db.Column(
+        db.Integer,
+        db.ForeignKey("ensembles.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True  # each ensemble only linked to one application
+    )
+    application_id = db.Column(
+        db.Integer,
+        db.ForeignKey("student_chamber_applications.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True  # each application produces only one ensemble
+    )
+
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
+    created_by_id = db.Column(db.String, db.ForeignKey("users.id", ondelete="SET NULL"))
+    created_by = db.relationship("User", foreign_keys=[created_by_id])
+
+    ensemble = db.relationship("Ensemble", back_populates="application_links", uselist=False)
+    application = db.relationship("StudentChamberApplication", back_populates="ensemble_link", uselist=False)
+
+
 class EnsembleNote(db.Model):
     __tablename__ = 'ensemble_notes'
     id = db.Column(db.Integer, primary_key=True)
@@ -259,7 +292,6 @@ class EnsembleNote(db.Model):
         "User",
         foreign_keys=[created_by_id]
     )
-
 
 
 class EnsembleTeacher(db.Model):

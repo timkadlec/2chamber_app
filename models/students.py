@@ -164,6 +164,14 @@ class StudentChamberApplication(db.Model):
         cascade='all, delete-orphan'
     )
 
+    ensemble_link = db.relationship(
+        "EnsembleApplication",
+        back_populates="application",
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True
+    )
+
     @property
     def all_player_ids(self):
         """Return a set of all player IDs (applicant + co-players)."""

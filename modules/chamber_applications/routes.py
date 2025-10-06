@@ -133,7 +133,7 @@ def new():
             app_player = StudentChamberApplicationPlayers(player=player)
             application.players.append(app_player)
 
-        for teacher in form.teacher.data:
+        for teacher in form.teachers.data:
             link = StudentChamberApplicationTeacher(teacher=teacher)
             application.teachers.append(link)
 

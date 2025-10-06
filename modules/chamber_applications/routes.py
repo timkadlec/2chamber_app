@@ -141,7 +141,7 @@ def new():
         db.session.commit()
 
         flash("Žádost byla úspěšně vytvořena!", "success")
-        return redirect(url_for("chamber_applications.index"))
+        return redirect(url_for("chamber_applications.detail", application_id=application.id,))
 
     return render_template("chamber_application_form.html", form=form)
 

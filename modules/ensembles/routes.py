@@ -92,6 +92,55 @@ def index():
     )
 
 
+@ensemble_bp.route("/all/pdf")
+def export_pdf():
+    import datetime
+    from flask import render_template_string, make_response, session, request
+    from weasyprint import HTML
+
+    current_semester = session["semester_id"]
+
+    # same filters as index()
+    instrument_ids = request.args.getlist("instrument_id", type=int)
+    teacher_ids = request.args.getlist("teacher_id", type=int)
+    search_query = request.args.get("q", "").strip()
+    health_filter = request.args.get("health", "").strip()
+
+    ensembles = Ensemble.query.filter(
+        Ensemble.semester_links.any(EnsembleSemester.semester_id == current_semester)
+    )
+    if instrument_ids:
+        ensembles = ensembles.join(Ensemble.instrumentation_entries).filter(
+            EnsembleInstrumentation.instrument_id.in_(instrument_ids))
+    if teacher_ids:
+        ensembles = ensembles.join(Ensemble.teacher_links).filter(
+            EnsembleTeacher.teacher_id.in_(teacher_ids),
+            EnsembleTeacher.semester_id == current_semester)
+    if search_query:
+        pattern = f"%{search_query.lower()}%"
+        ensembles = (ensembles.outerjoin(Ensemble.player_links)
+            .outerjoin(EnsemblePlayer.player)
+            .filter(or_(
+                func.unaccent(func.lower(Player.first_name)).like(pattern),
+                func.unaccent(func.lower(Player.last_name)).like(pattern),
+                func.unaccent(func.lower(Ensemble.name)).like(pattern)
+            )))
+    if health_filter:
+        ensembles = ensembles.filter(Ensemble.health_check_label == health_filter)
+    ensembles = ensembles.distinct().order_by(Ensemble.name).all()
+
+    # HTML template
+    html = render_template('pdf_export/all_ensembles.html', ensembles=ensembles, current_semester=current_semester,
+       today=datetime.date.today())
+
+    pdf = HTML(string=html).write_pdf()
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = \
+        f'attachment; filename=ensembles_{datetime.date.today():%Y%m%d}.pdf'
+    return response
+
+
 @ensemble_bp.route("/add", methods=["GET", "POST"])
 def ensemble_add():
     form = EnsembleForm(mode="add")
@@ -108,7 +157,7 @@ def ensemble_add():
         db.session.add(ensemble_semester)
         db.session.commit()
         flash("Byl úspěšně přidán soubor.", "success")
-        return redirect(url_for("ensemble.ensemble_detail", ensemble_id=new_ensemble.id,))
+        return redirect(url_for("ensemble.ensemble_detail", ensemble_id=new_ensemble.id, ))
     return render_template("ensemble_form.html", form=form)
 
 

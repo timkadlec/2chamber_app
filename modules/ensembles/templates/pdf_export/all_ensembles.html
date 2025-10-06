@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: "DejaVu Sans", "Noto Sans", sans-serif;
+            font-size: 10pt;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1em;
+        }
+
+        th, td {
+            border: 0.4pt solid #999;
+            padding: 4px 6px;
+            vertical-align: top;
+        }
+
+        th {
+            background: #eee;
+            text-align: center;
+        }
+
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        .ok {
+            color: #198754;
+            font-weight: bold;
+        }
+
+        .bad {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .exc {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<h1>Přehled komorních souborů</h1>
+<p style="text-align:center">Semestr ID: {{ current_semester }} &nbsp;&nbsp;
+    {{ today.strftime('%d.%m.%Y') }}</p>
+
+<table>
+    <thead>
+    <tr>
+        <th>Soubor</th>
+        <th>Instrumentace</th>
+        <th>Pedagog</th>
+        <th>Členové</th>
+        <th>Stav</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for ens in ensembles %}
+        {% set teacher = ens.semester_teacher(current_semester) %}
+        <tr>
+            <td>{{ ens.name }}</td>
+            <td>{{ ens.instrumentation }}</td>
+            <td>{{ teacher.teacher.full_name if teacher else '-' }}</td>
+            <td>
+                {% for pl in ens.player_links %}
+                    {% if pl.player %}{{ pl.player.instrument.abbreviation }}. {{ pl.player.first_name[0] }}.
+                        {{ pl.player.last_name }}{% if not loop.last %}, {% endif %}{% endif %}
+                {% endfor %}
+            </td>
+            <td>
+                {% if ens.exception and ens.exception.status == 'approved' %}
+                    <span class="exc">Výjimka</span>
+                {% elif ens.health_check == 'OK' %}
+                    <span class="ok">OK</span>
+                {% else %}
+                    <span class="bad">Nesplňuje</span>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</body>
+</html>

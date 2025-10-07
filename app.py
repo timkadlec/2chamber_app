@@ -1,9 +1,7 @@
-from flask import Flask, url_for, request, redirect, g, render_template
-from flask_migrate import Migrate
+from flask import Flask, url_for, request, redirect, render_template
 from config import ProductionConfig
-from models import db, User, Student, KomorniHraStud
-import locale
-from db_core_entries import seed_instruments, seed_composers, seed_basic_compositions, seed_chamber_application_statuses
+from models import db, User
+from datetime import datetime, timedelta
 import os
 import oracledb
 from extensions import login_manager, oauth, migrate
@@ -89,17 +87,61 @@ def create_app():
             return False
         return current_user.role and current_user.role.name in link._nav_roles
 
+    from datetime import datetime, timedelta
+    from flask import request, session, redirect, url_for
+    from flask_login import current_user
+
+    SESSION_TIMEOUT_MINUTES = 60  # 1 hour inactivity timeout
+
+    # -----------------------------------------------------
+    # 1. Require login for all web routes (except auth/static)
+    # -----------------------------------------------------
     @app.before_request
     def restrict_web_only_to_logged_in():
-        # Allow static and auth routes to be accessed without login
-        if request.endpoint is None:
+        endpoint = request.endpoint
+        if not endpoint:
+            return  # ignore favicon.ico, 404s, etc.
+
+        # Allow static files and auth routes
+        if request.blueprint == "auth" or endpoint.startswith("static"):
             return
 
-        if request.blueprint == "auth" or request.endpoint.startswith("static"):
-            return
-
+        # Enforce login
         if not current_user.is_authenticated:
-            return redirect(url_for('auth.login', next=request.url))
+            return redirect(url_for("auth.login", next=request.url))
+
+    # -----------------------------------------------------
+    # 2. Auto-logout after inactivity
+    # -----------------------------------------------------
+    @app.before_request
+    def enforce_session_timeout():
+        endpoint = request.endpoint
+        if not endpoint:
+            return
+
+        # Skip auth & static routes to avoid recursion
+        if endpoint in ("auth.login", "auth.logout") or endpoint.startswith("static"):
+            return
+
+        now = datetime.utcnow()
+        last_activity = session.get("last_activity")
+
+        if last_activity:
+            try:
+                last_activity = datetime.fromisoformat(last_activity)
+            except ValueError:
+                # corrupted or old format
+                last_activity = now
+
+            if now - last_activity > timedelta(minutes=SESSION_TIMEOUT_MINUTES):
+                app.logger.info(
+                    f"Session expired for user {current_user.get_id() if current_user.is_authenticated else 'anonymous'}"
+                )
+                session.clear()
+                return redirect(url_for("auth.logout"))
+
+        # Update last activity timestamp
+        session["last_activity"] = now.isoformat()
 
     @app.context_processor
     def inject_nav_links():

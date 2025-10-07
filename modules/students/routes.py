@@ -1,7 +1,7 @@
 from flask import render_template, request, flash, redirect, url_for, session, request
 from utils.nav import navlink
 from models import Student, StudentSubjectEnrollment, Instrument, Subject, Player, EnsemblePlayer, Ensemble, \
-    EnsembleSemester, db, Semester
+    EnsembleSemester, db, Semester, Department
 from modules.students import students_bp
 from sqlalchemy import and_, func
 from .forms import EnrollmentForm
@@ -52,6 +52,11 @@ def index():
             )
         )
 
+    # --- Department filter ---
+    department_ids = request.args.getlist("department_id", type=int)
+    if department_ids:
+        query = query.filter(Student.department_id.in_(department_ids))
+
     # --- Ensemble filter ---
     has_ensemble = request.args.get("has_ensemble")
     if has_ensemble in ("0", "1"):
@@ -92,10 +97,12 @@ def index():
         subjects=Subject.query.order_by(Subject.weight).all(),
         instruments=Instrument.query.filter_by(is_primary=True).order_by(Instrument.weight).all(),
         semesters=Semester.query.order_by(Semester.start_date.desc()).all(),
+        departments=Department.query.order_by(Department.name).all(),
         selected_semester_ids=semester_ids,
         selected_instrument_ids=instrument_ids,
         selected_subject_ids=subject_ids,
         selected_has_ensemble=has_ensemble,
+        selected_department_ids=department_ids,
         search_query=search_query,
     )
 

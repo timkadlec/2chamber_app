@@ -37,6 +37,20 @@
                 </select>
             </div>
 
+            <!-- Department filter -->
+            <div class="col-md-3">
+                <label for="department_id" class="form-label">Katedra</label>
+                <select class="form-select form-select-sm" id="department_id" name="department_id" multiple>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}"
+                                {% if dept.id in (selected_department_ids or []) %}selected{% endif %}>
+                            {{ dept.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+
             <!-- Subject filter -->
             <div class="col-md-3">
                 <label for="subject_id" class="form-label">Předmět</label>
@@ -108,6 +122,11 @@
                 plugins: {remove_button: {title: "Odebrat"}},
                 placeholder: "Má / nemá soubor"
             });
+            new TomSelect("#department_id", {
+                plugins: {remove_button: {title: "Odebrat"}},
+                placeholder: "Vyberte katedru(y)"
+            });
+
         });
     </script>
 </div>

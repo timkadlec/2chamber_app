@@ -25,6 +25,7 @@
                     <table class="table align-middle mb-0">
                         <thead class="table-light text-uppercase small text-muted">
                         <tr>
+                            <th>Číslo</th>
                             <th>Student</th>
                             <th>Spoluhráči</th>
                             <th>Stav žádosti</th>
@@ -36,6 +37,11 @@
                         <tbody>
                         {% for app in applications %}
                             <tr>
+                                <td>
+                                    <div class="text-dark">
+                                        {{ app.id }}
+                                    </div>
+                                </td>
                                 <td>
                                     <div class="fw-semibold text-dark">
                                         {{ app.student.full_name }} ({{ app.student.instrument.name }})

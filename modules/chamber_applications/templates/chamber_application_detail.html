@@ -27,12 +27,23 @@
                         <p class="mb-1">
                             <strong>Student:</strong> {{ application.student.full_name }}
                         </p>
-                         <p class="mb-1">
+                        <p class="mb-1">
                             <strong>Nástroj:</strong> {{ application.student.instrument.name if application.student else "-" }}
                         </p>
                         <p class="mb-1">
                             <strong>Semestr:</strong> {{ application.semester.name if application.semester else "-" }} {{ application.semester.academic_year.name if application.semester else "-" }}
                         </p>
+
+                        <p class="mb-1">
+                            <strong>Zapsaný předmět:</strong>
+                            {% if application.student.subject_enrollments_current %}
+                                {{ application.student.subject_enrollments_current[0].subject.name }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </p>
+
+
                         <p class="mb-1">
                             <strong>Datum
                                 podání:</strong> {{ application.submission_date.strftime("%d.%m.%Y") if application.submission_date else "-" }}

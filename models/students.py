@@ -82,6 +82,18 @@ class Student(db.Model):
             .all()
         )
 
+    @property
+    def subject_enrollments_current(self):
+        """Return all subject enrollments for the current semester (from session)."""
+        current_semester = session.get('semester_id') or session.get('current_semester')
+        if not current_semester:
+            return []
+
+        return [
+            se for se in self.subject_enrollments
+            if se.semester_id == current_semester
+        ]
+
 
 class StudentSemesterEnrollment(db.Model):
     __tablename__ = 'student_semester_enrollments'

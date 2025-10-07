@@ -1,4 +1,4 @@
-from flask import render_template, flash, redirect, url_for, session, request, jsonify
+from flask import render_template, flash, redirect, url_for, session, request, jsonify, current_app
 from flask_login import current_user
 from .forms import EnsembleForm, TeacherForm, NoteForm
 from utils.nav import navlink
@@ -131,6 +131,7 @@ def export_pdf():
     import datetime
     from flask import render_template_string, make_response, session, request
     from weasyprint import HTML
+    from pathlib import Path
 
     current_semester = session["semester_id"]
 
@@ -163,10 +164,14 @@ def export_pdf():
         ensembles = ensembles.filter(Ensemble.health_check_label == health_filter)
     ensembles = ensembles.distinct().order_by(Ensemble.name).all()
 
+    logo_path = Path(current_app.static_folder) / "images" / "hamu_logo.png"
+    logo_url = logo_path.resolve().as_uri()
+
     # HTML template
     html = render_template('pdf_export/all_ensembles.html', ensembles=ensembles,
                            current_semester=Semester.query.get(current_semester),
-                           today=datetime.date.today())
+                           today=datetime.date.today(),
+                           logo_url=logo_url,)
 
     pdf = HTML(string=html).write_pdf()
     response = make_response(pdf)

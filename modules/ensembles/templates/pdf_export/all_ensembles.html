@@ -13,10 +13,17 @@
             margin-bottom: 0;
         }
 
+        h2 {
+            border-bottom: 1pt solid #333;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            font-size: 11pt;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 1em;
+            margin-top: 0.3em;
         }
 
         th, td {
@@ -48,13 +55,46 @@
             color: #17a2b8;
             font-weight: bold;
         }
+
+        .no-ensembles {
+            color: #666;
+            font-style: italic;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2em;
+            font-size: 8pt;
+            color: #888;
+        }
     </style>
 </head>
 <body>
-<h1>Přehled komorních souborů</h1>
-<p style="text-align:center">{{ current_semester.name }} {{ current_semester.academic_year.name }}&nbsp;&nbsp;
-    {{ today.strftime('%d.%m.%Y') }}</p>
 
+<!-- Header with logo and semester -->
+<header style="
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0 10px 0;
+  margin-bottom: 25px;
+">
+    <!-- Left: logo -->
+    <div style="flex: 0 0 auto;">
+        <img src="{{ logo_url }}" alt="HAMU Logo" style="height: 55px;">
+    </div>
+
+    <!-- Right: title -->
+    <div style="text-align: right; flex: 1;">
+        <h1 style="margin: 0; font-size: 18pt; font-weight: normal; text-align: right">Přehled komorních souborů</h1>
+        <p style="margin: 2px 0 0 0; font-size: 10pt; color: #666; text-align: right">
+            Akademie múzických umění v Praze
+        </p>
+        <p style="font-size: 20pt; font-weight: bold; text-align:right">{{ current_semester.name }} {{ current_semester.academic_year.name }}</p>
+    </div>
+</header>
+
+<!-- Main table -->
 <table>
     <thead>
     <tr>
@@ -62,34 +102,30 @@
         <th>Instrumentace</th>
         <th>Pedagog</th>
         <th>Členové</th>
-        <th>Stav</th>
     </tr>
     </thead>
     <tbody>
     {% for ens in ensembles %}
         {% set teacher = ens.semester_teacher(current_semester.id) %}
         <tr>
-            <td>{{ ens.name }}</td>
+            <td><b>{{ ens.name }}</b></td>
             <td>{{ ens.instrumentation }}</td>
             <td>{{ teacher.teacher.full_name if teacher else '-' }}</td>
             <td>
                 {% for pl in ens.player_links %}
-                    {% if pl.player %}{{ pl.player.instrument.abbreviation }}. {{ pl.player.first_name[0] }}.
-                        {{ pl.player.last_name }}{% if not loop.last %}, {% endif %}{% endif %}
+                    {% if pl.player %}
+                        <em>{{ pl.player.instrument.abbreviation }}. </em>{{ pl.player.first_name[0] }}. {{ pl.player.last_name }}{% if not loop.last %}, {% endif %}
+                    {% endif %}
                 {% endfor %}
-            </td>
-            <td>
-                {% if ens.exception and ens.exception.status == 'approved' %}
-                    <span class="exc">Výjimka</span>
-                {% elif ens.health_check == 'OK' %}
-                    <span class="ok">OK</span>
-                {% else %}
-                    <span class="bad">Nesplňuje</span>
-                {% endif %}
             </td>
         </tr>
     {% endfor %}
     </tbody>
 </table>
+
+<footer>
+    Vygenerováno {{ today.strftime('%d.%m.%Y') }}
+</footer>
+
 </body>
 </html>

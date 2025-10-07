@@ -21,6 +21,9 @@ class Student(db.Model):
     instrument_id = db.Column(db.Integer, db.ForeignKey('instruments.id', ondelete='SET NULL'))
     instrument = relationship('Instrument')
 
+    department_id = db.Column(db.Integer, db.ForeignKey('departments.id'))
+    department = db.relationship("Department")
+
     player = relationship(
         'Player',
         back_populates='student',

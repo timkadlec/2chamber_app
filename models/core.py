@@ -110,6 +110,15 @@ class Subject(db.Model):
         return f"<Subject {self.id} {self.name!r}>"
 
 
+class Department(db.Model):
+    __tablename__ = "departments"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    code = db.Column(db.String(100))
+    weight = db.Column(db.Integer)
+
+
+
 # ------------------------
 # Users, Roles, Permissions (GLOBAL USER SYSTEM)
 # ------------------------

@@ -10,6 +10,9 @@ class Teacher(db.Model):
     last_name = db.Column(db.String(100))
     osobni_cislo = db.Column(db.Integer)
 
+    department_id = db.Column(db.Integer, db.ForeignKey('departments.id'))
+    department = db.relationship("Department")
+
     full_name = db.Column(db.String(200))
 
     teacher_subjects = db.relationship(

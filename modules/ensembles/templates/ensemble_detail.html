@@ -441,19 +441,12 @@
                             </div>
                         </div>
 
-
-                        <a href="#"
-                           class="btn btn-sm btn-primary d-flex align-items-center">
-                            <i class="fas fa-user-plus"></i>
-                            <span class="ms-2 d-none d-md-inline">Přidat studenta</span>
-                        </a>
                     </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table align-middle mb-0">
                         <thead class="table-light text-uppercase small text-muted">
                         <tr>
-                            <th class="d-none d-lg-table-cell">Příjmení</th>
                             <th class="d-none d-lg-table-cell">Jméno</th>
                             <th class="d-none d-lg-table-cell">Nástroj</th>
                             <th class="d-none d-lg-table-cell">Akce</th>
@@ -467,10 +460,13 @@
                                         <i class="fas fa-triangle-exclamation me-2 text-warning"
                                            title="Jedná se o hosta"></i>
                                     {% endif %}
-                                    {{ ensemble_player.player.last_name }}
-                                </td>
-                                <td>
-                                    {{ ensemble_player.player.first_name }}
+                                    {% if ensemble_player.player.student %}
+                                        <a href="{{ url_for('students.student_detail', student_id=ensemble_player.player.student_id) }}" target="_blank">
+                                            {{ ensemble_player.player.last_name }} {{ ensemble_player.player.first_name }}
+                                        </a>
+                                    {% else %}
+                                        {{ ensemble_player.player.last_name }} {{ ensemble_player.player.first_name }} j.h.
+                                    {% endif %}
                                 </td>
                                 <td>
                                     {% if ensemble_player.ensemble_instrumentation %}

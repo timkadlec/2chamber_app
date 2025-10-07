@@ -136,7 +136,7 @@ def get_or_create_student(oracle_student_model):
         )
         return None
 
-    department = get_or_create_department(oracle_student_model.DEPARTMENT)
+    department = get_or_create_department(oracle_student_model.PROGRAM_NAZEV)
     if not department:
         click.echo(
             f"⚠️ No department found for {oracle_student_model.JMENO} {oracle_student_model.PRIJMENI} "

@@ -1,8 +1,23 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
-from models import Semester, db, AcademicYear, StudentSubjectEnrollment, Subject, Instrument, Student, Player, Teacher
+from models import Semester, db, AcademicYear, StudentSubjectEnrollment, Subject, Instrument, Student, Player, Teacher, \
+    Department
 import re
 import click
+
+
+def get_or_create_department(department_name: str):
+    lookup = Department.query.filter_by(name=department_name).first()
+    if lookup:
+        return lookup
+    try:
+        new_department = Department(name=department_name)
+        db.session.add(new_department)
+        db.session.commit()
+        return new_department
+    except IntegrityError:
+        db.session.rollback()
+        return None
 
 
 def get_or_create_academic_year(semester_id: str):
@@ -111,11 +126,22 @@ def get_or_create_student(oracle_student_model):
         lookup = Student.query.filter_by(osobni_cislo=str(oracle_student_model.CISLO_OSOBY)).first()
 
     instrument = find_instrument_by_name(oracle_student_model.KATEDRA_NAZEV)
+
     if not instrument:
         click.echo(
             f"⚠️ No instrument found for {oracle_student_model.JMENO} {oracle_student_model.PRIJMENI} "
             f"(osobni_cislo={oracle_student_model.CISLO_OSOBY}, id_studia={oracle_student_model.ID_STUDIA}, "
             f"katedra={oracle_student_model.KATEDRA_NAZEV})",
+            err=True,
+        )
+        return None
+
+    department = get_or_create_department(oracle_student_model.DEPARTMENT)
+    if not department:
+        click.echo(
+            f"⚠️ No department found for {oracle_student_model.JMENO} {oracle_student_model.PRIJMENI} "
+            f"(osobni_cislo={oracle_student_model.CISLO_OSOBY}, id_studia={oracle_student_model.ID_STUDIA}, "
+            f"katedra={oracle_student_model.DEPARTMENT})",
             err=True,
         )
         return None
@@ -128,6 +154,7 @@ def get_or_create_student(oracle_student_model):
         lookup.instrument_id = instrument.id
         lookup.email = oracle_student_model.EMAIL
         lookup.state = oracle_student_model.STUDUJE
+        lookup.department_id = department.id
         if getattr(oracle_student_model, "STUDUJE", None) in ("P", "K"):
             lookup.active = False
         else:
@@ -145,6 +172,7 @@ def get_or_create_student(oracle_student_model):
             email=oracle_student_model.EMAIL,
             active=(getattr(oracle_student_model, "STUDUJE", None) not in ("P", "K")),
             state=oracle_student_model.STUDUJE,
+            department_id=department.id,
         )
         db.session.add(new_student)
         db.session.flush()

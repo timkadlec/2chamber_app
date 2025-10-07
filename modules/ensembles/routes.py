@@ -83,7 +83,7 @@ def index():
         "all_ensembles.html",
         ensembles=ensembles,
         pagination=pagination,
-        instruments=Instrument.query.order_by(Instrument.weight).filter_by(is_primary=True).all(),
+        instruments=Instrument.query.order_by(Instrument.name).filter_by(is_primary=True).all(),
         teachers=Teacher.query.order_by(Teacher.last_name, Teacher.first_name).all(),
         selected_instrument_ids=instrument_ids,
         selected_teacher_ids=teacher_ids,
@@ -119,25 +119,59 @@ def export_pdf():
     if search_query:
         pattern = f"%{search_query.lower()}%"
         ensembles = (ensembles.outerjoin(Ensemble.player_links)
-            .outerjoin(EnsemblePlayer.player)
-            .filter(or_(
-                func.unaccent(func.lower(Player.first_name)).like(pattern),
-                func.unaccent(func.lower(Player.last_name)).like(pattern),
-                func.unaccent(func.lower(Ensemble.name)).like(pattern)
-            )))
+        .outerjoin(EnsemblePlayer.player)
+        .filter(or_(
+            func.unaccent(func.lower(Player.first_name)).like(pattern),
+            func.unaccent(func.lower(Player.last_name)).like(pattern),
+            func.unaccent(func.lower(Ensemble.name)).like(pattern)
+        )))
     if health_filter:
         ensembles = ensembles.filter(Ensemble.health_check_label == health_filter)
     ensembles = ensembles.distinct().order_by(Ensemble.name).all()
 
     # HTML template
-    html = render_template('pdf_export/all_ensembles.html', ensembles=ensembles, current_semester=current_semester,
-       today=datetime.date.today())
+    html = render_template('pdf_export/all_ensembles.html', ensembles=ensembles,
+                           current_semester=Semester.query.get(current_semester),
+                           today=datetime.date.today())
 
     pdf = HTML(string=html).write_pdf()
     response = make_response(pdf)
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = \
         f'attachment; filename=ensembles_{datetime.date.today():%Y%m%d}.pdf'
+    return response
+
+@ensemble_bp.route("/by_teacher/pdf")
+def export_pdf_by_teacher():
+    import datetime
+    from flask import render_template, make_response, session
+    from weasyprint import HTML
+
+    current_semester_id = session["semester_id"]
+    current_semester = Semester.query.get(current_semester_id)
+
+    # Query all teachers who teach at least one ensemble this semester
+    teachers = (
+        Teacher.query.join(EnsembleTeacher)
+        .filter(EnsembleTeacher.semester_id == current_semester_id)
+        .distinct()
+        .order_by(Teacher.last_name, Teacher.first_name)
+        .all()
+    )
+
+    html = render_template(
+        "pdf_export/ensemble_by_teacher.html",
+        teachers=teachers,
+        current_semester=current_semester,
+        today=datetime.date.today(),
+    )
+
+    pdf = HTML(string=html).write_pdf()
+    response = make_response(pdf)
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers[
+        "Content-Disposition"
+    ] = f'attachment; filename=ensembles_by_teacher_{datetime.date.today():%Y%m%d}.pdf'
     return response
 
 

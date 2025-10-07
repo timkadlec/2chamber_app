@@ -9,16 +9,25 @@
             <div class="container-xl pb-4">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
 
-                    <h1 class="text-secondary">Komorní soubory</h1>
+                    <h1 class="text-secondary mb-0">Komorní soubory</h1>
 
-                    <a href="{{ url_for("ensemble.ensemble_add") }}" class="btn btn-primary d-flex align-items-center">
-                        <i class="fas fa-plus me-2"></i> Přidat soubor
-                    </a>
-                    <a href="{{ url_for('ensemble.export_pdf', **request.args) }}"
-                       class="btn btn-outline-secondary d-flex align-items-center">
-                        <i class="fas fa-file-pdf me-2"></i> Export PDF
-                    </a>
+                    <div class="d-flex align-items-center gap-3 ms-auto">
+                        <div class="btn-group" role="group" aria-label="Exporty PDF">
+                            <a href="{{ url_for('ensemble.export_pdf', **request.args) }}"
+                               class="btn btn-outline-secondary d-flex align-items-center">
+                                <i class="fas fa-file-pdf me-2"></i> Export PDF
+                            </a>
+                            <a href="{{ url_for('ensemble.export_pdf_by_teacher', **request.args) }}"
+                               class="btn btn-outline-secondary d-flex align-items-center">
+                                <i class="fas fa-file-pdf me-2"></i> Pedagogové
+                            </a>
+                        </div>
 
+                        <a href="{{ url_for('ensemble.ensemble_add') }}"
+                           class="btn btn-primary d-flex align-items-center">
+                            <i class="fas fa-plus me-2"></i> Přidat soubor
+                        </a>
+                    </div>
 
                 </div>
             </div>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: "DejaVu Sans", "Noto Sans", sans-serif;
+            font-size: 10pt;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 0;
+        }
+
+        h2 {
+            border-bottom: 1pt solid #333;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            font-size: 11pt;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.3em;
+        }
+
+        th, td {
+            border: 0.4pt solid #999;
+            padding: 4px 6px;
+            vertical-align: top;
+        }
+
+        th {
+            background: #eee;
+            text-align: center;
+        }
+
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        .ok {
+            color: #198754;
+            font-weight: bold;
+        }
+
+        .bad {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .exc {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+
+        .no-ensembles {
+            color: #666;
+            font-style: italic;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2em;
+            font-size: 8pt;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+<h1>Přehled komorních souborů podle pedagogů</h1>
+<p style="text-align:center">{{ current_semester.name }} {{ current_semester.academic_year.name }} &nbsp;&nbsp;
+    {{ today.strftime('%d.%m.%Y') }}</p>
+
+{% for teacher in teachers %}
+    {% set ensemb_links = teacher.ensemble_links | selectattr("semester_id", "equalto", current_semester.id) | list %}
+    <h2>{{ teacher.full_name }}</h2>
+
+    {% if ensemb_links %}
+        <table>
+            <thead>
+            <tr>
+                <th>Soubor</th>
+                <th>Členové</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for link in ensemb_links %}
+                {% set ens = link.ensemble %}
+                <tr>
+                    <td><b>{{ ens.name }}</b></td>
+                    <td>
+                        {% for pl in ens.player_links %}
+                            {% if pl.player %}
+                                <em>{{ pl.player.instrument.abbreviation }}. </em>{{ pl.player.last_name }} {{ pl.player.first_name[0] }}.{% if not loop.last %}, {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="no-ensembles">Žádné soubory v tomto semestru.</p>
+    {% endif %}
+{% endfor %}
+
+<footer>Vygenerováno {{ today.strftime('%d.%m.%Y') }}</footer>
+</body>
+</html>

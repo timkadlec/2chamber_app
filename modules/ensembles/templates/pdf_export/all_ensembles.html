@@ -52,7 +52,7 @@
 </head>
 <body>
 <h1>Přehled komorních souborů</h1>
-<p style="text-align:center">Semestr ID: {{ current_semester }} &nbsp;&nbsp;
+<p style="text-align:center">{{ current_semester.name }} {{ current_semester.academic_year.name }}&nbsp;&nbsp;
     {{ today.strftime('%d.%m.%Y') }}</p>
 
 <table>
@@ -67,7 +67,7 @@
     </thead>
     <tbody>
     {% for ens in ensembles %}
-        {% set teacher = ens.semester_teacher(current_semester) %}
+        {% set teacher = ens.semester_teacher(current_semester.id) %}
         <tr>
             <td>{{ ens.name }}</td>
             <td>{{ ens.instrumentation }}</td>

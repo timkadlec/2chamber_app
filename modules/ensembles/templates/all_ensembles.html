@@ -203,41 +203,53 @@
                             Zobrazeno
                             <span class="fw-semibold">{{ pagination.page * pagination.per_page - pagination.per_page + 1 }}</span>
                             až
-                            <span class="fw-semibold">{{ pagination.page * pagination.per_page if pagination.total > pagination.page * pagination.per_page else pagination.total }}</span>
+                            <span class="fw-semibold">
+        {{ pagination.page * pagination.per_page if pagination.total > pagination.page * pagination.per_page else pagination.total }}
+      </span>
                             z
                             <span class="fw-semibold">{{ pagination.total }}</span>
                             souborů
                         </div>
+
+                        {# Prepare pagination args #}
+                        {% set args = request.args.to_dict(flat=False) %}
+                        {% set _ = args.pop('page', None) %}
+
+
                         <nav aria-label="Stránkování">
                             <ul class="pagination pagination-sm mb-0 mt-3 mt-md-0">
                                 {% if pagination.has_prev %}
                                     <li class="page-item">
                                         <a class="page-link"
-                                           href="{{ url_for('ensemble.index', page=pagination.prev_num) }}"
+                                           href="{{ url_for('ensemble.index', page=pagination.prev_num, **args) }}"
                                            aria-label="Předchozí">
-                                            <span aria-hidden="true">&laquo;</span>
+                                            &laquo;
                                         </a>
                                     </li>
                                 {% endif %}
+
                                 {% for p in range(1, pagination.pages + 1) %}
                                     <li class="page-item {% if pagination.page == p %}active{% endif %}">
                                         <a class="page-link"
-                                           href="{{ url_for('ensemble.index', page=p) }}">{{ p }}</a>
+                                           href="{{ url_for('ensemble.index', page=p, **args) }}">{{ p }}</a>
                                     </li>
                                 {% endfor %}
+
                                 {% if pagination.has_next %}
                                     <li class="page-item">
                                         <a class="page-link"
-                                           href="{{ url_for('ensemble.index', page=pagination.next_num) }}"
+                                           href="{{ url_for('ensemble.index', page=pagination.next_num, **args) }}"
                                            aria-label="Další">
-                                            <span aria-hidden="true">&raquo;</span>
+                                            &raquo;
                                         </a>
                                     </li>
                                 {% endif %}
                             </ul>
                         </nav>
+
                     </div>
                 </div>
+
             </div>
 
 

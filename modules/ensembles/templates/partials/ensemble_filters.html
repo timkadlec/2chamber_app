@@ -28,6 +28,17 @@
                 </select>
             </div>
 
+            <!-- Incomplete ensemble filter -->
+            <div class="col-md-3">
+                <label for="incomplete" class="form-label">Kompletnost</label>
+                <select class="form-select form-select-sm" id="incomplete" name="incomplete">
+                    <option value="1" {% if request.args.get('incomplete') == '1' %}selected{% endif %}>Neúplné</option>
+                    <option value="0" {% if request.args.get('incomplete') == '0' %}selected{% endif %}>Kompletní
+                    </option>
+                </select>
+            </div>
+
+
             <!-- Health check filter -->
             <div class="col-md-3">
                 <label for="health" class="form-label">Stav souboru</label>
@@ -63,7 +74,7 @@
                     <i class="fas fa-filter me-1"></i> Filtrovat
                 </button>
 
-                {% if selected_instrument_ids or selected_teacher_ids or search_query %}
+                {% if request.args %}
                     <a href="{{ url_for('ensemble.index') }}" class="btn btn-sm btn-outline-secondary">
                         <i class="fas fa-times me-1"></i> Reset
                     </a>
@@ -87,6 +98,11 @@
                 placeholder: "Vyberte stav",
                 allowEmptyOption: true
             });
+            new TomSelect("#incomplete", {
+                placeholder: "Vyberte stav kompletnosti",
+                allowEmptyOption: true
+            });
+
         });
     </script>
 </div>

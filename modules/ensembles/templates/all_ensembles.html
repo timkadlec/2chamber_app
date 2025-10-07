@@ -63,15 +63,23 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% for pl in ensemble.player_links %}
-                                        {% if pl.player.first_name or pl.player.last_name %}
-                                            <em>{{ pl.player.instrument.abbreviation }}.</em>
-                                            {{ pl.player.first_name[0] }}. {{ pl.player.last_name }}
+                                <td>
+                                    {% for ie in ensemble.instrumentation_entries %}
+                                        {% set assigned = ie.player_links|selectattr("player_id")|list %}
+                                        {% if assigned %}
+                                            {% set pl = assigned[0].player %}
+                                            <em>{{ pl.instrument.abbreviation }}.</em>
+                                            {{ pl.first_name[0] }}. {{ pl.last_name }}
                                         {% else %}
-                                            Prázdný hráč
+                                            <em>{{ ie.instrument.abbreviation }}. </em>
+                                            <span class="badge bg-light text-muted border">
+                <i class="fas fa-user-slash me-1"></i> Neobsazeno
+            </span>
                                         {% endif %}
                                         {% if not loop.last %}, {% endif %}
                                     {% endfor %}
+                                </td>
+
                                 </td>
                                 <td>
                                     {% if ensemble.exception.status == "approved" %}
@@ -164,7 +172,9 @@
                                         {% if pl.player.first_name or pl.player.last_name %}
                                             {{ pl.player.first_name[0] }}. {{ pl.player.last_name }}
                                         {% else %}
-                                            Prázdný hráč
+                                            <span class="badge bg-light text-muted border">
+        <i class="fas fa-user-slash me-1"></i> Neobsazeno
+    </span>
                                         {% endif %}
                                         {% if not loop.last %}, {% endif %}
                                     {% endfor %}

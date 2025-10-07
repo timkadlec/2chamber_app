@@ -4,7 +4,7 @@ from models.core import Instrumentation, Semester
 from datetime import date
 from collections import defaultdict
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy import case, func
+from sqlalchemy import case, func, select, exists
 
 
 def format_ensemble_instrumentation(instrumentation_entries):
@@ -168,6 +168,32 @@ class Ensemble(db.Model):
             else_="Soubor obsahuej vysoké procento hostů."
         )
 
+    @hybrid_property
+    def is_complete(self):
+        if not self.instrumentation_entries:
+            return False
+        return all(
+            any(p.player_id for p in instr.player_links)
+            for instr in self.instrumentation_entries
+        )
+
+    @is_complete.expression
+    def is_complete(cls):
+        empty_exists = (
+            select(EnsembleInstrumentation.id)
+            .outerjoin(
+                EnsemblePlayer,
+                EnsemblePlayer.ensemble_instrumentation_id == EnsembleInstrumentation.id
+            )
+            .where(
+                (EnsembleInstrumentation.ensemble_id == cls.id)
+                & (EnsemblePlayer.player_id.is_(None))
+            )
+            .limit(1)
+            .correlate(cls)
+        )
+        return ~exists(empty_exists)
+
 
 class EnsembleInstrumentation(Instrumentation):
     __tablename__ = 'ensemble_instrumentations'
@@ -255,7 +281,7 @@ class EnsembleApplication(db.Model):
         db.Integer,
         db.ForeignKey("ensembles.id", ondelete="CASCADE"),
         nullable=False,
-        index=True   # no UNIQUE constraint anymore
+        index=True  # no UNIQUE constraint anymore
     )
     application_id = db.Column(
         db.Integer,

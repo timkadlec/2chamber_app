@@ -6,27 +6,41 @@ from models import db, Ensemble, EnsembleSemester, Player, Student, EnsemblePlay
     KomorniHraStud, Instrument, StudentSubjectEnrollment, Semester, EnsembleTeacher, Teacher, EnsembleNote
 from . import ensemble_bp
 from sqlalchemy.orm import selectinload
-from sqlalchemy import or_, select, func
 from sqlalchemy.exc import IntegrityError
 import unicodedata
+from sqlalchemy import exists, select, or_
+from models import EnsembleInstrumentation, EnsemblePlayer
+from sqlalchemy.sql import func
+
+incomplete_subq = (
+    select(EnsembleInstrumentation.ensemble_id)
+    .outerjoin(
+        EnsemblePlayer,
+        EnsemblePlayer.ensemble_instrumentation_id == EnsembleInstrumentation.id
+    )
+    .group_by(EnsembleInstrumentation.ensemble_id, EnsembleInstrumentation.id)
+    # Having: no player assigned (either none exist or all have player_id IS NULL)
+    .having(func.count(EnsemblePlayer.player_id) == 0)
+    .scalar_subquery()
+)
 
 
 @ensemble_bp.route("/all")
 @navlink("Soubory", weight=10)
 def index():
     current_semester = session["semester_id"]
-    page = request.args.get('page', 1, type=int)
-    per_page = 10
+    page = request.args.get("page", 1, type=int)
+    per_page = 20
 
     # --- filters from GET ---
     instrument_ids = request.args.getlist("instrument_id", type=int)
     teacher_ids = request.args.getlist("teacher_id", type=int)
     search_query = request.args.get("q", "").strip()
     health_filter = request.args.get("health", "").strip()
+    incomplete_filter = request.args.get("incomplete", "").strip()
 
     def strip_diacritics(s: str) -> str:
-        # Normalize to NFD (decomposed form), then remove combining marks
-        return ''.join(
+        return "".join(
             c for c in unicodedata.normalize("NFD", s)
             if unicodedata.category(c) != "Mn"
         )
@@ -48,8 +62,26 @@ def index():
     if teacher_ids:
         ensembles = ensembles.join(Ensemble.teacher_links).filter(
             EnsembleTeacher.teacher_id.in_(teacher_ids),
-            EnsembleTeacher.semester_id == current_semester  # only current semester teachers
+            EnsembleTeacher.semester_id == current_semester
         )
+
+    # --- incomplete / complete filter ---
+    if incomplete_filter in ("1", "0"):
+        incomplete_subq = (
+            db.select(EnsembleInstrumentation.ensemble_id)
+            .outerjoin(
+                EnsemblePlayer,
+                EnsemblePlayer.ensemble_instrumentation_id == EnsembleInstrumentation.id
+            )
+            .group_by(EnsembleInstrumentation.ensemble_id, EnsembleInstrumentation.id)
+            .having(func.count(EnsemblePlayer.player_id) == 0)
+            .scalar_subquery()
+        )
+
+        if incomplete_filter == "1":
+            ensembles = ensembles.filter(Ensemble.is_complete.is_(False))  # incomplete
+        else:
+            ensembles = Ensemble.query.filter(Ensemble.is_complete.is_(True))  # incomplete
 
     # --- player or ensemble search ---
     if search_query:
@@ -77,6 +109,7 @@ def index():
         per_page=per_page,
         error_out=False
     )
+
     ensembles = pagination.items
 
     return render_template(
@@ -88,7 +121,8 @@ def index():
         selected_instrument_ids=instrument_ids,
         selected_teacher_ids=teacher_ids,
         search_query=search_query,
-        health_filter=health_filter,  # <-- pass to template
+        health_filter=health_filter,
+        incomplete_filter=incomplete_filter,  # 👈 Pass to template
     )
 
 
@@ -169,7 +203,7 @@ def export_pdf_by_teacher():
         teachers=teachers,
         current_semester=current_semester,
         today=datetime.date.today(),
-        logo_url=logo_url,   # pass full absolute URI to template
+        logo_url=logo_url,  # pass full absolute URI to template
     )
 
     # base_url not strictly required for file://, but harmless

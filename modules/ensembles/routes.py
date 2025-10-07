@@ -83,7 +83,7 @@ def index():
         "all_ensembles.html",
         ensembles=ensembles,
         pagination=pagination,
-        instruments=Instrument.query.order_by(Instrument.name).filter_by(is_primary=True).all(),
+        instruments=Instrument.query.order_by(Instrument.weight).filter_by(is_primary=True).all(),
         teachers=Teacher.query.order_by(Teacher.last_name, Teacher.first_name).all(),
         selected_instrument_ids=instrument_ids,
         selected_teacher_ids=teacher_ids,

@@ -83,7 +83,7 @@ def index():
         "all_ensembles.html",
         ensembles=ensembles,
         pagination=pagination,
-        instruments=Instrument.query.order_by(Instrument.name).filter_by(is_primary=True).all(),
+        instruments=Instrument.query.order_by(Instrument.weight).filter_by(is_primary=True).all(),
         teachers=Teacher.query.order_by(Teacher.last_name, Teacher.first_name).all(),
         selected_instrument_ids=instrument_ids,
         selected_teacher_ids=teacher_ids,
@@ -141,16 +141,17 @@ def export_pdf():
         f'attachment; filename=ensembles_{datetime.date.today():%Y%m%d}.pdf'
     return response
 
+
 @ensemble_bp.route("/by_teacher/pdf")
 def export_pdf_by_teacher():
     import datetime
-    from flask import render_template, make_response, session
+    from pathlib import Path
+    from flask import render_template, make_response, session, current_app
     from weasyprint import HTML
 
     current_semester_id = session["semester_id"]
     current_semester = Semester.query.get(current_semester_id)
 
-    # Query all teachers who teach at least one ensemble this semester
     teachers = (
         Teacher.query.join(EnsembleTeacher)
         .filter(EnsembleTeacher.semester_id == current_semester_id)
@@ -159,14 +160,21 @@ def export_pdf_by_teacher():
         .all()
     )
 
+    # ✅ build absolute file:// path to logo for WeasyPrint
+    logo_path = Path(current_app.static_folder) / "images" / "hamu_logo.png"
+    logo_url = logo_path.resolve().as_uri()  # -> file:///srv/www/.../static/images/hamu_logo.png
+
     html = render_template(
         "pdf_export/ensemble_by_teacher.html",
         teachers=teachers,
         current_semester=current_semester,
         today=datetime.date.today(),
+        logo_url=logo_url,   # pass full absolute URI to template
     )
 
-    pdf = HTML(string=html).write_pdf()
+    # base_url not strictly required for file://, but harmless
+    pdf = HTML(string=html, base_url=str(Path(current_app.root_path).resolve())).write_pdf()
+
     response = make_response(pdf)
     response.headers["Content-Type"] = "application/pdf"
     response.headers[

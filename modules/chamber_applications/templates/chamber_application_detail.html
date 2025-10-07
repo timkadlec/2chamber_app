@@ -27,8 +27,11 @@
                         <p class="mb-1">
                             <strong>Student:</strong> {{ application.student.full_name }}
                         </p>
+                         <p class="mb-1">
+                            <strong>Nástroj:</strong> {{ application.student.instrument.name if application.student else "-" }}
+                        </p>
                         <p class="mb-1">
-                            <strong>Semestr:</strong> {{ application.semester.name if application.semester else "-" }}
+                            <strong>Semestr:</strong> {{ application.semester.name if application.semester else "-" }} {{ application.semester.academic_year.name if application.semester else "-" }}
                         </p>
                         <p class="mb-1">
                             <strong>Datum
@@ -227,7 +230,7 @@
                         </p>
                         {% if application.reviewed_at %}
                             <p class="small text-muted mb-1">
-                                Posuzoval: {{ application.exception.reviewed_by.display_name if application.exception.reviewed_by else "-" }}
+                                Posuzoval: {{ application.reviewed_by.display_name if application.reviewed_by else "-" }}
                             </p>
                             <p class="small text-muted mb-1">
                                 Rozhodnutí:

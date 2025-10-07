@@ -100,7 +100,6 @@
     <tr>
         <th>Soubor</th>
         <th>Instrumentace</th>
-        <th>Pedagog</th>
         <th>Členové</th>
     </tr>
     </thead>
@@ -110,7 +109,6 @@
         <tr>
             <td><b>{{ ens.name }}</b></td>
             <td>{{ ens.instrumentation }}</td>
-            <td>{{ teacher.teacher.full_name if teacher else '-' }}</td>
             <td>
                 {% for pl in ens.player_links %}
                     {% if pl.player %}

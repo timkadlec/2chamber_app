@@ -11,6 +11,7 @@ import unicodedata
 from sqlalchemy import exists, select, or_
 from models import EnsembleInstrumentation, EnsemblePlayer
 from sqlalchemy.sql import func
+from utils.decorators import permission_required
 
 incomplete_subq = (
     select(EnsembleInstrumentation.ensemble_id)
@@ -171,7 +172,7 @@ def export_pdf():
     html = render_template('pdf_export/all_ensembles.html', ensembles=ensembles,
                            current_semester=Semester.query.get(current_semester),
                            today=datetime.date.today(),
-                           logo_url=logo_url,)
+                           logo_url=logo_url, )
 
     pdf = HTML(string=html).write_pdf()
     response = make_response(pdf)
@@ -223,6 +224,7 @@ def export_pdf_by_teacher():
 
 
 @ensemble_bp.route("/add", methods=["GET", "POST"])
+@permission_required('ens_add')
 def ensemble_add():
     form = EnsembleForm(mode="add")
     if form.validate_on_submit():
@@ -243,6 +245,7 @@ def ensemble_add():
 
 
 @ensemble_bp.route("/<int:ensemble_id>/edit", methods=["GET", "POST"])
+@permission_required('ens_edit')
 def ensemble_edit(ensemble_id):
     form = EnsembleForm(mode="edit")
     ensemble = Ensemble.query.filter_by(id=ensemble_id).first_or_404()
@@ -257,6 +260,7 @@ def ensemble_edit(ensemble_id):
 
 
 @ensemble_bp.route("/<int:ensemble_id>/detail", methods=["GET", "POST"])
+@permission_required('ens_detail')
 def ensemble_detail(ensemble_id):
     ensemble = Ensemble.query.filter_by(id=ensemble_id).first_or_404()
 
@@ -409,7 +413,7 @@ def add_player_to_ensemble(ensemble_id, ensemble_instrumentation_id, mode="stude
         return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
 
 
-@ensemble_bp.route("/<int:ensemble_id>/players/add-empty", methods=["POST"])
+@ensemble_bp.route("/<int:ensemble_id>/player/add-empty", methods=["POST"])
 def add_empty_player(ensemble_id):
     data = request.get_json(silent=True) or request.form or {}
     inst_id = data.get("instrument_id")
@@ -513,7 +517,7 @@ def add_preset_ensemble(ensemble_id):
     return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
 
 
-@ensemble_bp.route("/<int:ensemble_id>/players/remove", methods=["POST"])
+@ensemble_bp.route("/<int:ensemble_id>/player/remove", methods=["POST"])
 def delete_ensemble_player(ensemble_id):
     data = request.get_json(silent=True) or request.form or {}
     ep_id = data.get("ensemble_player_id")
@@ -547,6 +551,7 @@ def delete_ensemble_player(ensemble_id):
 
 
 @ensemble_bp.route("/<int:ensemble_id>/delete", methods=["POST"])
+@permission_required('ens_delete')
 def ensemble_delete(ensemble_id):
     ensemble_to_delete = Ensemble.query.get_or_404(ensemble_id)
     db.session.delete(ensemble_to_delete)
@@ -561,6 +566,7 @@ def count_hour_donation(ensemble):
 
 
 @ensemble_bp.route("/<int:ensemble_id>/teacher/assign", methods=["POST"])
+@permission_required('ens_teacher_assign')
 def ensemble_assign_teacher(ensemble_id):
     ensemble = Ensemble.query.get_or_404(ensemble_id)
     teacher_form = TeacherForm()
@@ -596,6 +602,7 @@ def ensemble_assign_teacher(ensemble_id):
 
 
 @ensemble_bp.route("/teacher_assignment/<int:assignment_id>/remove", methods=["POST"])
+@permission_required('ens_teacher_remove')
 def ensemble_remove_teacher(assignment_id):
     assignment = EnsembleTeacher.query.get_or_404(assignment_id)
     ensemble = Ensemble.query.get_or_404(assignment.ensemble_id)

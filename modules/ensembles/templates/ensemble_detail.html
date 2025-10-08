@@ -413,14 +413,14 @@
                                                     </button>
                                                 </div>
                                             </form>
+                                            {% if current_user.has_permission('ens_preset_add') %}
+                                                <hr class="my-3">
 
-                                            <hr class="my-3">
+                                                <p class="fw-bold mb-2">Předdefinované soubory:</p>
 
-                                            <p class="fw-bold mb-2">Předdefinované soubory:</p>
-
-                                            <!-- Preset ensemble buttons -->
-                                            <div class="d-flex flex-wrap gap-2">
-                                                {% for key, label in {
+                                                <!-- Preset ensemble buttons -->
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    {% for key, label in {
                         '2flutes_piano': '2 flétny + klavír',
                         'wind_trio': 'Trio dřevěné',
                         'wind_quintet': 'Dechové kvinteto',
@@ -430,15 +430,17 @@
                         'brass_quintet': 'Žesťové kvinteto',
                         'guitar_duo': 'Kytarové duo'
                     }.items() %}
-                                                    <form method="post"
-                                                          action="{{ url_for('ensemble.add_preset_ensemble', ensemble_id=ensemble.id) }}">
-                                                        <input type="hidden" name="preset" value="{{ key }}">
-                                                        <button type="submit" class="btn btn-outline-primary btn-sm">
-                                                            {{ label }}
-                                                        </button>
-                                                    </form>
-                                                {% endfor %}
-                                            </div>
+                                                        <form method="post"
+                                                              action="{{ url_for('ensemble.add_preset_ensemble', ensemble_id=ensemble.id) }}">
+                                                            <input type="hidden" name="preset" value="{{ key }}">
+                                                            <button type="submit"
+                                                                    class="btn btn-outline-primary btn-sm">
+                                                                {{ label }}
+                                                            </button>
+                                                        </form>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
 
                                         </div>
 

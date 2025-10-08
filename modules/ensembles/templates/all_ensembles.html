@@ -43,22 +43,65 @@
                 <div class="table-responsive d-none d-md-block">
                     <table class="table align-middle mb-0">
                         <thead class="table-light text-uppercase small text-muted">
+                        {% set args = request.args.to_dict(flat=False) %}
+                        {% set _ = args.pop('sort_by', None) %}
+                        {% set _ = args.pop('sort_order', None) %}
                         <tr>
-                            <th>Název souboru</th>
+                            <th>
+                                <a href="{{ url_for('ensemble.index', sort_by='name', sort_order='desc' if sort_by=='name' and sort_order=='asc' else 'asc', **args) }}"
+                                   class="text-decoration-none text-dark">
+                                    Název souboru
+                                    {% if sort_by == 'name' %}
+                                        <i class="fas fa-sort-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                    {% else %}
+                                        <i class="fas fa-sort text-muted"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+
                             <th>Instrumentace</th>
-                            <th>Pedagog</th>
+
+                            <th>
+                                <a href="{{ url_for('ensemble.index', sort_by='teacher', sort_order='desc' if sort_by=='teacher' and sort_order=='asc' else 'asc', **args) }}"
+                                   class="text-decoration-none text-dark">
+                                    Pedagog
+                                    {% if sort_by == 'teacher' %}
+                                        <i class="fas fa-sort-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                    {% else %}
+                                        <i class="fas fa-sort text-muted"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+
                             <th>Členové</th>
-                            <th>Kontrola</th>
+
+                            <th>
+                                <a href="{{ url_for('ensemble.index', sort_by='health', sort_order='desc' if sort_by=='health' and sort_order=='asc' else 'asc', **args) }}"
+                                   class="text-decoration-none text-dark">
+                                    Kontrola
+                                    {% if sort_by == 'health' %}
+                                        <i class="fas fa-sort-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                    {% else %}
+                                        <i class="fas fa-sort text-muted"></i>
+                                    {% endif %}
+                                </a>
+                            </th>
+
                             <th class="text-end">Akce</th>
                         </tr>
                         </thead>
+
+
                         <tbody>
                         {% for ensemble in ensembles %}
                             <tr>
+                                <!-- Name -->
                                 <td>
                                     <div class="fw-semibold text-dark">{{ ensemble.name }}</div>
                                 </td>
+                                <!-- Instrumenation -->
                                 <td>{{ ensemble.instrumentation }}</td>
+                                <!-- Teachers -->
                                 <td>
                                     {% set teachers = ensemble.semester_teachers(session["semester_id"]) %}
                                     {% if teachers %}
@@ -74,7 +117,6 @@
                                     {% endif %}
                                 </td>
 
-                                <td>
                                 <td>
                                     {% for ie in ensemble.instrumentation_entries %}
                                         {% set assigned = ie.player_links|selectattr("player_id")|list %}
@@ -92,7 +134,6 @@
                                     {% endfor %}
                                 </td>
 
-                                </td>
                                 <td>
                                     {% if ensemble.exception.status == "approved" %}
                                         <span class="badge bg-info">

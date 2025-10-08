@@ -88,14 +88,30 @@
             font-size: 9pt;
             color: #555;
         }
+
+        .summary-title {
+            margin-top: 0.5em;
+            font-size: 11pt;
+            font-weight: bold;
+            text-align: left;
+            border-bottom: 1pt solid #555;
+            padding-bottom: 2px;
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
     </style>
 </head>
 <body>
 
+<!-- =========================================
+     HEADER
+     ========================================= -->
 <header>
     <div><img src="{{ logo_url }}" alt="HAMU Logo"></div>
     <div class="title">
-        <h1>Přehled komorních souborů</h1>
+        <h1>Přehled úvazků komorních souborů</h1>
         <div>Akademie múzických umění v Praze</div>
         <div style="font-size:13pt;font-weight:bold;margin-top:2px;">
             {{ current_semester.name }} {{ current_semester.academic_year.name }}
@@ -103,6 +119,57 @@
     </div>
 </header>
 
+<!-- =========================================
+     SUMMARY PAGE (BUILD DATA)
+     ========================================= -->
+{# Build a simple array of {name, hours} for teachers with any hours #}
+{% set summary = [] %}
+{% for teacher in teachers %}
+    {% set ensemb_links = teacher.ensemble_links | selectattr("semester_id", "equalto", current_semester.id) | list %}
+    {% set hours = ensemb_links | map(attribute='hour_donation') | select('number') | sum %}
+    {% if hours %}
+        {% set _ = summary.append({'name': teacher.full_name, 'hours': hours|float}) %}
+    {% endif %}
+{% endfor %}
+{# Compute grand total safely #}
+{% set grand_total = summary | sum(attribute='hours') %}
+
+<!-- =========================================
+     SUMMARY PAGE (RENDER TABLE)
+     ========================================= -->
+<div class="summary-section">
+    <div class="summary-title">Souhrn úvazků pedagogů</div>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Pedagog</th>
+            <th class="hours">Celkem hodin</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for entry in summary | sort(attribute='name') %}
+            <tr>
+                <td>{{ entry.name }}</td>
+                <td class="hours">{{ "%.1f"|format(entry.hours) }}</td>
+            </tr>
+        {% endfor %}
+        <tr style="font-weight:bold;">
+            <td style="text-align:right;">Součet všech pedagogů</td>
+            <td class="hours">{{ "%.1f"|format(grand_total or 0) }}</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- =========================================
+     PAGE BREAK BETWEEN SUMMARY & DETAIL
+     ========================================= -->
+<div class="page-break"></div>
+
+<!-- =========================================
+     DETAILED SECTION (PER TEACHER)
+     ========================================= -->
 {% for teacher in teachers %}
     {% set ensemb_links = teacher.ensemble_links | selectattr("semester_id", "equalto", current_semester.id) | list %}
     {% set total_hours = ensemb_links | map(attribute='hour_donation') | select('number') | sum %}
@@ -149,6 +216,9 @@
     {% endif %}
 {% endfor %}
 
+<!-- =========================================
+     FOOTER
+     ========================================= -->
 <footer>Vygenerováno {{ today.strftime('%d.%m.%Y') }}</footer>
 </body>
 </html>

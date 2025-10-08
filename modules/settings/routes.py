@@ -22,31 +22,42 @@ def roles():
     return render_template("settings_roles.html", roles=roles)
 
 
-# --- Role detail with permissions ---
 @settings_bp.route("/role/<int:role_id>", methods=["GET", "POST"])
 def role_detail(role_id):
     role = Role.query.options(joinedload(Role.permissions)).get(role_id)
     if not role:
         abort(404)
 
+    # --- POST: save updated permissions ---
     if request.method == "POST":
         selected_codes = request.form.getlist("permissions")
-        # fetch corresponding Permission objects
+
+        # Fetch all Permission objects by their code
         new_permissions = Permission.query.filter(Permission.code.in_(selected_codes)).all()
+
+        # Update role permissions
         role.permissions = new_permissions
         db.session.commit()
+
         flash("Oprávnění role byla úspěšně aktualizována.", "success")
         return redirect(url_for("settings.role_detail", role_id=role.id))
 
-    # group permissions alphabetically by prefix (users.*, ensembles.*, etc.)
+    # --- GET: show grouped permissions ---
+    permissions = Permission.query.order_by(Permission.category, Permission.code).all()
+
     grouped = {}
-    for perm in Permission.query.order_by(Permission.code).all():
-        group = perm.code.split(".")[0].capitalize() if "." in perm.code else "Ostatní"
-        grouped.setdefault(group, []).append({
+    for perm in permissions:
+        category = perm.category or "Ostatní"
+        grouped.setdefault(category, []).append({
+            "id": perm.id,
             "code": perm.code,
             "name": perm.name or perm.code,
             "description": perm.description or "",
             "granted": any(p.id == perm.id for p in role.permissions),
         })
 
-    return render_template("settings_role_detail.html", role=role, permissions_grouped=grouped)
+    return render_template(
+        "settings_role_detail.html",
+        role=role,
+        permissions_grouped=grouped
+    )

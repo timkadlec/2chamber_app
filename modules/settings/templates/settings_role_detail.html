@@ -1,53 +1,77 @@
 {% extends "base.html" %}
 {% block title %}{{ role.name }} – Oprávnění{% endblock %}
 {% block content %}
-    <main>
-        <div class="container-xl">
+<main>
+    <div class="container-xl">
 
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 pb-4">
-                <h1 class="text-secondary mb-0">{{ role.name }}</h1>
-                <a href="{{ url_for('settings.roles') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i> Zpět na seznam rolí
-                </a>
-            </div>
-
-            <div class="card shadow-sm">
-                <div class="card-header">
-                    <h5 class="mb-0">Oprávnění role</h5>
-                </div>
-                <div class="card-body">
-                    <p class="text-muted mb-4">{{ role.description or "—" }}</p>
-
-                    <form action="{{ url_for('settings.role_detail', role_id=role.id) }}" method="post">
-                        {{ csrf_token() if csrf_token }}
-                        {% for category, perms in permissions_grouped.items() %}
-                            <div class="mb-4">
-                                <h6 class="fw-bold border-bottom pb-1 mb-3">{{ category }}</h6>
-                                <div class="row row-cols-1 row-cols-md-2 g-2">
-                                    {% for perm in perms %}
-                                        <div class="col">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox"
-                                                       id="{{ perm.code }}" name="permissions"
-                                                       value="{{ perm.code }}"
-                                                       {% if perm.granted %}checked{% endif %}>
-                                                <label class="form-check-label" for="{{ perm.code }}">
-                                                    <strong>{{ perm.name }}</strong><br>
-                                                    <span class="text-muted small">{{ perm.code }}</span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        {% endfor %}
-                        <hr>
-                        <button type="submit" class="btn btn-primary">Uložit změny</button>
-                    </form>
-
-                </div>
-            </div>
-
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 pb-4">
+            <h1 class="text-secondary mb-0">{{ role.name }}</h1>
+            <a href="{{ url_for('settings.roles') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i> Zpět na seznam rolí
+            </a>
         </div>
-    </main>
+
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Oprávnění role</h5>
+            </div>
+
+            <div class="card-body">
+                <p class="text-muted mb-4">{{ role.description or "—" }}</p>
+
+                <form action="{{ url_for('settings.role_detail', role_id=role.id) }}" method="post">
+                    {{ csrf_token() if csrf_token }}
+
+                    {% for category, perms in permissions_grouped.items() %}
+                        <div class="mb-4 permission-category" data-category="{{ category }}">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold border-bottom pb-1 mb-0">{{ category }}</h6>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary select-all-btn"
+                                        data-category="{{ category }}">
+                                    Označit vše
+                                </button>
+                            </div>
+
+                            <div class="row row-cols-1 row-cols-md-2 g-2">
+                                {% for perm in perms %}
+                                    <div class="col">
+                                        <div class="form-check">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   id="{{ perm.code }}"
+                                                   name="permissions"
+                                                   value="{{ perm.code }}"
+                                                   {% if perm.granted %}checked{% endif %}>
+                                            <label class="form-check-label" for="{{ perm.code }}">
+                                                <strong>{{ perm.name }}</strong><br>
+                                                <span class="text-muted small">{{ perm.description or perm.code }}</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <hr>
+                    <button type="submit" class="btn btn-primary">Uložit změny</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script>
+document.querySelectorAll('.select-all-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const category = btn.dataset.category;
+        const container = document.querySelector(`[data-category="${category}"]`);
+        const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => cb.checked = !allChecked);
+    });
+});
+</script>
 {% endblock %}

@@ -3,192 +3,194 @@
     Výjimky
 {% endblock %}
 {% block content %}
-<main>
-    {% set active = "exceptions" %}
-    <div class="container-xl pb-4">
-        <h1 class="text-secondary">Výjimky</h1>
-        <p>Přehled všech žádostí o výjimku a jejich přiřazených hráčů.</p>
-    </div>
+    <main>
+        {% set active = "exceptions" %}
+        <div class="container-xl pb-4">
+            <h1 class="text-secondary">Výjimky</h1>
+            <p>Přehled všech žádostí o výjimku a jejich přiřazených hráčů.</p>
+        </div>
 
-    <div class="container-xl">
-        <div class="card shadow-sm mb-4">
-            <!-- Filters (optional, like with students) -->
-            {% include "partials/_exception_filters.html" ignore missing %}
+        <div class="container-xl">
+            <div class="card shadow-sm mb-4">
+                <!-- Filters (optional, like with students) -->
+                {% include "partials/_exception_filters.html" ignore missing %}
 
-            <!-- Table -->
-            <div class="table-responsive">
-                <table class="table align-middle mb-0">
-                    <thead class="table-light text-uppercase small text-muted">
-                    <tr>
-                        <th>ID</th>
-                        <th>Žádost</th>
-                        <th>Student (žadatel)</th>
-                        <th>Nástroj žadatele</th>
-                        <th>Spoluhráči</th>
-                        <th>Důvod</th>
-                        <th>Stav</th>
-                        {% if current_user.has_permission('exc_can_decide') or current_user.has_permission('exc_can_view_detail') or current_user.has_permission('exc_can_delete') %}
-                            <th class="text-end">Akce</th>
-                        {% endif %}
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for exception in exceptions %}
-                    <tr>
-                        <td>{{ exception.id }}</td>
-                        <td>
-                            <a href="{{ url_for('chamber_applications.detail', application_id=exception.application.id) }}">
-                                Žádost #{{ exception.application_id }}
-                            </a>
-                        </td>
-                        <td>
-                            {% if exception.application.student %}
-                                {{ exception.application.student.full_name }}
-                            {% else %}
-                                —
+                <!-- Table -->
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light text-uppercase small text-muted">
+                        <tr>
+                            <th>ID</th>
+                            <th>Žádost</th>
+                            <th>Student (žadatel)</th>
+                            <th>Nástroj žadatele</th>
+                            <th>Spoluhráči</th>
+                            <th>Důvod</th>
+                            <th>Stav</th>
+                            {% if current_user.has_permission('exc_can_decide') or current_user.has_permission('exc_can_view_detail') or current_user.has_permission('exc_can_delete') %}
+                                <th class="text-end">Akce</th>
                             {% endif %}
-                        </td>
-                        <td>
-                            {{ exception.application.student.instrument.name }}
-                        </td>
-                        <td>
-                            {% for e_player in exception.application.players %}
-                                {{ e_player.player.instrument.abbreviation }}.
-                                {{ e_player.player.student.full_name if e_player.player.student else e_player.player.full_name }}
-                                {% if not loop.last %}, {% endif %}
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {{ exception.reason }}
-                        </td>
-                        <td>
-                            {% if exception.status == 'pending' %}
-                                <span class="badge rounded-pill bg-warning text-dark">Čeká na schválení</span>
-                            {% elif exception.status == 'rejected' %}
-                                <span class="badge rounded-pill bg-danger">Zamítnuto</span>
-                            {% elif exception.status == 'approved' %}
-                                <span class="badge rounded-pill bg-success">Schváleno</span>
-                            {% endif %}
-                        </td>
-                        {% if current_user.has_permission('exc_can_decide') or current_user.has_permission('exc_can_view_detail') or current_user.has_permission('exc_can_delete') %}
-
-                            <td class="text-end">
-                            <div class="btn-group btn-group-sm" role="group">
-                            {% if current_user.has_permission('exc_can_decide') %}
-                                {% if exception.status != "approved" and exception.status != "rejected" %}
-                                    <a href="{{ url_for('exceptions.detail', exception_id=exception.id) }}"
-                                       class="btn btn-outline-primary" title="Posoudit žádost">
-                                        <i class="fas fa-gavel"></i>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for exception in exceptions %}
+                            <tr>
+                                <td>{{ exception.id }}</td>
+                                <td>
+                                    <a href="{{ url_for('chamber_applications.detail', application_id=exception.application.id) }}">
+                                        Žádost #{{ exception.application_id }}
                                     </a>
+                                </td>
+                                <td>
+                                    {% if exception.application.student %}
+                                        {{ exception.application.student.full_name }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ exception.application.student.instrument.name }}
+                                </td>
+                                <td>
+                                    {% for e_player in exception.application.players %}
+                                        {{ e_player.player.instrument.abbreviation }}.
+                                        {{ e_player.player.student.full_name if e_player.player.student else e_player.player.full_name }}
+                                        {% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {{ exception.reason }}
+                                </td>
+                                <td>
+                                    {% if exception.status == 'pending' %}
+                                        <span class="badge rounded-pill bg-warning text-dark">Čeká na schválení</span>
+                                    {% elif exception.status == 'rejected' %}
+                                        <span class="badge rounded-pill bg-danger">Zamítnuto</span>
+                                    {% elif exception.status == 'approved' %}
+                                        <span class="badge rounded-pill bg-success">Schváleno</span>
+                                    {% endif %}
+                                </td>
+                                {% if current_user.has_permission('exc_can_decide')
+   or current_user.has_permission('exc_can_view_detail')
+   or current_user.has_permission('exc_can_delete') %}
+
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            {% if current_user.has_permission('exc_can_decide')
+                  and exception.status != "approved"
+                  and exception.status != "rejected" %}
+                                                <a href="{{ url_for('exceptions.detail', exception_id=exception.id) }}"
+                                                   class="btn btn-outline-primary" title="Posoudit žádost">
+                                                    <i class="fas fa-gavel"></i>
+                                                </a>
+                                            {% endif %}
+
+                                            {% if current_user.has_permission('exc_can_view_detail') %}
+                                                <a href="{{ url_for('exceptions.view', exception_id=exception.id) }}"
+                                                   class="btn btn-outline-info" title="Náhlédnout">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            {% endif %}
+
+                                            {% if current_user.has_permission('exc_can_delete') %}
+                                                <button type="button"
+                                                        class="btn btn-outline-danger"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#deleteExceptionModal{{ exception.id }}"
+                                                        title="Smazat">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+
+                                        {% if current_user.has_permission('exc_can_delete') %}
+                                            <!-- Delete modal -->
+                                            <div class="modal fade" id="deleteExceptionModal{{ exception.id }}"
+                                                 tabindex="-1"
+                                                 aria-labelledby="deleteExceptionModal{{ exception.id }}Label"
+                                                 aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h1 class="modal-title fs-5"
+                                                                id="deleteExceptionModal{{ exception.id }}Label">
+                                                                Smazat výjimku
+                                                            </h1>
+                                                            <button type="button" class="btn-close"
+                                                                    data-bs-dismiss="modal"
+                                                                    aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body text-start">
+                                                            Opravdu si přejete smazat tuto výjimku
+                                                            (ID {{ exception.id }})?
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <form action="{{ url_for('exceptions.exception_delete', exception_id=exception.id) }}"
+                                                                  method="post" class="d-inline">
+                                                                <button type="button" class="btn btn-secondary"
+                                                                        data-bs-dismiss="modal">Zavřít
+                                                                </button>
+                                                                <button type="submit" class="btn btn-danger">Smazat
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </td>
                                 {% endif %}
-                            {% endif %}
-                            {% if current_user.has_permission('exc_can_view_detail') %}
-                                <a href="{{ url_for('exceptions.view', exception_id=exception.id) }}"
-                                   class="btn btn-outline-info" title="Náhlédnout">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                            {% endif %}
-                        {% endif %}
-                        {% if current_user.has_permission('exc_can_delete') %}
-                            <button type="button"
-                                    class="btn btn-outline-danger"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#deleteExceptionModal{{ exception.id }}"
-                                    title="Smazat">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        {% endif %}
-                        </div>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
 
-
-                        <!-- Delete modal -->
-                        {% if current_user.has_permission('exc_can_delete') %}
-                            <div class="modal fade" id="deleteExceptionModal{{ exception.id }}"
-                                 tabindex="-1"
-                                 aria-labelledby="deleteExceptionModal{{ exception.id }}Label"
-                                 aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h1 class="modal-title fs-5"
-                                                id="deleteExceptionModal{{ exception.id }}Label">
-                                                Smazat výjimku
-                                            </h1>
-                                            <button type="button" class="btn-close"
-                                                    data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body text-start">
-                                            Opravdu si přejete smazat tuto výjimku
-                                            (ID {{ exception.id }})?
-                                        </div>
-                                        <div class="modal-footer">
-                                            <form action="{{ url_for('exceptions.exception_delete', exception_id=exception.id) }}"
-                                                  method="post" class="d-inline">
-                                                <button type="button" class="btn btn-secondary"
-                                                        data-bs-dismiss="modal">Zavřít
-                                                </button>
-                                                <button type="submit" class="btn btn-danger">Smazat
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endif %}
-                        </td>
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            <div class="card-footer bg-white">
-                <div class="d-flex flex-column flex-md-row align-items-center justify-content-between">
-                    <div class="text-muted small">
-                        Zobrazeno
-                        <span class="fw-semibold">{{ pagination.page * pagination.per_page - pagination.per_page + 1 }}</span>
-                        až
-                        <span class="fw-semibold">
+                <!-- Pagination -->
+                <div class="card-footer bg-white">
+                    <div class="d-flex flex-column flex-md-row align-items-center justify-content-between">
+                        <div class="text-muted small">
+                            Zobrazeno
+                            <span class="fw-semibold">{{ pagination.page * pagination.per_page - pagination.per_page + 1 }}</span>
+                            až
+                            <span class="fw-semibold">
                             {{ pagination.page * pagination.per_page if pagination.total > pagination.page * pagination.per_page else pagination.total }}
                         </span>
-                        z
-                        <span class="fw-semibold">{{ pagination.total }}</span>
-                        výjimek
+                            z
+                            <span class="fw-semibold">{{ pagination.total }}</span>
+                            výjimek
+                        </div>
+                        <nav aria-label="Stránkování">
+                            <ul class="pagination pagination-sm mb-0 mt-3 mt-md-0">
+                                {% if pagination.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           href="{{ url_for('exceptions.index', page=pagination.prev_num) }}"
+                                           aria-label="Předchozí">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {% for p in range(1, pagination.pages + 1) %}
+                                    <li class="page-item {% if pagination.page == p %}active{% endif %}">
+                                        <a class="page-link"
+                                           href="{{ url_for('exceptions.index', page=p) }}">{{ p }}</a>
+                                    </li>
+                                {% endfor %}
+                                {% if pagination.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           href="{{ url_for('exceptions.index', page=pagination.next_num) }}"
+                                           aria-label="Další">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
                     </div>
-                    <nav aria-label="Stránkování">
-                        <ul class="pagination pagination-sm mb-0 mt-3 mt-md-0">
-                            {% if pagination.has_prev %}
-                                <li class="page-item">
-                                    <a class="page-link"
-                                       href="{{ url_for('exceptions.index', page=pagination.prev_num) }}"
-                                       aria-label="Předchozí">
-                                        <span aria-hidden="true">&laquo;</span>
-                                    </a>
-                                </li>
-                            {% endif %}
-                            {% for p in range(1, pagination.pages + 1) %}
-                                <li class="page-item {% if pagination.page == p %}active{% endif %}">
-                                    <a class="page-link"
-                                       href="{{ url_for('exceptions.index', page=p) }}">{{ p }}</a>
-                                </li>
-                            {% endfor %}
-                            {% if pagination.has_next %}
-                                <li class="page-item">
-                                    <a class="page-link"
-                                       href="{{ url_for('exceptions.index', page=pagination.next_num) }}"
-                                       aria-label="Další">
-                                        <span aria-hidden="true">&raquo;</span>
-                                    </a>
-                                </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
                 </div>
             </div>
         </div>
-    </div>
-</main>
+    </main>
 {% endblock %}

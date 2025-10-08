@@ -28,6 +28,19 @@
                 </select>
             </div>
 
+            <!-- Department filter -->
+            <div class="col-md-3">
+                <label for="department_id" class="form-label">Katedra pedagoga</label>
+                <select class="form-select form-select-sm" id="department_id" name="department_id" multiple>
+                    {% for dep in departments %}
+                        <option value="{{ dep.id }}"
+                                {% if dep.id in (selected_department_ids or []) %}selected{% endif %}>
+                            {{ dep.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <!-- Incomplete ensemble filter -->
             <div class="col-md-3">
                 <label for="incomplete" class="form-label">Kompletnost</label>
@@ -102,6 +115,11 @@
                 placeholder: "Vyberte stav kompletnosti",
                 plugins: {remove_button: {title: "Odebrat"}},
                 allowEmptyOption: true
+            });
+
+            new TomSelect("#department_id", {
+                plugins: {remove_button: {title: "Odebrat"}},
+                placeholder: "Vyberte katedru"
             });
 
         });

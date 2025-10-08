@@ -118,7 +118,6 @@ class Department(db.Model):
     weight = db.Column(db.Integer)
 
 
-
 # ------------------------
 # Users, Roles, Permissions (GLOBAL USER SYSTEM)
 # ------------------------
@@ -403,7 +402,6 @@ class EventType(db.Model):
 # -----------------------------------------
 # Player System (after core)
 # -----------------------------------------
-
 
 
 class PlayerAssignment(db.Model):

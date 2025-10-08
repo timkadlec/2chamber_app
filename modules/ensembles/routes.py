@@ -3,7 +3,7 @@ from flask_login import current_user
 from .forms import EnsembleForm, TeacherForm, NoteForm
 from utils.nav import navlink
 from models import db, Ensemble, EnsembleSemester, Player, Student, EnsemblePlayer, EnsembleInstrumentation, \
-    KomorniHraStud, Instrument, StudentSubjectEnrollment, Semester, EnsembleTeacher, Teacher, EnsembleNote
+    KomorniHraStud, Instrument, StudentSubjectEnrollment, Semester, EnsembleTeacher, Teacher, EnsembleNote, Department
 from . import ensemble_bp
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
@@ -38,22 +38,19 @@ def index():
     page = request.args.get("page", 1, type=int)
     per_page = 20
 
-    # --- filters from GET ---
+    # --- filters ---
     instrument_ids = request.args.getlist("instrument_id", type=int)
     teacher_ids = request.args.getlist("teacher_id", type=int)
+    department_ids = request.args.getlist("department_id", type=int)  # NEW
     search_query = request.args.get("q", "").strip()
     health_filter = request.args.get("health", "").strip()
     incomplete_filter = request.args.get("incomplete", "").strip()
 
     def strip_diacritics(s: str) -> str:
-        return "".join(
-            c for c in unicodedata.normalize("NFD", s)
-            if unicodedata.category(c) != "Mn"
-        )
+        return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
 
     search = strip_diacritics(search_query).lower()
 
-    # --- base query restricted to current semester ---
     ensembles = db.session.query(Ensemble).filter(
         Ensemble.semester_links.any(EnsembleSemester.semester_id == current_semester)
     )
@@ -71,51 +68,58 @@ def index():
             EnsembleTeacher.semester_id == current_semester
         )
 
+    # --- department filter ---
+    if department_ids:
+        subq = (
+            select(EnsembleTeacher.id)
+            .join(Teacher)
+            .where(
+                EnsembleTeacher.ensemble_id == Ensemble.id,
+                EnsembleTeacher.semester_id == current_semester,
+                Teacher.department_id.in_(department_ids),
+            )
+            .exists()
+        )
+        ensembles = ensembles.filter(subq)
+
     # --- incomplete / complete filter ---
     if incomplete_filter in ("1", "0"):
-        if incomplete_filter == "1":
-            ensembles = ensembles.filter(Ensemble.is_complete.is_(False))
-        else:
-            ensembles = ensembles.filter(Ensemble.is_complete.is_(True))
+        ensembles = ensembles.filter(
+            Ensemble.is_complete.is_(False) if incomplete_filter == "1" else Ensemble.is_complete.is_(True)
+        )
 
-    # --- player or ensemble search ---
+    # --- search ---
     if search_query:
-        search_pattern = f"%{search}%"
+        pattern = f"%{search}%"
         ensembles = (
             ensembles.outerjoin(Ensemble.player_links)
             .outerjoin(EnsemblePlayer.player)
             .filter(
                 or_(
-                    func.unaccent(func.lower(Player.first_name)).like(search_pattern),
-                    func.unaccent(func.lower(Player.last_name)).like(search_pattern),
-                    func.unaccent(func.lower(Ensemble.name)).like(search_pattern),
+                    func.unaccent(func.lower(Player.first_name)).like(pattern),
+                    func.unaccent(func.lower(Player.last_name)).like(pattern),
+                    func.unaccent(func.lower(Ensemble.name)).like(pattern),
                 )
             )
         )
 
-    # --- health check filter ---
+    # --- health ---
     if health_filter:
         ensembles = ensembles.filter(Ensemble.health_check_label == health_filter)
 
-    # --- distinct + order + pagination ---
-    pagination = (
-        ensembles.distinct()
-        .order_by(Ensemble.name)
-        .paginate(page=page, per_page=per_page, error_out=False)
-    )
-
+    pagination = ensembles.distinct().order_by(Ensemble.name).paginate(page=page, per_page=per_page, error_out=False)
     ensembles = pagination.items
 
     return render_template(
         "all_ensembles.html",
         ensembles=ensembles,
         pagination=pagination,
-        instruments=Instrument.query.order_by(Instrument.weight)
-        .filter_by(is_primary=True)
-        .all(),
+        instruments=Instrument.query.order_by(Instrument.weight).filter_by(is_primary=True).all(),
         teachers=Teacher.query.order_by(Teacher.last_name, Teacher.first_name).all(),
+        departments=Department.query.order_by(Department.name).all(),  # NEW
         selected_instrument_ids=instrument_ids,
         selected_teacher_ids=teacher_ids,
+        selected_department_ids=department_ids,  # NEW
         search_query=search_query,
         health_filter=health_filter,
         incomplete_filter=incomplete_filter,
@@ -137,15 +141,13 @@ def export_pdf():
     # --- filters from GET ---
     instrument_ids = request.args.getlist("instrument_id", type=int)
     teacher_ids = request.args.getlist("teacher_id", type=int)
+    department_ids = request.args.getlist("department_id", type=int)  # NEW
     search_query = request.args.get("q", "").strip()
     health_filter = request.args.get("health", "").strip()
     incomplete_filter = request.args.get("incomplete", "").strip()
 
     def strip_diacritics(s: str) -> str:
-        return "".join(
-            c for c in unicodedata.normalize("NFD", s)
-            if unicodedata.category(c) != "Mn"
-        )
+        return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
 
     search = strip_diacritics(search_query).lower()
 
@@ -153,16 +155,15 @@ def export_pdf():
     log.info(f"Semester ID: {current_semester}")
     log.info(f"Instrument IDs: {instrument_ids}")
     log.info(f"Teacher IDs: {teacher_ids}")
+    log.info(f"Department IDs: {department_ids}")  # NEW
     log.info(f"Search: '{search_query}'")
     log.info(f"Health: '{health_filter}' Incomplete: '{incomplete_filter}'")
 
-    # --- base query restricted to current semester ---
     ensembles = db.session.query(Ensemble).filter(
         Ensemble.semester_links.any(EnsembleSemester.semester_id == current_semester)
     )
-    log.info(f"Base count: {ensembles.count()}")
 
-    # --- instrument filter via EXISTS ---
+    # --- instrument filter ---
     if instrument_ids:
         subq = (
             select(EnsembleInstrumentation.id)
@@ -175,7 +176,7 @@ def export_pdf():
         ensembles = ensembles.filter(subq)
         log.info(f"After instrument filter: {ensembles.count()}")
 
-    # --- teacher filter via EXISTS ---
+    # --- teacher filter ---
     if teacher_ids:
         subq = (
             select(EnsembleTeacher.id)
@@ -189,15 +190,29 @@ def export_pdf():
         ensembles = ensembles.filter(subq)
         log.info(f"After teacher filter: {ensembles.count()}")
 
+    # --- department filter ---
+    if department_ids:
+        subq = (
+            select(EnsembleTeacher.id)
+            .join(Teacher)
+            .where(
+                EnsembleTeacher.ensemble_id == Ensemble.id,
+                EnsembleTeacher.semester_id == current_semester,
+                Teacher.department_id.in_(department_ids),
+            )
+            .exists()
+        )
+        ensembles = ensembles.filter(subq)
+        log.info(f"After department filter: {ensembles.count()}")
+
     # --- incomplete / complete ---
     if incomplete_filter in ("1", "0"):
-        if incomplete_filter == "1":
-            ensembles = ensembles.filter(Ensemble.is_complete.is_(False))
-        else:
-            ensembles = ensembles.filter(Ensemble.is_complete.is_(True))
+        ensembles = ensembles.filter(
+            Ensemble.is_complete.is_(False) if incomplete_filter == "1" else Ensemble.is_complete.is_(True)
+        )
         log.info(f"After incomplete filter: {ensembles.count()}")
 
-    # --- search filter ---
+    # --- search ---
     if search_query:
         pattern = f"%{search}%"
         ensembles = ensembles.filter(
@@ -218,15 +233,9 @@ def export_pdf():
         ensembles = ensembles.filter(Ensemble.health_check_label == health_filter)
         log.info(f"After health filter: {ensembles.count()}")
 
-    # --- finalize ---
     ensembles = ensembles.distinct().order_by(Ensemble.name).all()
     log.info(f"✅ FINAL COUNT: {len(ensembles)}")
-    log.info("---- 🧾 Ensembles included ----")
-    for e in ensembles:
-        log.info(f" - {e.name}")
-    log.info("---- PDF EXPORT DEBUG END ----")
 
-    # --- render pdf ---
     logo_path = Path(current_app.static_folder) / "images" / "hamu_logo.png"
     logo_url = logo_path.resolve().as_uri()
 
@@ -236,6 +245,7 @@ def export_pdf():
         current_semester=Semester.query.get(current_semester),
         today=datetime.date.today(),
         logo_url=logo_url,
+        department_ids=department_ids,  # NEW (for template debugging if needed)
     )
 
     pdf = HTML(string=html).write_pdf()
@@ -263,6 +273,7 @@ def export_pdf_by_teacher():
     # --- filters from GET ---
     instrument_ids = request.args.getlist("instrument_id", type=int)
     teacher_ids = request.args.getlist("teacher_id", type=int)
+    department_ids = request.args.getlist("department_id", type=int)  # NEW
     search_query = request.args.get("q", "").strip()
     health_filter = request.args.get("health", "").strip()
     incomplete_filter = request.args.get("incomplete", "").strip()
@@ -277,7 +288,9 @@ def export_pdf_by_teacher():
 
     log.info("---- 🎯 PDF EXPORT BY TEACHER START ----")
     log.info(
-        f"Filters -> inst: {instrument_ids}, teach: {teacher_ids}, q: '{search_query}', health: '{health_filter}', incomplete: '{incomplete_filter}'")
+        f"Filters -> inst: {instrument_ids}, teach: {teacher_ids}, dep: {department_ids}, "
+        f"q: '{search_query}', health: '{health_filter}', incomplete: '{incomplete_filter}'"
+    )
 
     # --- base teacher query ---
     teachers_query = (
@@ -290,9 +303,14 @@ def export_pdf_by_teacher():
     if teacher_ids:
         teachers_query = teachers_query.filter(Teacher.id.in_(teacher_ids))
 
-    teachers = teachers_query.order_by(Teacher.last_name, Teacher.first_name).all()
+    # --- department filter ---
+    if department_ids:
+        teachers_query = teachers_query.filter(Teacher.department_id.in_(department_ids))
 
-    # --- filter ensembles for each teacher ---
+    teachers = teachers_query.order_by(Teacher.last_name, Teacher.first_name).all()
+    log.info(f"Teachers matching filters: {len(teachers)}")
+
+    # --- process ensembles for each teacher ---
     filtered_teachers = []
     for teacher in teachers:
         ensembles = (
@@ -304,7 +322,7 @@ def export_pdf_by_teacher():
             )
         )
 
-        # instrument filter
+        # --- instrument filter ---
         if instrument_ids:
             subq = (
                 select(EnsembleInstrumentation.id)
@@ -316,14 +334,14 @@ def export_pdf_by_teacher():
             )
             ensembles = ensembles.filter(subq)
 
-        # incomplete/complete filter
+        # --- incomplete / complete filter ---
         if incomplete_filter in ("1", "0"):
             if incomplete_filter == "1":
                 ensembles = ensembles.filter(Ensemble.is_complete.is_(False))
             else:
                 ensembles = ensembles.filter(Ensemble.is_complete.is_(True))
 
-        # search filter
+        # --- search filter ---
         if search_query:
             pattern = f"%{search}%"
             ensembles = ensembles.filter(
@@ -338,7 +356,7 @@ def export_pdf_by_teacher():
                 )
             )
 
-        # health filter
+        # --- health filter ---
         if health_filter:
             ensembles = ensembles.filter(Ensemble.health_check_label == health_filter)
 
@@ -362,6 +380,7 @@ def export_pdf_by_teacher():
         logo_url=logo_url,
         instrument_ids=instrument_ids,
         teacher_ids=teacher_ids,
+        department_ids=department_ids,  # NEW
         search_query=search_query,
         health_filter=health_filter,
         incomplete_filter=incomplete_filter,
@@ -373,10 +392,11 @@ def export_pdf_by_teacher():
     response.headers[
         "Content-Disposition"
     ] = f'attachment; filename=ensembles_by_teacher_{datetime.date.today():%Y%m%d}.pdf'
+
     return response
 
 
-@ensemble_bp.route("/teacher-hourse/pdf")
+@ensemble_bp.route("/teacher-hours/pdf")
 def export_pdf_teacher_hours():
     import datetime
     import unicodedata
@@ -392,6 +412,7 @@ def export_pdf_teacher_hours():
     # --- filters from GET ---
     instrument_ids = request.args.getlist("instrument_id", type=int)
     teacher_ids = request.args.getlist("teacher_id", type=int)
+    department_ids = request.args.getlist("department_id", type=int)  # NEW
     search_query = request.args.get("q", "").strip()
     health_filter = request.args.get("health", "").strip()
     incomplete_filter = request.args.get("incomplete", "").strip()
@@ -406,7 +427,9 @@ def export_pdf_teacher_hours():
 
     log.info("---- 🎯 PDF EXPORT BY TEACHER START ----")
     log.info(
-        f"Filters -> inst: {instrument_ids}, teach: {teacher_ids}, q: '{search_query}', health: '{health_filter}', incomplete: '{incomplete_filter}'")
+        f"Filters -> inst: {instrument_ids}, teach: {teacher_ids}, dep: {department_ids}, "
+        f"q: '{search_query}', health: '{health_filter}', incomplete: '{incomplete_filter}'"
+    )
 
     # --- base teacher query ---
     teachers_query = (
@@ -419,9 +442,14 @@ def export_pdf_teacher_hours():
     if teacher_ids:
         teachers_query = teachers_query.filter(Teacher.id.in_(teacher_ids))
 
-    teachers = teachers_query.order_by(Teacher.last_name, Teacher.first_name).all()
+    # --- department filter ---
+    if department_ids:
+        teachers_query = teachers_query.filter(Teacher.department_id.in_(department_ids))
 
-    # --- filter ensembles for each teacher ---
+    teachers = teachers_query.order_by(Teacher.last_name, Teacher.first_name).all()
+    log.info(f"Teachers matching filters: {len(teachers)}")
+
+    # --- process ensembles for each teacher ---
     filtered_teachers = []
     for teacher in teachers:
         ensembles = (
@@ -433,7 +461,7 @@ def export_pdf_teacher_hours():
             )
         )
 
-        # instrument filter
+        # --- instrument filter ---
         if instrument_ids:
             subq = (
                 select(EnsembleInstrumentation.id)
@@ -445,14 +473,14 @@ def export_pdf_teacher_hours():
             )
             ensembles = ensembles.filter(subq)
 
-        # incomplete/complete filter
+        # --- incomplete / complete filter ---
         if incomplete_filter in ("1", "0"):
             if incomplete_filter == "1":
                 ensembles = ensembles.filter(Ensemble.is_complete.is_(False))
             else:
                 ensembles = ensembles.filter(Ensemble.is_complete.is_(True))
 
-        # search filter
+        # --- search filter ---
         if search_query:
             pattern = f"%{search}%"
             ensembles = ensembles.filter(
@@ -467,7 +495,7 @@ def export_pdf_teacher_hours():
                 )
             )
 
-        # health filter
+        # --- health filter ---
         if health_filter:
             ensembles = ensembles.filter(Ensemble.health_check_label == health_filter)
 
@@ -491,6 +519,7 @@ def export_pdf_teacher_hours():
         logo_url=logo_url,
         instrument_ids=instrument_ids,
         teacher_ids=teacher_ids,
+        department_ids=department_ids,  # NEW
         search_query=search_query,
         health_filter=health_filter,
         incomplete_filter=incomplete_filter,
@@ -502,6 +531,7 @@ def export_pdf_teacher_hours():
     response.headers[
         "Content-Disposition"
     ] = f'attachment; filename=ensembles_by_teacher_{datetime.date.today():%Y%m%d}.pdf'
+
     return response
 
 

@@ -78,7 +78,7 @@ def auth_callback():
     }
 
     flash("Úspěšně přihlášený.", "success")
-    return redirect(url_for("ensemble.index"))
+    return redirect(url_for("index"))
 
 
 @auth_bp.route("/logout")

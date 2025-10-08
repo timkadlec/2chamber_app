@@ -70,9 +70,9 @@
                                         <span class="badge rounded-pill bg-success">Schváleno</span>
                                     {% endif %}
                                 </td>
+                                {% if current_user.has_permission('exc_can_decide') or current_user.has_permission('exc_can_view_detail') or current_user.has_permission('exc_can_delete') %}
 
-                                <td class="text-end">
-                                    {% if current_user.has_permission('exc_can_decide') or current_user.has_permission('exc_can_view_detail') or current_user.has_permission('exc_can_delete') %}
+                                    <td class="text-end">
                                         <div class="btn-group btn-group-sm" role="group">
                                             {% if current_user.has_permission('exc_can_decide') %}
                                                 {% if not exception.status == "approved" or exception.status == "rejected" %}
@@ -99,42 +99,45 @@
                                                 </button>
                                             {% endif %}
                                         </div>
-                                    {% endif %}
 
 
-                                    <!-- Delete modal -->
-                                    {% if current_user.has_permission('exc_can_delete') %}
-                                        <div class="modal fade" id="deleteExceptionModal{{ exception.id }}"
-                                             tabindex="-1"
-                                             aria-labelledby="deleteExceptionModal{{ exception.id }}Label"
-                                             aria-hidden="true">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h1 class="modal-title fs-5"
-                                                            id="deleteExceptionModal{{ exception.id }}Label">
-                                                            Smazat výjimku
-                                                        </h1>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                                aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body text-start">
-                                                        Opravdu si přejete smazat tuto výjimku (ID {{ exception.id }})?
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <form action="#"
-                                                              method="post" class="d-inline">
-                                                            <button type="button" class="btn btn-secondary"
-                                                                    data-bs-dismiss="modal">Zavřít
-                                                            </button>
-                                                            <button type="submit" class="btn btn-danger">Smazat</button>
-                                                        </form>
+                                        <!-- Delete modal -->
+                                        {% if current_user.has_permission('exc_can_delete') %}
+                                            <div class="modal fade" id="deleteExceptionModal{{ exception.id }}"
+                                                 tabindex="-1"
+                                                 aria-labelledby="deleteExceptionModal{{ exception.id }}Label"
+                                                 aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h1 class="modal-title fs-5"
+                                                                id="deleteExceptionModal{{ exception.id }}Label">
+                                                                Smazat výjimku
+                                                            </h1>
+                                                            <button type="button" class="btn-close"
+                                                                    data-bs-dismiss="modal"
+                                                                    aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body text-start">
+                                                            Opravdu si přejete smazat tuto výjimku
+                                                            (ID {{ exception.id }})?
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <form action="#"
+                                                                  method="post" class="d-inline">
+                                                                <button type="button" class="btn btn-secondary"
+                                                                        data-bs-dismiss="modal">Zavřít
+                                                                </button>
+                                                                <button type="submit" class="btn btn-danger">Smazat
+                                                                </button>
+                                                            </form>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    {% endif %}
-                                </td>
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
                             </tr>
                         {% endfor %}
                         </tbody>

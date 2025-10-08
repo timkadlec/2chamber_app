@@ -3,7 +3,7 @@ from flask_login import current_user
 from .forms import EnsembleForm, TeacherForm, NoteForm
 from utils.nav import navlink
 from models import db, Ensemble, EnsembleSemester, Player, Student, EnsemblePlayer, EnsembleInstrumentation, Instrument, \
-    StudentSubjectEnrollment, Semester, EnsembleTeacher, Teacher, EnsembleNote, Department
+    StudentSubjectEnrollment, Semester, EnsembleTeacher, Teacher, EnsembleNote, Department, Permission
 from . import ensemble_bp
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
@@ -86,6 +86,7 @@ def index():
 
 
 @ensemble_bp.route("/all/pdf")
+@permission_required('ens_export_pdf')
 def export_pdf():
     current_semester = session["semester_id"]
     filters = get_common_filters()
@@ -104,6 +105,7 @@ def export_pdf():
 
 
 @ensemble_bp.route("/by_teacher/pdf")
+@permission_required('ens_export_pdf')
 def export_pdf_by_teacher():
     current_semester_id = session["semester_id"]
     filters = get_common_filters()
@@ -142,6 +144,7 @@ def export_pdf_by_teacher():
 
 
 @ensemble_bp.route("/teacher-hours/pdf")
+@permission_required('ens_export_pdf')
 def export_pdf_teacher_hours():
     current_semester_id = session["semester_id"]
     filters = get_common_filters()
@@ -298,6 +301,7 @@ def _get_or_create_ensemble_instrumentation_by_ids(ensemble_id: int, instrument_
 
 
 @ensemble_bp.route("/<int:ensemble_id>/player/<int:ensemble_instrumentation_id>/<mode>", methods=["GET", "POST"])
+@permission_required('ens_player_assign')
 def add_player_to_ensemble(ensemble_id, ensemble_instrumentation_id, mode="student"):
     ensemble = Ensemble.query.get(ensemble_id)
     instrumentation = EnsembleInstrumentation.query.get(ensemble_instrumentation_id)
@@ -370,6 +374,7 @@ def add_player_to_ensemble(ensemble_id, ensemble_instrumentation_id, mode="stude
 
 
 @ensemble_bp.route("/<int:ensemble_id>/player/add-empty", methods=["POST"])
+@permission_required('ens_player_add')
 def add_empty_player(ensemble_id):
     data = request.get_json(silent=True) or request.form or {}
     inst_id = data.get("instrument_id")
@@ -410,6 +415,7 @@ def add_empty_player(ensemble_id):
 
 
 @ensemble_bp.route("/<int:ensemble_id>/add-preset", methods=["POST"])
+@permission_required('ens_preset_add')
 def add_preset_ensemble(ensemble_id):
     """Quickly create a predefined ensemble structure."""
     ensemble = Ensemble.query.get_or_404(ensemble_id)
@@ -474,6 +480,7 @@ def add_preset_ensemble(ensemble_id):
 
 
 @ensemble_bp.route("/<int:ensemble_id>/player/remove", methods=["POST"])
+@permission_required('ens_player_remove')
 def delete_ensemble_player(ensemble_id):
     data = request.get_json(silent=True) or request.form or {}
     ep_id = data.get("ensemble_player_id")
@@ -576,6 +583,7 @@ def ensemble_remove_teacher(assignment_id):
 
 
 @ensemble_bp.route("/<int:ensemble_id>/add_note", methods=["POST"])
+@permission_required('ens_notes')
 def add_note(ensemble_id):
     form = NoteForm()
     if form.validate_on_submit():
@@ -593,6 +601,7 @@ def add_note(ensemble_id):
 
 
 @ensemble_bp.route("/<int:ensemble_id>/notes/<int:note_id>/delete", methods=["POST"])
+@permission_required('ens_notes')
 def delete_note(ensemble_id, note_id):
     note = EnsembleNote.query.filter_by(id=note_id, ensemble_id=ensemble_id).first_or_404()
     db.session.delete(note)

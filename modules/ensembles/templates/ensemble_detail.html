@@ -289,7 +289,9 @@
                             <th class="d-none d-lg-table-cell">Příjmení</th>
                             <th class="d-none d-lg-table-cell">Jméno</th>
                             <th class="d-none d-lg-table-cell">Dotace</th>
-                            <th class="d-none d-lg-table-cell">Akce</th>
+                            {% if current_user.has_permission('ens_teacher_remove') %}
+                                <th class="d-none d-lg-table-cell">Akce</th>
+                            {% endif %}
                         </tr>
                         </thead>
                         <tbody>
@@ -305,59 +307,60 @@
                                 <td>
                                     {{ ta.hour_donation }}
                                 </td>
+                                {% if current_user.has_permission('ens_teacher_remove') %}
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="#"
+                                               class="btn btn-light"
+                                               title="Odebrat pedagoga"
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#removeTeacherModal{{ ta.teacher.id }}">
+                                                <i class="fas fa-user-minus text-danger"></i>
+                                            </a>
+                                        </div>
+                                        <!-- Remove Teacher Modal -->
+                                        <div class="modal fade" id="removeTeacherModal{{ ta.teacher.id }}"
+                                             tabindex="-1"
+                                             aria-labelledby="removeTeacherModalLabel{{ ta.teacher.id }}"
+                                             aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content">
 
-                                <td>
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a href="#"
-                                           class="btn btn-light"
-                                           title="Odebrat pedagoga"
-                                           data-bs-toggle="modal"
-                                           data-bs-target="#removeTeacherModal{{ ta.teacher.id }}">
-                                            <i class="fas fa-user-minus text-danger"></i>
-                                        </a>
-                                    </div>
-                                    <!-- Remove Teacher Modal -->
-                                    <div class="modal fade" id="removeTeacherModal{{ ta.teacher.id }}"
-                                         tabindex="-1"
-                                         aria-labelledby="removeTeacherModalLabel{{ ta.teacher.id }}"
-                                         aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title"
+                                                            id="removeTeacherModalLabel{{ ta.teacher.id }}">
+                                                            Odebrat pedagoga
+                                                        </h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                                aria-label="Zavřít"></button>
+                                                    </div>
 
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title"
-                                                        id="removeTeacherModalLabel{{ ta.teacher.id }}">
-                                                        Odebrat pedagoga
-                                                    </h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                            aria-label="Zavřít"></button>
-                                                </div>
+                                                    <div class="modal-body">
+                                                        Opravdu chcete odebrat pedagoga
+                                                        <strong>{{ ta.teacher.full_name }}</strong> ze
+                                                        souboru?
+                                                    </div>
 
-                                                <div class="modal-body">
-                                                    Opravdu chcete odebrat pedagoga
-                                                    <strong>{{ ta.teacher.full_name }}</strong> ze
-                                                    souboru?
-                                                </div>
-
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                            data-bs-dismiss="modal">
-                                                        Zrušit
-                                                    </button>
-                                                    <form method="post"
-                                                          action="{{ url_for('ensemble.ensemble_remove_teacher',
-                                         assignment_id=ta.id) }}">
-                                                        {{ teacher_form.hidden_tag() }}
-                                                        <button type="submit" class="btn btn-sm btn-danger">
-                                                            <i class="fas fa-user-minus me-1"></i> Odebrat
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                                data-bs-dismiss="modal">
+                                                            Zrušit
                                                         </button>
-                                                    </form>
-                                                </div>
+                                                        <form method="post"
+                                                              action="{{ url_for('ensemble.ensemble_remove_teacher',
+                                         assignment_id=ta.id) }}">
+                                                            {{ teacher_form.hidden_tag() }}
+                                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                                <i class="fas fa-user-minus me-1"></i> Odebrat
+                                                            </button>
+                                                        </form>
+                                                    </div>
 
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </td>
+                                    </td>
+                                {% endif %}
                             {% endfor %}
                         {% endif %}
                         </tr>
@@ -370,54 +373,54 @@
             <div class="card shadow-sm mt-4">
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h5 class="mb-0">Hráči</h5>
+                    {% if current_user.has_permission('ens_player_add') %}
+                        <div class="d-flex gap-2">
+                            <a href="#"
+                               class="btn btn-sm btn-primary d-flex align-items-center"
+                               data-bs-toggle="modal" data-bs-target="#addPlayerModal">
+                                <i class="fas fa-plus"></i>
+                                <span class="ms-2 d-none d-md-inline">Přidat hráče (prázdný)</span>
+                            </a>
 
-                    <div class="d-flex gap-2">
-                        <a href="#"
-                           class="btn btn-sm btn-primary d-flex align-items-center"
-                           data-bs-toggle="modal" data-bs-target="#addPlayerModal">
-                            <i class="fas fa-plus"></i>
-                            <span class="ms-2 d-none d-md-inline">Přidat hráče (prázdný)</span>
-                        </a>
+                            <!-- Add Empty Player Modal -->
+                            <div class="modal fade" id="addPlayerModal" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Přidat hráče nebo předdefinovaný soubor</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
 
-                        <!-- Add Empty Player Modal -->
-                        <div class="modal fade" id="addPlayerModal" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Přidat hráče nebo předdefinovaný soubor</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
+                                        <div class="modal-body">
 
-                                    <div class="modal-body">
+                                            <!-- Manual single-player form -->
+                                            <form action="{{ url_for('ensemble.add_empty_player', ensemble_id=ensemble.id) }}"
+                                                  method="post" class="mb-3">
+                                                <div class="mb-3">
+                                                    <label for="instrument_id" class="form-label">Nástroj</label>
+                                                    <select id="instrument_id" name="instrument_id" class="form-select"
+                                                            required>
+                                                        <option value="" disabled selected>— Vyberte nástroj —</option>
+                                                        {% for i in available_instruments %}
+                                                            <option value="{{ i.id }}">{{ i.name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
 
-                                        <!-- Manual single-player form -->
-                                        <form action="{{ url_for('ensemble.add_empty_player', ensemble_id=ensemble.id) }}"
-                                              method="post" class="mb-3">
-                                            <div class="mb-3">
-                                                <label for="instrument_id" class="form-label">Nástroj</label>
-                                                <select id="instrument_id" name="instrument_id" class="form-select"
-                                                        required>
-                                                    <option value="" disabled selected>— Vyberte nástroj —</option>
-                                                    {% for i in available_instruments %}
-                                                        <option value="{{ i.id }}">{{ i.name }}</option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
+                                                <div class="text-end">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="fas fa-plus me-1"></i> Přidat prázdného hráče
+                                                    </button>
+                                                </div>
+                                            </form>
 
-                                            <div class="text-end">
-                                                <button type="submit" class="btn btn-primary">
-                                                    <i class="fas fa-plus me-1"></i> Přidat prázdného hráče
-                                                </button>
-                                            </div>
-                                        </form>
+                                            <hr class="my-3">
 
-                                        <hr class="my-3">
+                                            <p class="fw-bold mb-2">Předdefinované soubory:</p>
 
-                                        <p class="fw-bold mb-2">Předdefinované soubory:</p>
-
-                                        <!-- Preset ensemble buttons -->
-                                        <div class="d-flex flex-wrap gap-2">
-                                            {% for key, label in {
+                                            <!-- Preset ensemble buttons -->
+                                            <div class="d-flex flex-wrap gap-2">
+                                                {% for key, label in {
                         '2flutes_piano': '2 flétny + klavír',
                         'wind_trio': 'Trio dřevěné',
                         'wind_quintet': 'Dechové kvinteto',
@@ -427,27 +430,28 @@
                         'brass_quintet': 'Žesťové kvinteto',
                         'guitar_duo': 'Kytarové duo'
                     }.items() %}
-                                                <form method="post"
-                                                      action="{{ url_for('ensemble.add_preset_ensemble', ensemble_id=ensemble.id) }}">
-                                                    <input type="hidden" name="preset" value="{{ key }}">
-                                                    <button type="submit" class="btn btn-outline-primary btn-sm">
-                                                        {{ label }}
-                                                    </button>
-                                                </form>
-                                            {% endfor %}
+                                                    <form method="post"
+                                                          action="{{ url_for('ensemble.add_preset_ensemble', ensemble_id=ensemble.id) }}">
+                                                        <input type="hidden" name="preset" value="{{ key }}">
+                                                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                                                            {{ label }}
+                                                        </button>
+                                                    </form>
+                                                {% endfor %}
+                                            </div>
+
                                         </div>
 
-                                    </div>
-
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Zavřít
-                                        </button>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Zavřít
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                    </div>
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="table-responsive">
                     <table class="table align-middle mb-0">
@@ -455,7 +459,10 @@
                         <tr>
                             <th class="d-none d-lg-table-cell">Jméno</th>
                             <th class="d-none d-lg-table-cell">Nástroj</th>
-                            <th class="d-none d-lg-table-cell">Akce</th>
+                            {% if current_user.has_permission('ens_player_assign')
+                                    or current_user.has_permission('ens_player_remove') %}
+                                <th class="d-none d-lg-table-cell">Akce</th>
+                            {% endif %}
                         </tr>
                         </thead>
                         <tbody>
@@ -486,57 +493,65 @@
                                         <span class="text-muted">–</span>
                                     {% endif %}
                                 </td>
-                                <td>
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{{ url_for('ensemble.add_player_to_ensemble', ensemble_id=ensemble.id, ensemble_instrumentation_id=ensemble_player.ensemble_instrumentation.id, mode="student") }}"
-                                           class="btn btn-light" title="Přiřadit studenta">
-                                            <i class="fas fa-user-plus text-primary"></i>
-                                        </a>
-                                        <a href="#" class="btn btn-light" title="Přesunout hráče">
-                                            <i class="fas fa-right-left text-info"></i>
-                                        </a>
-                                        <a href="{{ url_for('ensemble.add_player_to_ensemble', ensemble_id=ensemble.id, ensemble_instrumentation_id=ensemble_player.ensemble_instrumentation.id, mode="guest") }}"
-                                           class="btn btn-light" title="Přiřadit hosta">
-                                            <i class="fas fa-user-tag text-warning"></i>
-                                        </a>
-                                        <a href="#" class="btn btn-light" data-bs-toggle="modal"
-                                           data-bs-target="#deletePlayerModal{{ ensemble_player.id }}"
-                                           title="Smazat hráče">
-                                            <i class="fas fa-trash text-danger"></i>
-                                        </a>
-                                    </div>
-
-                                    <!-- Delete Modal -->
-                                    <div class="modal fade" id="deletePlayerModal{{ ensemble_player.id }}" tabindex="-1"
-                                         aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <form action="{{ url_for('ensemble.delete_ensemble_player', ensemble_id=ensemble.id) }}"
-                                                  method="post" class="modal-content">
-                                                <input type="hidden" name="ensemble_player_id"
-                                                       value="{{ ensemble_player.id }}" required>
-
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Smazat hráče</h5>
-                                                    <button type="button" class="btn-close"
-                                                            data-bs-dismiss="modal"></button>
-                                                </div>
-
-                                                <div class="modal-body">
-                                                    <p>Opravdu si přejete smazat tohoto hráče?</p>
-                                                </div>
-
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
-                                                        Zrušit
-                                                    </button>
-                                                    <button type="submit" class="btn btn-danger">
-                                                        <i class="fas fa-trash me-1"></i> Smazat
-                                                    </button>
-                                                </div>
-                                            </form>
+                                {% if current_user.has_permission('ens_player_assign')
+                                    or current_user.has_permission('ens_player_remove') %}
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            {% if current_user.has_permission('ens_player_assign') %}
+                                                <a href="{{ url_for('ensemble.add_player_to_ensemble', ensemble_id=ensemble.id, ensemble_instrumentation_id=ensemble_player.ensemble_instrumentation.id, mode="student") }}"
+                                                   class="btn btn-light" title="Přiřadit studenta">
+                                                    <i class="fas fa-user-plus text-primary"></i>
+                                                </a>
+                                                <a href="{{ url_for('ensemble.add_player_to_ensemble', ensemble_id=ensemble.id, ensemble_instrumentation_id=ensemble_player.ensemble_instrumentation.id, mode="guest") }}"
+                                                   class="btn btn-light" title="Přiřadit hosta">
+                                                    <i class="fas fa-user-tag text-warning"></i>
+                                                </a>
+                                            {% endif %}
+                                            {% if current_user.has_permission('ens_player_remove') %}
+                                                <a href="#" class="btn btn-light" data-bs-toggle="modal"
+                                                   data-bs-target="#deletePlayerModal{{ ensemble_player.id }}"
+                                                   title="Smazat hráče">
+                                                    <i class="fas fa-trash text-danger"></i>
+                                                </a>
+                                            {% endif %}
                                         </div>
-                                    </div>
-                                </td>
+
+                                        <!-- Delete Modal -->
+                                        {% if current_user.has_permission('ens_player_remove') %}
+                                            <div class="modal fade" id="deletePlayerModal{{ ensemble_player.id }}"
+                                                 tabindex="-1"
+                                                 aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <form action="{{ url_for('ensemble.delete_ensemble_player', ensemble_id=ensemble.id) }}"
+                                                          method="post" class="modal-content">
+                                                        <input type="hidden" name="ensemble_player_id"
+                                                               value="{{ ensemble_player.id }}" required>
+
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">Smazat hráče</h5>
+                                                            <button type="button" class="btn-close"
+                                                                    data-bs-dismiss="modal"></button>
+                                                        </div>
+
+                                                        <div class="modal-body">
+                                                            <p>Opravdu si přejete smazat tohoto hráče?</p>
+                                                        </div>
+
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-light"
+                                                                    data-bs-dismiss="modal">
+                                                                Zrušit
+                                                            </button>
+                                                            <button type="submit" class="btn btn-danger">
+                                                                <i class="fas fa-trash me-1"></i> Smazat
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
                             </tr>
                         {% endfor %}
                         </tbody>
@@ -551,7 +566,7 @@
                         <i class="fas fa-calendar-alt me-2 text-secondary d-none d-md-inline"></i> Semestry
                     </h5>
                     <a href="#"
-                       class="btn btn-sm btn-primary d-flex align-items-center">
+                       class="btn btn-sm btn-primary d-flex align-items-center" disabled>
                         <!-- Icon always visible -->
                         <i class="fas fa-file-export"></i>
                         <!-- Text only visible from md and up -->

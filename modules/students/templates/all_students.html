@@ -157,42 +157,32 @@
                             <span class="fw-semibold">{{ pagination.total }}</span>
                             studentů
                         </div>
+                        {% set args = request.args.to_dict(flat=False) %}
+                        {% set _ = args.pop('page', None) %}
+
                         <nav aria-label="Stránkování">
                             <ul class="pagination pagination-sm mb-0 mt-3 mt-md-0">
                                 {% if pagination.has_prev %}
                                     <li class="page-item">
                                         <a class="page-link"
-                                           href="{{ url_for('students.index',
-                                            page=pagination.prev_num,
-                                            q=request.args.get('q'),
-                                            instrument_id=request.args.get('instrument_id'),
-                                            subject_id=request.args.get('subject_id'),
-                                            active=request.args.get('active')) }}"
+                                           href="{{ url_for('students.index', page=pagination.prev_num, **args) }}"
                                            aria-label="Předchozí">
                                             <span aria-hidden="true">&laquo;</span>
                                         </a>
                                     </li>
                                 {% endif %}
+
                                 {% for p in range(1, pagination.pages + 1) %}
                                     <li class="page-item {% if pagination.page == p %}active{% endif %}">
                                         <a class="page-link"
-                                           href="{{ url_for('students.index',
-                                            page=p,
-                                            q=request.args.get('q'),
-                                            instrument_id=request.args.get('instrument_id'),
-                                            subject_id=request.args.get('subject_id'),
-                                            active=request.args.get('active')) }}">{{ p }}</a>
+                                           href="{{ url_for('students.index', page=p, **args) }}">{{ p }}</a>
                                     </li>
                                 {% endfor %}
+
                                 {% if pagination.has_next %}
                                     <li class="page-item">
                                         <a class="page-link"
-                                           href="{{ url_for('students.index',
-                                            page=pagination.next_num,
-                                            q=request.args.get('q'),
-                                            instrument_id=request.args.get('instrument_id'),
-                                            subject_id=request.args.get('subject_id'),
-                                            active=request.args.get('active')) }}"
+                                           href="{{ url_for('students.index', page=pagination.next_num, **args) }}"
                                            aria-label="Další">
                                             <span aria-hidden="true">&raquo;</span>
                                         </a>

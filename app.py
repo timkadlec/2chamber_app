@@ -1,11 +1,19 @@
-from flask import Flask, url_for, request, redirect, render_template
+from cli import (
+    cli_format_academic_year,
+    cli_get_or_create_academic_year,
+    cli_oracle_ping,
+    cli_get_or_create_semester,
+    cli_get_or_create_subject,
+    cli_oracle_students_update,
+    cli_oracle_semesters,
+    cli_oracle_teachers
+)
+from flask import Flask, url_for, request, redirect, render_template, session
 from config import ProductionConfig
 from models import db, User
-from datetime import datetime, timedelta
 import os
 import oracledb
 from extensions import login_manager, oauth, migrate
-from flask_login import current_user
 from modules.library import library_bp
 from modules.auth import auth_bp
 from modules.settings import settings_bp
@@ -20,18 +28,13 @@ from modules.exceptions import exceptions_bp
 from modules.rules import rules_bp
 from collections import defaultdict
 from utils.error_handlers import register_error_handlers
-from flask import session
 from sqlalchemy.orm import selectinload
+from sqlalchemy import func, select, exists, case  # <-- needed
 from models import AcademicYear, Semester
-from cli import (
-    cli_format_academic_year,
-    cli_get_or_create_academic_year,
-    cli_oracle_ping,
-    cli_get_or_create_semester,
-    cli_get_or_create_subject,
-    cli_oracle_students_update,
-    cli_oracle_semesters,
-    cli_oracle_teachers
+from utils.dashboard_helper import get_dashboard_data
+from models import (
+    Ensemble, EnsembleSemester, EnsembleTeacher, EnsembleInstrumentation,
+    EnsemblePlayer, Player, Teacher, Instrument
 )
 
 
@@ -240,7 +243,9 @@ def create_app():
 
     @app.route("/")
     def index():
-        return render_template("hero_page.html")
+        current_sem = session.get("semester_id")
+        data = get_dashboard_data(current_sem)
+        return render_template("dashboard.html", **data)
 
     # ------------------------------
     # LOGGING CONFIGURATION

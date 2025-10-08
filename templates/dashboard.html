@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+    <main class="py-4">
+        <div class="container-xl">
+
+            <!-- === HEADER === -->
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <div>
+                    <h1 class="text-secondary mb-0">Dashboard</h1>
+                    <div class="text-muted small">
+                        Aktuální semestr:
+                        <strong>{{ current_semester.name if current_semester else "—" }}</strong>
+                        ({{ current_semester.academic_year.name if current_semester else "—" }})
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <a href="{{ url_for('ensemble.export_pdf') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-file-pdf me-2"></i>Přehled
+                    </a>
+                    <a href="{{ url_for('ensemble.export_pdf_by_teacher') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-file-pdf me-2"></i>Pedagogové
+                    </a>
+                    <a href="{{ url_for('ensemble.export_pdf_teacher_hours') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-file-pdf me-2"></i>Úvazky
+                    </a>
+                </div>
+            </div>
+
+            <!-- === KPI CARDS === -->
+            <div class="row g-3 mb-4">
+                {% macro kpi(title, value, hint=None, color="primary") -%}
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <div class="card border-{{ color }} shadow-sm h-100">
+                            <div class="card-body py-2">
+                                <div class="text-muted small">{{ title }}</div>
+                                <div class="fs-4 fw-semibold text-{{ color }}">{{ value }}</div>
+                                {% if hint %}
+                                    <div class="small text-muted">{{ hint }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {%- endmacro %}
+
+                {{ kpi("Soubory", total_ensembles) }}
+                {{ kpi("Neúplné", incomplete_count, color="danger") }}
+                {{ kpi("Nesplňuje minimum", min_fail_count, color="warning") }}
+                {{ kpi("Vysoké % hostů", high_guests_count, color="secondary") }}
+                {{ kpi("Pedagogové", teachers_involved, color="info") }}
+                {{ kpi("Průměr hráčů / soubor", "%.1f"|format(avg_players), hint=student_coverage_pct ~ "% studentů", color="success") }}
+            </div>
+
+            <!-- === ALERTS === -->
+            <div class="row g-3 mb-4">
+                <!-- Ensembles without teacher -->
+                <div class="col-lg-6">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-white fw-semibold">Soubory bez pedagoga</div>
+                        <ul class="list-group list-group-flush small">
+                            {% for e in ensembles_no_teacher %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ e.name }}</span>
+                                    <a href="{{ url_for('ensemble.ensemble_detail', ensemble_id=e.id) }}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        Přiřadit
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="list-group-item text-muted">Vše přiřazeno.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Unassigned instruments -->
+                <div class="col-lg-6">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-white fw-semibold">Neobsazené pozice (Top 5)</div>
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Nástroj</th>
+                                <th class="text-end">Počet</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for row in unassigned %}
+                                <tr>
+                                    <td>{{ row.abbr or "—" }}</td>
+                                    <td class="text-end">{{ row.cnt }}</td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="2" class="text-muted">Žádné chybějící pozice.</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {% if exceptions_pending is not none %}
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-white fw-semibold">Výjimky k rozhodnutí</div>
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>Soubor</th>
+                                        <th>Stav</th>
+                                        <th class="text-end">Akce</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for e in exceptions_pending %}
+                                        <tr>
+                                            <td>{{ e.name }}</td>
+                                            <td><span class="badge bg-warning text-dark">Čeká</span></td>
+                                            <td class="text-end">
+                                                <a href="{{ url_for('ensemble.ensemble_detail', ensemble_id=e.id) }}"
+                                                   class="btn btn-sm btn-outline-primary">Otevřít</a>
+                                            </td>
+                                        </tr>
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="3" class="text-muted">Žádné čekající výjimky.</td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- === EVENTS + TEACHERS === -->
+            <div class="row g-3">
+                <!-- Upcoming events -->
+                <div class="col-lg-6">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-white fw-semibold">Nadcházející akce (14 dní)</div>
+                        <ul class="list-group list-group-flush small">
+                            {% for ev in next_events %}
+                                <li class="list-group-item">
+                                    <b>{{ ev.date_start.strftime('%d.%m.') }}</b>
+                                    {% if ev.time_start %} {{ ev.time_start.strftime('%H:%M') }}{% endif %}
+                                    — {{ ev.event_type.name if ev.event_type else "Akce" }},
+                                    {{ ev.place or "Místo neuvedeno" }}
+                                </li>
+                            {% else %}
+                                <li class="list-group-item text-muted">Žádné plánované akce v následujících 14 dnech.
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Top teachers -->
+                <div class="col-lg-6">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-white fw-semibold">Nejvytíženější pedagogové</div>
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Pedagog</th>
+                                <th class="text-end">Hodiny</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for t in top_teachers %}
+                                <tr>
+                                    <td>{{ t.full_name }}</td>
+                                    <td class="text-end">{{ "%.1f"|format(t.hours or 0) }}</td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="2" class="text-muted">Žádná data.</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+{% endblock %}

@@ -29,10 +29,12 @@
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Detail souboru</h5>
-                    <a href="{{ url_for("ensemble.ensemble_edit", ensemble_id=ensemble.id) }}"
-                       class="btn btn-sm btn-info">
-                        <i class="fas fa-edit me-1"></i>Upravit soubor
-                    </a>
+                    {% if current_user.has_permission('ens_edit') %}
+                        <a href="{{ url_for("ensemble.ensemble_edit", ensemble_id=ensemble.id) }}"
+                           class="btn btn-sm btn-info">
+                            <i class="fas fa-edit me-1"></i>Upravit soubor
+                        </a>
+                    {% endif %}
                 </div>
 
                 <div class="card-body">
@@ -103,111 +105,113 @@
             </div>
 
             <!-- Ensemble Notes Card -->
-            <div class="card shadow-sm mt-4">
-                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <h5 class="mb-0">Poznámky</h5>
-                    <a href="#"
-                       class="btn btn-sm btn-outline-primary d-flex align-items-center"
-                       data-bs-toggle="modal" data-bs-target="#addNoteModal">
-                        <i class="fas fa-plus me-1"></i>Přidat poznámku
-                    </a>
-                </div>
-                <!-- Ensemble Notes List -->
-                <div class="card-body">
-                    {% if ensemble.ensemble_notes %}
-                        <ul class="list-group list-group-flush">
-                            {% for note in ensemble.ensemble_notes|sort(attribute='created_at', reverse=True) %}
-                                <li class="list-group-item">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <p class="mb-1">{{ note.text }}</p>
-                                            <small class="text-muted">
-                                                Přidáno {{ note.created_at.strftime('%d.%m.%Y %H:%M') }}
-                                                {% if note.created_by %}
-                                                    — {{ note.created_by.display_name }}
-                                                {% endif %}
-                                            </small>
+            {% if current_user.has_permission('ens_notes') %}
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="mb-0">Poznámky</h5>
+                        <a href="#"
+                           class="btn btn-sm btn-outline-primary d-flex align-items-center"
+                           data-bs-toggle="modal" data-bs-target="#addNoteModal">
+                            <i class="fas fa-plus me-1"></i>Přidat poznámku
+                        </a>
+                    </div>
+                    <!-- Ensemble Notes List -->
+                    <div class="card-body">
+                        {% if ensemble.ensemble_notes %}
+                            <ul class="list-group list-group-flush">
+                                {% for note in ensemble.ensemble_notes|sort(attribute='created_at', reverse=True) %}
+                                    <li class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <p class="mb-1">{{ note.text }}</p>
+                                                <small class="text-muted">
+                                                    Přidáno {{ note.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                                    {% if note.created_by %}
+                                                        — {{ note.created_by.display_name }}
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+
+                                            <!-- Delete Note Button -->
+                                            <a href="#"
+                                               class="btn btn-sm btn-light"
+                                               title="Smazat poznámku"
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#deleteNoteModal{{ note.id }}">
+                                                <i class="fas fa-trash text-danger"></i>
+                                            </a>
                                         </div>
+                                    </li>
 
-                                        <!-- Delete Note Button -->
-                                        <a href="#"
-                                           class="btn btn-sm btn-light"
-                                           title="Smazat poznámku"
-                                           data-bs-toggle="modal"
-                                           data-bs-target="#deleteNoteModal{{ note.id }}">
-                                            <i class="fas fa-trash text-danger"></i>
-                                        </a>
+                                    <!-- Delete Note Modal -->
+                                    <div class="modal fade" id="deleteNoteModal{{ note.id }}" tabindex="-1"
+                                         aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <form method="post"
+                                                  action="{{ url_for('ensemble.delete_note', ensemble_id=ensemble.id, note_id=note.id) }}"
+                                                  class="modal-content">
+                                                {{ note_form.hidden_tag() }}
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Smazat poznámku</h5>
+                                                    <button type="button" class="btn-close"
+                                                            data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Opravdu chcete smazat tuto poznámku?</p>
+                                                    <blockquote
+                                                            class="blockquote small text-muted">{{ note.text }}</blockquote>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                            data-bs-dismiss="modal">
+                                                        Zrušit
+                                                    </button>
+                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash me-1"></i> Smazat
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
                                     </div>
-                                </li>
-
-                                <!-- Delete Note Modal -->
-                                <div class="modal fade" id="deleteNoteModal{{ note.id }}" tabindex="-1"
-                                     aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-centered">
-                                        <form method="post"
-                                              action="{{ url_for('ensemble.delete_note', ensemble_id=ensemble.id, note_id=note.id) }}"
-                                              class="modal-content">
-                                            {{ note_form.hidden_tag() }}
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Smazat poznámku</h5>
-                                                <button type="button" class="btn-close"
-                                                        data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <p>Opravdu chcete smazat tuto poznámku?</p>
-                                                <blockquote
-                                                        class="blockquote small text-muted">{{ note.text }}</blockquote>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                        data-bs-dismiss="modal">
-                                                    Zrušit
-                                                </button>
-                                                <button type="submit" class="btn btn-sm btn-danger">
-                                                    <i class="fas fa-trash me-1"></i> Smazat
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-muted mb-0">Zatím nejsou přidány žádné poznámky.</p>
-                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted mb-0">Zatím nejsou přidány žádné poznámky.</p>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
 
-            <!-- Add Note Modal -->
-            <div class="modal fade" id="addNoteModal" tabindex="-1" aria-labelledby="addNoteModalLabel"
-                 aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <form method="post"
-                          action="{{ url_for('ensemble.add_note', ensemble_id=ensemble.id) }}"
-                          class="modal-content">
-                        {{ note_form.hidden_tag() }}
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="addNoteModalLabel">Přidat poznámku</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                {{ note_form.text.label(class="form-label") }}
-                                {{ note_form.text(class="form-control", rows="3") }}
-                                {% if note_form.text.errors %}
-                                    <div class="text-danger small">{{ note_form.text.errors[0] }}</div>
-                                {% endif %}
+                <!-- Add Note Modal -->
+                <div class="modal fade" id="addNoteModal" tabindex="-1" aria-labelledby="addNoteModalLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <form method="post"
+                              action="{{ url_for('ensemble.add_note', ensemble_id=ensemble.id) }}"
+                              class="modal-content">
+                            {{ note_form.hidden_tag() }}
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="addNoteModalLabel">Přidat poznámku</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
-                                Zavřít
-                            </button>
-                            {{ note_form.submit(class="btn btn-sm btn-primary") }}
-                        </div>
-                    </form>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    {{ note_form.text.label(class="form-label") }}
+                                    {{ note_form.text(class="form-control", rows="3") }}
+                                    {% if note_form.text.errors %}
+                                        <div class="text-danger small">{{ note_form.text.errors[0] }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+                                    Zavřít
+                                </button>
+                                {{ note_form.submit(class="btn btn-sm btn-primary") }}
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            </div>
+            {% endif %}
 
 
             <!-- Ensemble Teacher Card -->
@@ -215,66 +219,68 @@
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h5 class="mb-0">Pedagog</h5>
                     {% set teacher_assignment = ensemble.semester_teacher(session["semester_id"]) %}
-                    <div class="d-flex gap-2">
-                        <a href="#"
-                           class="btn btn-sm btn-outline-primary d-flex align-items-center"
-                           data-bs-toggle="modal"
-                           data-bs-target="#assignTeacherModal">
-                            <i class="fas fa-chalkboard-teacher"></i>
-                            <span class="ms-2 d-none d-md-inline">Přiřadit pedagoga</span>
-                        </a>
-                        <!-- Assign Teacher Modal -->
-                        <div class="modal fade" id="assignTeacherModal" tabindex="-1"
-                             aria-labelledby="assignTeacherModalLabel" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
+                    {% if current_user.has_permission('ens_teacher_assign') %}
+                        <div class="d-flex gap-2">
+                            <a href="#"
+                               class="btn btn-sm btn-outline-primary d-flex align-items-center"
+                               data-bs-toggle="modal"
+                               data-bs-target="#assignTeacherModal">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <span class="ms-2 d-none d-md-inline">Přiřadit pedagoga</span>
+                            </a>
+                            <!-- Assign Teacher Modal -->
+                            <div class="modal fade" id="assignTeacherModal" tabindex="-1"
+                                 aria-labelledby="assignTeacherModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
 
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="assignTeacherModalLabel">Přiřadit pedagoga</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                aria-label="Zavřít"></button>
-                                    </div>
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="assignTeacherModalLabel">Přiřadit pedagoga</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Zavřít"></button>
+                                        </div>
 
-                                    <form method="post"
-                                          action="{{ url_for('ensemble.ensemble_assign_teacher', ensemble_id=ensemble.id) }}">
-                                        {{ teacher_form.hidden_tag() }}
-                                        <div class="modal-body">
-                                            <div class="mb-3">
-                                                {{ teacher_form.teacher.label(class="form-label") }}
-                                                {{ teacher_form.teacher(id="teacher_id", class="form-select") }}
-                                                {% if teacher_form.teacher.errors %}
-                                                    <div class="text-danger small">{{ teacher_form.teacher.errors[0] }}</div>
-                                                {% endif %}
+                                        <form method="post"
+                                              action="{{ url_for('ensemble.ensemble_assign_teacher', ensemble_id=ensemble.id) }}">
+                                            {{ teacher_form.hidden_tag() }}
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    {{ teacher_form.teacher.label(class="form-label") }}
+                                                    {{ teacher_form.teacher(id="teacher_id", class="form-select") }}
+                                                    {% if teacher_form.teacher.errors %}
+                                                        <div class="text-danger small">{{ teacher_form.teacher.errors[0] }}</div>
+                                                    {% endif %}
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                    data-bs-dismiss="modal">
-                                                Zavřít
-                                            </button>
-                                            {{ teacher_form.submit(class="btn btn-sm btn-primary") }}
-                                        </div>
-                                    </form>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                        data-bs-dismiss="modal">
+                                                    Zavřít
+                                                </button>
+                                                {{ teacher_form.submit(class="btn btn-sm btn-primary") }}
+                                            </div>
+                                        </form>
 
+                                    </div>
                                 </div>
                             </div>
+
+                            <script>
+                                document.addEventListener("DOMContentLoaded", function () {
+                                    new TomSelect("#teacher_id", {
+                                        placeholder: "— Vyberte pedagoga —",   // placeholder instead of prefilled option
+                                        plugins: {remove_button: {title: "Odebrat"}},
+                                        maxItems: 1,
+                                        allowEmptyOption: true,
+                                        sortField: {field: "text", direction: "asc"}
+                                    }).clear();
+                                });
+                            </script>
+
+
                         </div>
-
-                        <script>
-                            document.addEventListener("DOMContentLoaded", function () {
-                                new TomSelect("#teacher_id", {
-                                    placeholder: "— Vyberte pedagoga —",   // placeholder instead of prefilled option
-                                    plugins: {remove_button: {title: "Odebrat"}},
-                                    maxItems: 1,
-                                    allowEmptyOption: true,
-                                    sortField: {field: "text", direction: "asc"}
-                                }).clear();
-                            });
-                        </script>
-
-
-                    </div>
+                    {% endif %}
                 </div>
                 <div class="table-responsive">
                     <table class="table align-middle mb-0">
@@ -461,11 +467,13 @@
                                            title="Jedná se o hosta"></i>
                                     {% endif %}
                                     {% if ensemble_player.player.student %}
-                                        <a href="{{ url_for('students.student_detail', student_id=ensemble_player.player.student_id) }}" target="_blank">
+                                        <a href="{{ url_for('students.student_detail', student_id=ensemble_player.player.student_id) }}"
+                                           target="_blank">
                                             {{ ensemble_player.player.last_name }} {{ ensemble_player.player.first_name }}
                                         </a>
                                     {% else %}
-                                        {{ ensemble_player.player.last_name }} {{ ensemble_player.player.first_name }} j.h.
+                                        {{ ensemble_player.player.last_name }} {{ ensemble_player.player.first_name }}
+                                        j.h.
                                     {% endif %}
                                 </td>
                                 <td>

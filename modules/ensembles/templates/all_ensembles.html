@@ -153,48 +153,58 @@
                                 <td class="text-end">
                                     <div class="d-flex justify-content-end mt-2">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{{ url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id, **request.args) }}"
-                                               class="btn btn-outline-primary" title="Detail">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="{{ url_for("ensemble.ensemble_edit", ensemble_id=ensemble.id) }}"
-                                               class="btn btn-outline-primary" title="Upravit">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <button type="button" class="btn btn-outline-danger"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#deleteEnsembleModal{{ ensemble.id }}"
-                                                    title="Smazat">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            {% if current_user.has_permission('ens_detail') %}
+                                                <a href="{{ url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id, **request.args) }}"
+                                                   class="btn btn-outline-primary" title="Detail">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            {% endif %}
+                                            {% if current_user.has_permission('ens_edit') %}
+                                                <a href="{{ url_for("ensemble.ensemble_edit", ensemble_id=ensemble.id) }}"
+                                                   class="btn btn-outline-primary" title="Upravit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            {% endif %}
+                                            {% if current_user.has_permission('ens_delete') %}
+                                                <button type="button" class="btn btn-outline-danger"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#deleteEnsembleModal{{ ensemble.id }}"
+                                                        title="Smazat">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            {% endif %}
                                         </div>
                                     </div>
+
                                     <!-- Delete modal -->
-                                    <div class="modal fade" id="deleteEnsembleModal{{ ensemble.id }}" tabindex="-1"
-                                         aria-labelledby="deleteEnsembleModal{{ ensemble.id }}Label" aria-hidden="true">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h1 class="modal-title fs-5">Smazat soubor</h1>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                            aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body text-start">
-                                                    Opravdu si přejete smazat soubor <b>{{ ensemble.name }}</b>?
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <form action="{{ url_for("ensemble.ensemble_delete", ensemble_id=ensemble.id) }}"
-                                                          method="post" class="d-inline">
-                                                        <button type="button" class="btn btn-secondary"
-                                                                data-bs-dismiss="modal">
-                                                            Close
-                                                        </button>
-                                                        <button type="submit" class="btn btn-danger">Smazat</button>
-                                                    </form>
+                                    {% if current_user.has_permission('ens_delete') %}
+                                        <div class="modal fade" id="deleteEnsembleModal{{ ensemble.id }}" tabindex="-1"
+                                             aria-labelledby="deleteEnsembleModal{{ ensemble.id }}Label"
+                                             aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h1 class="modal-title fs-5">Smazat soubor</h1>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                                aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body text-start">
+                                                        Opravdu si přejete smazat soubor <b>{{ ensemble.name }}</b>?
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <form action="{{ url_for("ensemble.ensemble_delete", ensemble_id=ensemble.id) }}"
+                                                              method="post" class="d-inline">
+                                                            <button type="button" class="btn btn-secondary"
+                                                                    data-bs-dismiss="modal">
+                                                                Close
+                                                            </button>
+                                                            <button type="submit" class="btn btn-danger">Smazat</button>
+                                                        </form>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}

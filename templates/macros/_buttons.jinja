@@ -1,5 +1,5 @@
-{# --- Generic icon button --- #}
-{% macro icon_button(url='#', icon='', text='', color='light', size='sm', title='', disabled=False, target='') %}
+{# --- Generic icon button (base) --- #}
+{% macro icon_button(url='#', icon='', text='', color='outline-secondary', size='sm', title='', disabled=False, target='') %}
     <a href="{{ url if not disabled else '#' }}"
        class="btn btn-{{ size }} btn-{{ color }} d-flex align-items-center {% if disabled %}disabled{% endif %}"
        {% if title %}title="{{ title }}"{% endif %}
@@ -10,22 +10,26 @@
 {% endmacro %}
 
 
-{# --- Specific variants for common use --- #}
-{% macro add_button(url, label='Přidat', icon='plus', color='primary') %}
+{# --- Common outlined variants --- #}
+
+{% macro add_button(url, label='Přidat', icon='plus', color='outline-primary') %}
     {{ icon_button(url, icon=icon, text=label, color=color, title=label) }}
 {% endmacro %}
 
-{% macro edit_button(url, label='Upravit', icon='edit', color='info') %}
+{% macro edit_button(url, label='Upravit', icon='edit', color='outline-info') %}
     {{ icon_button(url, icon=icon, text=label, color=color, title=label) }}
 {% endmacro %}
 
-{% macro delete_button(modal_target, title='Smazat', icon='trash', color='light') %}
-    <a href="#" class="btn btn-{{ color }} btn-sm"
-       data-bs-toggle="modal" data-bs-target="#{{ modal_target }}"
-       title="{{ title }}">
-        <i class="fas fa-{{ icon }} text-danger"></i>
-    </a>
+{% macro delete_button(modal_target, title='Smazat', icon='trash', color='outline-danger') %}
+    <button type="button"
+            class="btn btn-{{ color }} btn-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#{{ modal_target }}"
+            title="{{ title }}">
+        <i class="fas fa-{{ icon }}"></i>
+    </button>
 {% endmacro %}
+
 {% macro export_button(url, label='Export PDF', icon='file-pdf', color='outline-secondary') %}
     {{ icon_button(url, icon=icon, text=label, color=color, title=label) }}
 {% endmacro %}

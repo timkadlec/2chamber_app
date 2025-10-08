@@ -79,8 +79,13 @@ def get_dashboard_data(current_sem):
     try:
         from models import ChamberException
         exceptions_pending = (
-            ens_q.join(ChamberException, ChamberException.id == Ensemble.exception_id)
-            .filter(ChamberException.status == "pending")
+            db.session.query(Ensemble)
+            .join(ChamberException, ChamberException.id == Ensemble.exception_id)
+            .join(EnsembleSemester, EnsembleSemester.ensemble_id == Ensemble.id)
+            .filter(
+                EnsembleSemester.semester_id == current_sem,
+                ChamberException.status == "pending",
+            )
             .order_by(Ensemble.name)
             .limit(10)
             .all()

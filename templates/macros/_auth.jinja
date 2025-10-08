@@ -8,13 +8,13 @@
 
 
 {% macro if_any_perm(permissions, current_user) %}
-    {% set has_perm = false %}
+    {% set ns = namespace(has_perm=false) %}
     {% for p in permissions %}
         {% if current_user and current_user.has_permission(p) %}
-            {% set has_perm = true %}
+            {% set ns.has_perm = true %}
         {% endif %}
     {% endfor %}
-    {% if has_perm %}
+    {% if ns.has_perm %}
         {{ caller() }}
     {% endif %}
 {% endmacro %}

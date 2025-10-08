@@ -99,7 +99,7 @@ def export_pdf():
     return render_pdf(
         "pdf_export/all_ensembles.html",
         {"ensembles": ensembles, "current_semester": Semester.query.get(current_semester)},
-        "ensembles",
+        "SKH_KomorniSoubory_vse",
     )
 
 
@@ -137,7 +137,7 @@ def export_pdf_by_teacher():
             "teachers": filtered_teachers,
             "current_semester": Semester.query.get(current_semester_id),
         },
-        "ensembles_by_teacher",
+        "SKH_KomorniSoubory_dle_pedagogu",
     )
 
 
@@ -175,7 +175,7 @@ def export_pdf_teacher_hours():
             "teachers": filtered_teachers,
             "current_semester": Semester.query.get(current_semester_id),
         },
-        "teacher_hours",
+        "SKH_Uvazky",
     )
 
 

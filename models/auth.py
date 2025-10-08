@@ -11,8 +11,18 @@ class Role(db.Model):
     name = db.Column(db.String(64), unique=True, nullable=False, index=True)
     description = db.Column(db.String(255))
 
-    role_permissions = relationship("RolePermission", back_populates="role", cascade="all, delete-orphan")
-    permissions = relationship("Permission", secondary="role_permissions", back_populates="roles")
+    role_permissions = relationship(
+        "RolePermission",
+        back_populates="role",
+        cascade="all, delete-orphan",
+        overlaps="permissions"
+    )
+    permissions = relationship(
+        "Permission",
+        secondary="role_permissions",
+        back_populates="roles",
+        overlaps="role_permissions"
+    )
     users = relationship("User", back_populates="role")
 
     def has_permission(self, code: str) -> bool:
@@ -24,8 +34,8 @@ class RolePermission(db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True)
     permission_id = db.Column(db.Integer, db.ForeignKey("permissions.id", ondelete="CASCADE"), primary_key=True)
 
-    role = relationship("Role", back_populates="role_permissions")
-    permission = relationship("Permission", back_populates="role_permissions")
+    role = relationship("Role", back_populates="role_permissions", overlaps="permissions")
+    permission = relationship("Permission", back_populates="role_permissions", overlaps="roles")
 
 
 class Permission(db.Model):
@@ -35,7 +45,19 @@ class Permission(db.Model):
     name = db.Column(db.String(64))
     description = db.Column(db.String(255))
 
-    roles = relationship("Role", secondary="role_permissions", back_populates="permissions")
+    # 🔧 this was missing before
+    role_permissions = relationship(
+        "RolePermission",
+        back_populates="permission",
+        cascade="all, delete-orphan",
+        overlaps="roles"
+    )
+    roles = relationship(
+        "Role",
+        secondary="role_permissions",
+        back_populates="permissions",
+        overlaps="role_permissions"
+    )
 
 
 class User(db.Model, UserMixin):

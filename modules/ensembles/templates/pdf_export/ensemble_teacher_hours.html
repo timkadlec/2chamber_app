@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: "DejaVu Sans", "Noto Sans", sans-serif;
+            font-size: 9pt;
+            margin: 25px;
+        }
+
+        h1 {
+            text-align: end;
+            margin: 0 0 4px 0;
+            font-size: 16pt;
+        }
+
+        h2 {
+            border-bottom: 0.6pt solid #444;
+            margin: 1.0em 0 0.3em 0;
+            font-size: 10pt;
+            font-weight: bold;
+            padding-bottom: 1px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.2em;
+            page-break-inside: avoid;
+        }
+
+        th, td {
+            border: 0.3pt solid #aaa;
+            padding: 2px 4px;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f2f2f2;
+            text-align: center;
+            font-size: 8.5pt;
+            font-weight: normal;
+        }
+
+        td {
+            font-size: 8.5pt;
+        }
+
+        tr:nth-child(even) {
+            background: #fbfbfb;
+        }
+
+        .no-ensembles {
+            color: #666;
+            font-style: italic;
+            font-size: 8.5pt;
+            margin: 0;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 1.2em;
+            font-size: 8pt;
+            color: #888;
+        }
+
+        th.hours, td.hours {
+            width: 60px;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        header img {
+            height: 45px;
+        }
+
+        header .title {
+            text-align: right;
+            flex: 1;
+            font-size: 9pt;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div><img src="{{ logo_url }}" alt="HAMU Logo"></div>
+    <div class="title">
+        <h1>Přehled komorních souborů</h1>
+        <div>Akademie múzických umění v Praze</div>
+        <div style="font-size:13pt;font-weight:bold;margin-top:2px;">
+            {{ current_semester.name }} {{ current_semester.academic_year.name }}
+        </div>
+    </div>
+</header>
+
+{% for teacher in teachers %}
+    {% set ensemb_links = teacher.ensemble_links | selectattr("semester_id", "equalto", current_semester.id) | list %}
+    {% set total_hours = ensemb_links | map(attribute='hour_donation') | select('number') | sum %}
+
+    <h2>
+        {{ teacher.full_name }}
+        {% if ensemb_links %}
+            <span style="font-weight:normal;color:#666;">– Celkem {{ "%.1f"|format(total_hours or 0) }} h</span>
+        {% endif %}
+    </h2>
+
+    {% if ensemb_links %}
+        <table>
+            <thead>
+            <tr>
+                <th>Soubor</th>
+                <th>Členové</th>
+                <th class="hours">Hodiny</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for link in ensemb_links %}
+                {% set ens = link.ensemble %}
+                <tr>
+                    <td><b>{{ ens.name }}</b></td>
+                    <td>
+                        {% for pl in ens.player_links if pl.player %}
+                            <em>{{ pl.player.instrument.abbreviation }}.</em>
+                            {{ pl.player.last_name }} {{ pl.player.first_name[0] }}.
+                            {% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td class="hours">{{ "%.1f"|format(link.hour_donation or 0) }}</td>
+                </tr>
+            {% endfor %}
+            <tr>
+                <td colspan="2" style="text-align:right;font-weight:bold;">Celkem</td>
+                <td class="hours" style="font-weight:bold;">{{ "%.1f"|format(total_hours or 0) }}</td>
+            </tr>
+            </tbody>
+        </table>
+    {% else %}
+        <p class="no-ensembles">Žádné soubory v tomto semestru.</p>
+    {% endif %}
+{% endfor %}
+
+<footer>Vygenerováno {{ today.strftime('%d.%m.%Y') }}</footer>
+</body>
+</html>

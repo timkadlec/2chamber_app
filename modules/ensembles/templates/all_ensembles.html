@@ -13,13 +13,17 @@
 
                     <div class="d-flex align-items-center gap-3 ms-auto">
                         <div class="btn-group" role="group" aria-label="Exporty PDF">
-                            <a href="{{ url_for('ensemble.export_pdf', **request.args) }}"
+                            <a href="{{ url_for('ensemble.export_pdf') }}?{{ request.query_string.decode()|safe }}"
                                class="btn btn-outline-secondary d-flex align-items-center">
                                 <i class="fas fa-file-pdf me-2"></i> Export PDF
                             </a>
-                            <a href="{{ url_for('ensemble.export_pdf_by_teacher', **request.args) }}"
+                            <a href="{{ url_for('ensemble.export_pdf_by_teacher') }}?{{ request.query_string.decode()|safe }}"
                                class="btn btn-outline-secondary d-flex align-items-center">
                                 <i class="fas fa-file-pdf me-2"></i> Pedagogové
+                            </a>
+                            <a href="{{ url_for('ensemble.export_pdf_teacher_hours') }}?{{ request.query_string.decode()|safe }}"
+                               class="btn btn-outline-secondary d-flex align-items-center">
+                                <i class="fas fa-file-pdf me-2"></i> Úvazky
                             </a>
                         </div>
 
@@ -28,6 +32,7 @@
                             <i class="fas fa-plus me-2"></i> Přidat soubor
                         </a>
                     </div>
+
 
                 </div>
             </div>

@@ -60,13 +60,20 @@
                                 </td>
                                 <td>{{ ensemble.instrumentation }}</td>
                                 <td>
-                                    {% set teacher_assignment = ensemble.semester_teacher(session["semester_id"]) %}
-                                    {% if teacher_assignment %}
-                                        {{ teacher_assignment.teacher.full_name }}
+                                    {% set teachers = ensemble.semester_teachers(session["semester_id"]) %}
+                                    {% if teachers %}
+                                        {% for teacher in teachers %}
+                                            {{ teacher.full_name }}
+                                            {% if teacher.department %}
+                                                <small class="text-muted">({{ teacher.department.name }})</small>
+                                            {% endif %}
+                                            {% if not loop.last %}, {% endif %}
+                                        {% endfor %}
                                     {% else %}
-                                        -
+                                        <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
+
                                 <td>
                                 <td>
                                     {% for ie in ensemble.instrumentation_entries %}

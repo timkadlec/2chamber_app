@@ -104,6 +104,17 @@ class Ensemble(db.Model):
         teacher = EnsembleTeacher.query.filter_by(ensemble_id=self.id, semester_id=semester_id).first()
         return teacher if teacher else None
 
+    def semester_teachers(self, semester_id):
+        """
+        Return a list of all Teacher objects assigned to this ensemble in a given semester.
+        Safer and cleaner than using the teacher_links directly in templates.
+        """
+        return [
+            link.teacher
+            for link in self.teacher_links
+            if link.semester_id == semester_id and link.teacher is not None
+        ]
+
     @property
     def players(self):
         return [ep.player for ep in self.player_links]

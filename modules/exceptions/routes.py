@@ -1,20 +1,23 @@
 from . import exceptions_bp
-from flask_login import login_required, current_user
-from utils.nav import navlink
 from flask import render_template, request, flash, redirect, url_for
-from utils.decorators import role_required
+from flask_login import current_user
+from utils.nav import navlink
+from utils.decorators import roles_required, permission_required
 from models import db, ChamberException
-from modules.chamber_applications.routes import approve_applications
+from modules.chamber_applications.routes import approve_applications, get_status_by_code
 from datetime import datetime
 
 
+# ---------------------------------------------------------
+#   INDEX – view all exceptions
+# ---------------------------------------------------------
 @exceptions_bp.route("/", methods=["GET"])
-@navlink("Výjimky", weight=100, roles=["admin"])
-@role_required("admin")
+@navlink("Výjimky", weight=100, roles=["admin", "reviewer"])
+@roles_required(["admin", "reviewer"])
+@permission_required("exc_can_view_all")
 def index():
-    # Get page from querystring (default = 1)
     page = request.args.get("page", 1, type=int)
-    per_page = 20  # adjust to your needs
+    per_page = 20
 
     pagination = ChamberException.query.order_by(
         ChamberException.id.desc()
@@ -27,13 +30,22 @@ def index():
     )
 
 
+# ---------------------------------------------------------
+#   DETAIL – inspect specific exception
+# ---------------------------------------------------------
 @exceptions_bp.route("/<int:exception_id>")
+@roles_required(["admin", "reviewer"])
+@permission_required("exc_can_view_detail")
 def detail(exception_id):
     exception = ChamberException.query.get_or_404(exception_id)
     return render_template("exception_detail.html", exception=exception)
 
 
+# ---------------------------------------------------------
+#   READ-ONLY PUBLIC VIEW (optional)
+# ---------------------------------------------------------
 @exceptions_bp.route("/<int:exception_id>/view")
+@permission_required("exc_can_view_detail")
 def view(exception_id):
     exception = ChamberException.query.get_or_404(exception_id)
     return render_template("exception_view.html", exception=exception)
@@ -65,9 +77,6 @@ def approve_exception(exc: ChamberException, reviewer, comment=None):
     return exc, new_ensemble, all_apps
 
 
-from modules.chamber_applications.routes import get_status_by_code
-
-
 def reject_applications(application, reviewer, comment=None):
     """
     Reject a StudentChamberApplication and all its related applications.
@@ -90,9 +99,12 @@ def reject_applications(application, reviewer, comment=None):
     return all_apps
 
 
+# ---------------------------------------------------------
+#   DECISION – approve / reject exception
+# ---------------------------------------------------------
 @exceptions_bp.route("/<int:exception_id>/decision", methods=["POST"])
-@login_required
-@role_required("admin")
+@roles_required(["admin", "reviewer"])
+@permission_required("exc_can_decide")
 def exception_decision(exception_id):
     exc = ChamberException.query.get_or_404(exception_id)
     decision = request.form.get("decision")
@@ -114,7 +126,6 @@ def exception_decision(exception_id):
         except ValueError as e:
             flash(str(e), "danger")
             return redirect(url_for("exceptions.detail", exception_id=exception_id))
-
 
     elif decision == "rejected":
         exc.status = "rejected"

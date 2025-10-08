@@ -140,3 +140,17 @@ def exception_decision(exception_id):
             "warning"
         )
         return redirect(url_for("exceptions.detail", exception_id=exception_id))
+
+
+@exceptions_bp.route("/delete/<int:exception_id>", methods=["POST"])
+@permission_required("exc_can_delete")
+def exception_delete(exception_id):
+    exc = ChamberException.query.get_or_404(exception_id)
+    try:
+        db.session.delete(exc)
+        db.session.commit()
+    except ValueError as e:
+        flash(str(e), "danger")
+        return redirect(url_for("exceptions.detail", exception_id=exception_id))
+
+    return redirect(url_for("exceptions.index"))

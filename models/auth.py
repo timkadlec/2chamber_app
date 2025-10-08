@@ -32,7 +32,8 @@ class RolePermission(db.Model):
 class Permission(db.Model):
     __tablename__ = "permissions"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    code = db.Column(db.String(32), unique=True, nullable=False, index=True)
+    name = db.Column(db.String(64), nullable=True)
     description = db.Column(db.String(255))
 
     role_permissions = relationship("RolePermission", back_populates="permission", cascade="all, delete-orphan")

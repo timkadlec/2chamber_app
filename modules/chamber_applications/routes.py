@@ -348,6 +348,30 @@ def reject(application_id):
     return redirect(url_for("chamber_applications.detail", application_id=application_id))
 
 
+@chamber_applications_bp.route("/reject-all", methods=["POST"])
+def reject_all():
+    current_semester = Semester.query.get(session.get("semester_id"))
+    apps = StudentChamberApplication.query.filter_by(status_id=1, semester_id=current_semester.id).all()
+
+    rejected_status = get_status_by_code("rejected")
+
+    reason = "[SYSTÉM] Hromadné zamítnutí zbývajících žádostí. Student již byl přiřazen do komorního souboru"
+
+    for a in apps:
+        a.status = rejected_status
+        a.reviewed_by = current_user
+        a.reviewed_at = datetime.now()
+        a.review_comment = reason
+
+    db.session.commit()
+
+    flash(
+        f"Žádosti {[a.id for a in apps]} byly zamítnuty.",
+        "warning"
+    )
+    return redirect(url_for("chamber_applications.index"))
+
+
 @chamber_applications_bp.route("/<int:application_id>/reset", methods=["POST"])
 def reset(application_id):
     app = StudentChamberApplication.query.get_or_404(application_id)

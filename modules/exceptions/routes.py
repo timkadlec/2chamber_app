@@ -13,7 +13,6 @@ from datetime import datetime
 # ---------------------------------------------------------
 @exceptions_bp.route("/", methods=["GET"])
 @navlink("Výjimky", weight=100, roles=["admin", "reviewer"])
-@roles_required(["admin", "reviewer"])
 @permission_required("exc_can_view_all")
 def index():
     page = request.args.get("page", 1, type=int)
@@ -34,7 +33,6 @@ def index():
 #   DETAIL – inspect specific exception
 # ---------------------------------------------------------
 @exceptions_bp.route("/<int:exception_id>")
-@roles_required(["admin", "reviewer"])
 @permission_required("exc_can_view_detail")
 def detail(exception_id):
     exception = ChamberException.query.get_or_404(exception_id)
@@ -103,7 +101,6 @@ def reject_applications(application, reviewer, comment=None):
 #   DECISION – approve / reject exception
 # ---------------------------------------------------------
 @exceptions_bp.route("/<int:exception_id>/decision", methods=["POST"])
-@roles_required(["admin", "reviewer"])
 @permission_required("exc_can_decide")
 def exception_decision(exception_id):
     exc = ChamberException.query.get_or_404(exception_id)

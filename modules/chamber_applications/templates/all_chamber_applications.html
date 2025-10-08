@@ -9,10 +9,12 @@
             <div class="container-xl pb-4">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                     <h1 class="text-secondary">Žádosti o komorní hru</h1>
-                    <a href="{{ url_for("chamber_applications.new") }}"
-                       class="btn btn-primary d-flex align-items-center">
-                        <i class="fas fa-plus me-2"></i> Založit žádost
-                    </a>
+                    {% if current_user.has_permission('app_create') %}
+                        <a href="{{ url_for("chamber_applications.new") }}"
+                           class="btn btn-primary d-flex align-items-center">
+                            <i class="fas fa-plus me-2"></i> Založit žádost
+                        </a>
+                    {% endif %}
                 </div>
 
             </div>
@@ -31,7 +33,9 @@
                             <th>Stav žádosti</th>
                             <th>Health check</th>
                             <th>Podáno</th>
-                            <th class="text-end">Akce</th>
+                            {% if current_user.has_permission('app_detail') or current_user.has_permission('app_delete') %}
+                                <th class="text-end">Akce</th>
+                            {% endif %}
                         </tr>
                         </thead>
                         <tbody>
@@ -100,50 +104,59 @@
                                 <td>
                                     {{ app.submission_date.strftime('%d.%m.%Y') }}
                                 </td>
-                                <td class="text-end">
-                                    <div class="btn-group btn-group-sm" role="group" aria-label="App actions">
-                                        <a href="{{ url_for("chamber_applications.detail", application_id=app.id, **request.args) }}"
-                                           class="btn btn-outline-primary">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <button type="button"
-                                                class="btn btn-outline-danger"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#deleteAppModal{{ app.id }}">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-
-
-                                    <!-- Delete modal -->
-                                    <div class="modal fade" id="deleteAppModal{{ app.id }}" tabindex="-1"
-                                         aria-labelledby="deleteAppModal{{ app.id }}Label" aria-hidden="true">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h1 class="modal-title fs-5" id="deleteAppModal{{ app.id }}Label">
-                                                        Smazat žádost
-                                                    </h1>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                            aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body text-start">
-                                                    Opravdu si přejete smazat žádost studenta
-                                                    <b>{{ app.student.full_name }}</b>?
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <form action="{{ url_for("chamber_applications.delete", application_id=app.id) }}"
-                                                          method="post" class="d-inline">
-                                                        <button type="button" class="btn btn-secondary"
-                                                                data-bs-dismiss="modal">Zavřít
-                                                        </button>
-                                                        <button type="submit" class="btn btn-danger">Smazat</button>
-                                                    </form>
+                                {% if current_user.has_permission('app_detail') or current_user.has_permission('app_delete') %}
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" role="group" aria-label="App actions">
+                                            {% if current_user.has_permission('app_detail') %}
+                                                <a href="{{ url_for("chamber_applications.detail", application_id=app.id, **request.args) }}"
+                                                   class="btn btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            {% endif %}
+                                            {% if current_user.has_permission('app_delete') %}
+                                                <button type="button"
+                                                        class="btn btn-outline-danger"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#deleteAppModal{{ app.id }}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                        <!-- Delete modal -->
+                                        {% if current_user.has_permission('app_delete') %}
+                                            <div class="modal fade" id="deleteAppModal{{ app.id }}" tabindex="-1"
+                                                 aria-labelledby="deleteAppModal{{ app.id }}Label" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h1 class="modal-title fs-5"
+                                                                id="deleteAppModal{{ app.id }}Label">
+                                                                Smazat žádost
+                                                            </h1>
+                                                            <button type="button" class="btn-close"
+                                                                    data-bs-dismiss="modal"
+                                                                    aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body text-start">
+                                                            Opravdu si přejete smazat žádost studenta
+                                                            <b>{{ app.student.full_name }}</b>?
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <form action="{{ url_for("chamber_applications.delete", application_id=app.id) }}"
+                                                                  method="post" class="d-inline">
+                                                                <button type="button" class="btn btn-secondary"
+                                                                        data-bs-dismiss="modal">Zavřít
+                                                                </button>
+                                                                <button type="submit" class="btn btn-danger">Smazat
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                </td>
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
                             </tr>
                         {% endfor %}
                         </tbody>

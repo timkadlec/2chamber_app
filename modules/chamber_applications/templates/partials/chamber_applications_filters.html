@@ -60,43 +60,47 @@
                         <i class="fas fa-times me-1"></i> Reset
                     </a>
                 {% endif %}
-                <button type="button"
-                        class="btn btn-outline-danger"
-                        data-bs-toggle="modal"
-                        data-bs-target="#RejectAllApplicationsModal">
-                    <i class="fas fa-circle-xmark"></i> Zamítnout nevyřízené
-                </button>
+                {% if current_user.has_permission('app_decline_all_unresolved') %}
+                    <button type="button"
+                            class="btn btn-outline-danger"
+                            data-bs-toggle="modal"
+                            data-bs-target="#RejectAllApplicationsModal">
+                        <i class="fas fa-circle-xmark"></i> Zamítnout nevyřízené
+                    </button>
+                {% endif %}
             </div>
         </div>
     </form>
 
     <!-- Reject all modal -->
-    <div class="modal fade" id="RejectAllApplicationsModal" tabindex="-1"
-         aria-labelledby="RejectAllApplicationsModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="RejectAllApplicationsModal">
-                        Zamítnout nevyřízené
-                    </h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-start">
-                    Opravdu si přejete zamítnout všechny zbývající nevyřízené žádosti?
-                </div>
-                <div class="modal-footer">
-                    <form action="{{ url_for("chamber_applications.reject_all") }}"
-                          method="post" class="d-inline">
-                        <button type="button" class="btn btn-secondary"
-                                data-bs-dismiss="modal">Zavřít
-                        </button>
-                        <button type="submit" class="btn btn-danger">Zamítnout</button>
-                    </form>
+    {% if current_user.has_permission('app_decline_all_unresolved') %}
+        <div class="modal fade" id="RejectAllApplicationsModal" tabindex="-1"
+             aria-labelledby="RejectAllApplicationsModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="RejectAllApplicationsModal">
+                            Zamítnout nevyřízené
+                        </h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-start">
+                        Opravdu si přejete zamítnout všechny zbývající nevyřízené žádosti?
+                    </div>
+                    <div class="modal-footer">
+                        <form action="{{ url_for("chamber_applications.reject_all") }}"
+                              method="post" class="d-inline">
+                            <button type="button" class="btn btn-secondary"
+                                    data-bs-dismiss="modal">Zavřít
+                            </button>
+                            <button type="submit" class="btn btn-danger">Zamítnout</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    {% endif %}
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {

@@ -11,3 +11,4 @@ from utils.decorators import role_required
 def users():
     users = User.query.all()
     return render_template('settings_users.html', users=users)
+

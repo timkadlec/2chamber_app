@@ -11,13 +11,12 @@ class Role(db.Model):
     name = db.Column(db.String(64), unique=True, nullable=False, index=True)
     description = db.Column(db.String(255))
 
-    # One-to-many to RolePermission
     role_permissions = relationship("RolePermission", back_populates="role", cascade="all, delete-orphan")
-
-    # Shortcut: list of Permission objects
-    permissions = relationship("Permission", secondary="role_permissions", viewonly=True)
-
+    permissions = relationship("Permission", secondary="role_permissions", back_populates="roles")
     users = relationship("User", back_populates="role")
+
+    def has_permission(self, code: str) -> bool:
+        return any(p.code == code for p in self.permissions)
 
 
 class RolePermission(db.Model):
@@ -33,11 +32,10 @@ class Permission(db.Model):
     __tablename__ = "permissions"
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(32), unique=True, nullable=False, index=True)
-    name = db.Column(db.String(64), nullable=True)
+    name = db.Column(db.String(64))
     description = db.Column(db.String(255))
 
-    role_permissions = relationship("RolePermission", back_populates="permission", cascade="all, delete-orphan")
-    roles = relationship("Role", secondary="role_permissions", viewonly=True)
+    roles = relationship("Role", secondary="role_permissions", back_populates="permissions")
 
 
 class User(db.Model, UserMixin):
@@ -59,7 +57,11 @@ class User(db.Model, UserMixin):
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id", ondelete="SET NULL"))
     role = relationship("Role", back_populates="users")
 
+    def has_role(self, role_name: str) -> bool:
+        return self.role and self.role.name == role_name
+
+    def has_any_role(self, roles: list[str]) -> bool:
+        return self.role and self.role.name in roles
+
     def has_permission(self, code: str) -> bool:
-        if not self.role:
-            return False
-        return any(rp.permission.code == code for rp in self.role.role_permissions)
+        return self.role and self.role.has_permission(code)

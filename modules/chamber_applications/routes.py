@@ -1,5 +1,6 @@
 from flask import render_template, request, flash, redirect, url_for, session
 from utils.nav import navlink
+from utils.decorators import permission_required
 from modules.chamber_applications import chamber_applications_bp
 from models import db, Ensemble, EnsembleSemester, EnsemblePlayer, EnsembleInstrumentation, Semester, \
     StudentChamberApplication, StudentChamberApplicationPlayers, StudentChamberApplicationStatus, Student, Instrument, \
@@ -106,6 +107,7 @@ def index():
 
 
 @chamber_applications_bp.route("/<int:application_id>/detail")
+@permission_required("app_detail")
 def detail(application_id):
     application = StudentChamberApplication.query.get_or_404(application_id)
     form = EmptyForm()
@@ -116,6 +118,7 @@ def detail(application_id):
 
 
 @chamber_applications_bp.route("/new", methods=["GET", "POST"])
+@permission_required("app_create")
 def new():
     form = StudentChamberApplicationForm()
 
@@ -147,6 +150,7 @@ def new():
 
 
 @chamber_applications_bp.route("/<int:application_id>/edit", methods=["GET", "POST"])
+@permission_required("app_edit")
 def edit(application_id):
     application = StudentChamberApplication.query.get_or_404(application_id)
     form = StudentChamberApplicationForm(obj=application, mode="edit")
@@ -294,6 +298,7 @@ def approve_applications(application, reviewer, comment=None):
 
 
 @chamber_applications_bp.route("/<int:application_id>/approve", methods=["POST"])
+@permission_required('app_approvals')
 def approve(application_id):
     app = StudentChamberApplication.query.get_or_404(application_id)
     comment = request.form.get("comment")
@@ -312,6 +317,7 @@ def approve(application_id):
 
 
 @chamber_applications_bp.route("/<int:application_id>/reject", methods=["POST"])
+@permission_required('app_approvals')
 def reject(application_id):
     app = StudentChamberApplication.query.get_or_404(application_id)
 
@@ -349,6 +355,7 @@ def reject(application_id):
 
 
 @chamber_applications_bp.route("/reject-all", methods=["POST"])
+@permission_required('app_decline_all_unresolved')
 def reject_all():
     current_semester = Semester.query.get(session.get("semester_id"))
     apps = StudentChamberApplication.query.filter_by(status_id=1, semester_id=current_semester.id).all()
@@ -373,6 +380,7 @@ def reject_all():
 
 
 @chamber_applications_bp.route("/<int:application_id>/reset", methods=["POST"])
+@permission_required('app_reset')
 def reset(application_id):
     app = StudentChamberApplication.query.get_or_404(application_id)
 
@@ -386,6 +394,7 @@ def reset(application_id):
 
 
 @chamber_applications_bp.route("/<int:application_id>/delete", methods=["POST"])
+@permission_required('app_delete')
 def delete(application_id):
     application = StudentChamberApplication.query.get_or_404(application_id)
     db.session.delete(application)
@@ -395,6 +404,7 @@ def delete(application_id):
 
 
 @chamber_applications_bp.route('/<int:application_id>/ensemble/exception/request', methods=['POST'])
+@permission_required('app_exception_request')
 def exception_request(application_id: int):
     form = ExceptionRequestForm()
     if form.validate_on_submit():

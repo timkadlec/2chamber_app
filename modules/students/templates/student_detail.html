@@ -15,9 +15,12 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Detail studenta</h5>
-                    <a href="#" class="btn btn-sm btn-info">
-                        <i class="fas fa-edit me-1"></i> Upravit studenta
-                    </a>
+                    {% if current_user.has_permission('st_can_edit') %}
+                        <a href="#" class="btn btn-sm btn-info">
+                            <i class="fas fa-edit me-1"></i> Upravit studenta
+                        </a>
+                    {% endif %}
+
                 </div>
 
                 <div class="card-body">
@@ -95,54 +98,58 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-end">
-                                    <button type="button" class="btn btn-sm btn-outline-primary"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#editEnrollmentModal{{ enrollment.id }}">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
+                                    {% if current_user.has_permission('st_can_edit') %}
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#editEnrollmentModal{{ enrollment.id }}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    {% endif %}
                                 </td>
                             </tr>
 
-                            <!-- Modal -->
-                            <div class="modal fade" id="editEnrollmentModal{{ enrollment.id }}" tabindex="-1"
-                                 aria-labelledby="editEnrollmentModal{{ enrollment.id }}Label" aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <form action="{{ url_for('students.edit_enrollment', enrollment_id=enrollment.id) }}"
-                                              method="post">
-                                            {{ form.hidden_tag() }}
-                                            <div class="modal-header">
-                                                <h5 class="modal-title"
-                                                    id="editEnrollmentModal{{ enrollment.id }}Label">
-                                                    Upravit zápis
-                                                </h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                        aria-label="Zavřít"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <p><strong>Předmět:</strong> {{ enrollment.subject.name }}</p>
-                                                <p><strong>Semestr:</strong> {{ enrollment.semester.name }}</p>
-
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="erasmus"
-                                                           id="erasmusCheck{{ enrollment.id }}"
-                                                           {% if enrollment.erasmus %}checked{% endif %}>
-                                                    <label class="form-check-label"
-                                                           for="erasmusCheck{{ enrollment.id }}">
-                                                        Erasmus+
-                                                    </label>
+                            <!-- Modal Erasmus -->
+                            {% if current_user.has_permission('st_can_edit') %}
+                                <div class="modal fade" id="editEnrollmentModal{{ enrollment.id }}" tabindex="-1"
+                                     aria-labelledby="editEnrollmentModal{{ enrollment.id }}Label" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form action="{{ url_for('students.edit_enrollment', enrollment_id=enrollment.id) }}"
+                                                  method="post">
+                                                {{ form.hidden_tag() }}
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title"
+                                                        id="editEnrollmentModal{{ enrollment.id }}Label">
+                                                        Upravit zápis
+                                                    </h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                            aria-label="Zavřít"></button>
                                                 </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary"
-                                                        data-bs-dismiss="modal">Zavřít
-                                                </button>
-                                                {{ form.submit(class="btn btn-primary") }}
-                                            </div>
-                                        </form>
+                                                <div class="modal-body">
+                                                    <p><strong>Předmět:</strong> {{ enrollment.subject.name }}</p>
+                                                    <p><strong>Semestr:</strong> {{ enrollment.semester.name }}</p>
+
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" name="erasmus"
+                                                               id="erasmusCheck{{ enrollment.id }}"
+                                                               {% if enrollment.erasmus %}checked{% endif %}>
+                                                        <label class="form-check-label"
+                                                               for="erasmusCheck{{ enrollment.id }}">
+                                                            Erasmus+
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary"
+                                                            data-bs-dismiss="modal">Zavřít
+                                                    </button>
+                                                    {{ form.submit(class="btn btn-primary") }}
+                                                </div>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            {% endif %}
                         {% else %}
                             <tr>
                                 <td colspan="4" class="text-muted text-center py-3">

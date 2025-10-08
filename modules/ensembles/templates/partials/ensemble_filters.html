@@ -31,7 +31,7 @@
             <!-- Incomplete ensemble filter -->
             <div class="col-md-3">
                 <label for="incomplete" class="form-label">Kompletnost</label>
-                <select class="form-select form-select-sm" id="incomplete" name="incomplete">
+                <select class="form-select form-select-sm" id="incomplete" name="incomplete" multiple>
                     <option value="1" {% if request.args.get('incomplete') == '1' %}selected{% endif %}>Neúplné</option>
                     <option value="0" {% if request.args.get('incomplete') == '0' %}selected{% endif %}>Kompletní
                     </option>
@@ -100,6 +100,7 @@
             });
             new TomSelect("#incomplete", {
                 placeholder: "Vyberte stav kompletnosti",
+                plugins: {remove_button: {title: "Odebrat"}},
                 allowEmptyOption: true
             });
 

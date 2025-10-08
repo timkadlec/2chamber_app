@@ -226,6 +226,14 @@ def create_app():
             academic_years=years
         )
 
+    @app.context_processor
+    def inject_permissions():
+        return dict(
+            has_permission=lambda code: (
+                    current_user.is_authenticated and current_user.has_permission(code)
+            )
+        )
+
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(user_id)

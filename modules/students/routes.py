@@ -5,12 +5,13 @@ from models import Student, StudentSubjectEnrollment, Instrument, Subject, Playe
 from modules.students import students_bp
 from sqlalchemy import and_, func
 from .forms import EnrollmentForm
-
+from utils.decorators import role_required, permission_required
 from sqlalchemy import or_
 
 
 @students_bp.route("/", methods=["GET"])
 @navlink("Studenti", group="Lidé", weight=100)
+@permission_required("st_can_view")
 def index():
     page = request.args.get("page", 1, type=int)
     per_page = 20
@@ -108,6 +109,7 @@ def index():
 
 
 @students_bp.route("/detail/<int:student_id>", methods=["GET"])
+@permission_required("st_can_view")
 def student_detail(student_id):
     student = Student.query.get_or_404(student_id)
     form = EnrollmentForm()  # basic form object
@@ -115,6 +117,7 @@ def student_detail(student_id):
 
 
 @students_bp.route("/edit-enrollment/<int:enrollment_id>", methods=["POST"])
+@permission_required("st_can_edit")
 def edit_enrollment(enrollment_id):
     enrollment = StudentSubjectEnrollment.query.get_or_404(enrollment_id)
     form = EnrollmentForm(obj=enrollment)

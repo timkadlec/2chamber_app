@@ -89,49 +89,53 @@
                                            class="btn btn-outline-primary" title="Detail">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="#"
+                                        {#<a href="#"
                                            class="btn btn-outline-primary" title="Upravit">
                                             <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button type="button"
-                                                class="btn btn-outline-danger"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#deleteStudentModal{{ student.id }}"
-                                                title="Smazat">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        </a>#}
+                                        {% if current_user.has_permission('st_can_delete') %}
+                                            <button type="button"
+                                                    class="btn btn-outline-danger"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#deleteStudentModal{{ student.id }}"
+                                                    title="Smazat">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        {% endif %}
                                     </div>
 
                                     <!-- Delete modal -->
-                                    <div class="modal fade" id="deleteStudentModal{{ student.id }}" tabindex="-1"
-                                         aria-labelledby="deleteStudentModal{{ student.id }}Label"
-                                         aria-hidden="true">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h1 class="modal-title fs-5"
-                                                        id="deleteStudentModal{{ student.id }}Label">
-                                                        Smazat studenta
-                                                    </h1>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                            aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body text-start">
-                                                    Opravdu si přejete smazat studenta
-                                                    <b>{{ student.full_name }}</b>?
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <form action="#"
-                                                          method="post" class="d-inline">
-                                                        <button type="button" class="btn btn-secondary"
-                                                                data-bs-dismiss="modal">Close
-                                                        </button>
-                                                        <button type="submit" class="btn btn-danger">Smazat</button>
-                                                    </form>
+                                    {% if current_user.has_permission('st_can_delete') %}
+                                        <div class="modal fade" id="deleteStudentModal{{ student.id }}" tabindex="-1"
+                                             aria-labelledby="deleteStudentModal{{ student.id }}Label"
+                                             aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h1 class="modal-title fs-5"
+                                                            id="deleteStudentModal{{ student.id }}Label">
+                                                            Smazat studenta
+                                                        </h1>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                                aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body text-start">
+                                                        Opravdu si přejete smazat studenta
+                                                        <b>{{ student.full_name }}</b>?
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <form action="#"
+                                                              method="post" class="d-inline">
+                                                            <button type="button" class="btn btn-secondary"
+                                                                    data-bs-dismiss="modal">Close
+                                                            </button>
+                                                            <button type="submit" class="btn btn-danger">Smazat</button>
+                                                        </form>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}

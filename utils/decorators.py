@@ -39,5 +39,40 @@ def role_required(role_name):
         # attach metadata for nav filtering
         f._required_role = role_name
         return decorated_function
+
     return decorator
 
+
+def permission_required(permission_code, flash_message=True, redirect_home=True):
+    """
+    Decorator to ensure the current user has a given permission.
+    Permissions are assigned to roles, and users have exactly one role.
+    - `permission_code`: str, required permission code to access the route.
+    - If the user is not authenticated → abort 401.
+    - If the user lacks permission → abort 403 (or redirect if flash enabled).
+    """
+
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # Not logged in → unauthorized
+            if not current_user.is_authenticated:
+                if redirect_home:
+                    flash("Musíte se přihlásit.", "danger")
+                    return redirect(url_for("auth.login"))
+                abort(401)
+
+            # Lacks permission → forbidden
+            if not current_user.has_permission(permission_code):
+                if flash_message and redirect_home:
+                    flash("Nemáte oprávnění k této akci.", "danger")
+                    return redirect(url_for("index"))
+                abort(403)
+
+            return f(*args, **kwargs)
+
+        # Attach metadata for optional UI filtering (navigation etc.)
+        f._required_permission = permission_code
+        return decorated_function
+
+    return decorator

@@ -59,7 +59,7 @@ class User(db.Model, UserMixin):
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id", ondelete="SET NULL"))
     role = relationship("Role", back_populates="users")
 
-    def has_permission(self, permission_name: str) -> bool:
+    def has_permission(self, code: str) -> bool:
         if not self.role:
             return False
-        return any(rp.permission.name == permission_name for rp in self.role.role_permissions)
+        return any(rp.permission.code == code for rp in self.role.role_permissions)

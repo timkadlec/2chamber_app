@@ -1,0 +1,6 @@
+{% macro back_link(endpoint, label='Zpět', args={}) %}
+    <a href="{{ url_for(endpoint, **args) }}"
+       class="btn btn-sm btn-outline-secondary mb-3 d-inline-flex align-items-center">
+        <i class="fas fa-arrow-left me-2"></i>{{ label }}
+    </a>
+{% endmacro %}

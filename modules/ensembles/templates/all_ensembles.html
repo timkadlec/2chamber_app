@@ -1,40 +1,31 @@
+<!-- all_ensembles.html -->
 {% extends 'base.html' %}
 {% block title %}
     Komorní soubory
 {% endblock %}
+{% from "macros/_auth.jinja" import if_perm, if_any_perm %}
+{% from "macros/_buttons.jinja" import export_button, add_button, action_button, delete_button %}
 {% block content %}
     <main>
         <div class="container-xl">
-
             <!-- Horní lišta -->
             <div class="container-xl pb-4">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                     <h1 class="text-secondary mb-0">Komorní soubory</h1>
                     <!-- Exporty -->
-                    {% if current_user.has_permission('ens_export_pdf') %}
-                        <div class="d-flex align-items-center gap-3 ms-auto">
-                        <div class="btn-group" role="group" aria-label="Exporty PDF">
-                            <a href="{{ url_for('ensemble.export_pdf') }}?{{ request.query_string.decode()|safe }}"
-                               class="btn btn-outline-secondary d-flex align-items-center">
-                                <i class="fas fa-file-pdf me-2"></i> Export PDF
-                            </a>
-                            <a href="{{ url_for('ensemble.export_pdf_by_teacher') }}?{{ request.query_string.decode()|safe }}"
-                               class="btn btn-outline-secondary d-flex align-items-center">
-                                <i class="fas fa-file-pdf me-2"></i> Pedagogové
-                            </a>
-                            <a href="{{ url_for('ensemble.export_pdf_teacher_hours') }}?{{ request.query_string.decode()|safe }}"
-                               class="btn btn-outline-secondary d-flex align-items-center">
-                                <i class="fas fa-file-pdf me-2"></i> Úvazky
-                            </a>
-                        </div>
-                    {% endif %}
-                    <!-- Přidat soubor -->
-                    {% if current_user.has_permission('ens_add') %}
-                        <a href="{{ url_for('ensemble.ensemble_add') }}"
-                           class="btn btn-primary d-flex align-items-center">
-                            <i class="fas fa-plus me-2"></i> Přidat soubor
-                        </a>
-                    {% endif %}
+                    <div class="d-flex align-items-center gap-3 ms-auto">
+                        {% call if_perm('ens_export_pdf', current_user) %}
+                            <div class="btn-group" role="group" aria-label="Exporty PDF">
+                                {{ export_button(url_for('ensemble.export_pdf') ~ '?' ~ request.query_string.decode(), 'Export PDF') }}
+                                {{ export_button(url_for('ensemble.export_pdf_by_teacher') ~ '?' ~ request.query_string.decode(), 'Pedagogové') }}
+                                {{ export_button(url_for('ensemble.export_pdf_teacher_hours') ~ '?' ~ request.query_string.decode(), 'Úvazky') }}
+                            </div>
+                        {% endcall %}
+
+                        <!-- Přidat soubor -->
+                        {% call if_perm('ens_add', current_user) %}
+                            {{ add_button(url_for('ensemble.ensemble_add') ~ '?' ~ request.query_string.decode(), 'Přidat soubor') }}
+                        {% endcall %}
                     </div>
                 </div>
             </div>
@@ -89,11 +80,10 @@
                                     {% endif %}
                                 </a>
                             </th>
-                            {% if current_user.has_permission('ens_detail')
-                                    or current_user.has_permission('ens_edit')
-                                    or current_user.has_permission('ens_delete') %}
+                            {% call if_any_perm(['ens_detail','ens_edit','ens_delete'], current_user) %}
                                 <th class="text-end">Akce</th>
-                            {% endif %}
+                            {% endcall %}
+
                         </tr>
                         </thead>
                         <!-- Table Body -->
@@ -154,69 +144,25 @@
                             </span>
                                     {% endif %}
                                 </td>
-                                {% if current_user.has_permission('ens_detail')
-                                    or current_user.has_permission('ens_edit')
-                                    or current_user.has_permission('ens_delete') %}
+                                {% call if_any_perm(['ens_detail','ens_edit','ens_delete'], current_user) %}
                                     <td class="text-end">
-                                        <div class="d-flex justify-content-end mt-2">
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                {% if current_user.has_permission('ens_detail') %}
-                                                    <a href="{{ url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id, **request.args) }}"
-                                                       class="btn btn-outline-primary" title="Detail">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                {% endif %}
-                                                {% if current_user.has_permission('ens_edit') %}
-                                                    <a href="{{ url_for("ensemble.ensemble_edit", ensemble_id=ensemble.id) }}"
-                                                       class="btn btn-outline-primary" title="Upravit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                {% endif %}
-                                                {% if current_user.has_permission('ens_delete') %}
-                                                    <button type="button" class="btn btn-outline-danger"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#deleteEnsembleModal{{ ensemble.id }}"
-                                                            title="Smazat">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                {% endif %}
-                                            </div>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            {% call if_perm('ens_detail', current_user) %}
+                                                {{ action_button(url_for('ensemble.ensemble_detail', ensemble_id=ensemble.id, **request.args),
+                                 'eye', title='Detail') }}
+                                            {% endcall %}
+                                            {% call if_perm('ens_edit', current_user) %}
+                                                {{ action_button(url_for('ensemble.ensemble_edit', ensemble_id=ensemble.id),
+                                 'edit', title='Upravit') }}
+                                            {% endcall %}
+                                            {% call if_perm('ens_delete', current_user) %}
+                                                {{ delete_button('deleteEnsembleModal' ~ ensemble.id) }}
+                                            {% endcall %}
                                         </div>
-
-                                        <!-- Delete modal -->
-                                        {% if current_user.has_permission('ens_delete') %}
-                                            <div class="modal fade" id="deleteEnsembleModal{{ ensemble.id }}"
-                                                 tabindex="-1"
-                                                 aria-labelledby="deleteEnsembleModal{{ ensemble.id }}Label"
-                                                 aria-hidden="true">
-                                                <div class="modal-dialog">
-                                                    <div class="modal-content">
-                                                        <div class="modal-header">
-                                                            <h1 class="modal-title fs-5">Smazat soubor</h1>
-                                                            <button type="button" class="btn-close"
-                                                                    data-bs-dismiss="modal"
-                                                                    aria-label="Close"></button>
-                                                        </div>
-                                                        <div class="modal-body text-start">
-                                                            Opravdu si přejete smazat soubor <b>{{ ensemble.name }}</b>?
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <form action="{{ url_for("ensemble.ensemble_delete", ensemble_id=ensemble.id) }}"
-                                                                  method="post" class="d-inline">
-                                                                <button type="button" class="btn btn-secondary"
-                                                                        data-bs-dismiss="modal">
-                                                                    Close
-                                                                </button>
-                                                                <button type="submit" class="btn btn-danger">Smazat
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        {% endif %}
                                     </td>
-                                {% endif %}
+                                {% endcall %}
+
+
                             </tr>
                         {% endfor %}
                         </tbody>

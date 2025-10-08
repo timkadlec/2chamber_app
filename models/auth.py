@@ -44,6 +44,7 @@ class Permission(db.Model):
     code = db.Column(db.String(32), unique=True, nullable=False, index=True)
     name = db.Column(db.String(64))
     description = db.Column(db.String(255))
+    category = db.Column(db.String(64))
 
     # 🔧 this was missing before
     role_permissions = relationship(

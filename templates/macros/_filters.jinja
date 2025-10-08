@@ -1,0 +1,56 @@
+{% macro select_filter(label, id, name, options, selected_ids=[], multiple=True,
+                       placeholder='', width='col-md-3',
+                       label_action_url='', label_action_text='') %}
+    <div class="{{ width }}">
+        <div class="d-flex justify-content-between align-items-center">
+            <label for="{{ id }}" class="form-label mb-0">{{ label }}</label>
+            {% if label_action_url %}
+                <a href="{{ label_action_url }}" class="small text-decoration-none text-secondary">
+                    {{ label_action_text }}
+                </a>
+            {% endif %}
+        </div>
+
+        <select class="form-select form-select-sm"
+                id="{{ id }}"
+                name="{{ name }}"
+                {% if multiple %}multiple{% endif %}>
+            <option value="" disabled>— Vyberte —</option>
+            {% for opt in options %}
+                <option value="{{ opt.id }}"
+                        {% if opt.id in selected_ids %}selected{% endif %}>
+                    {{ opt.full_name if opt.full_name is defined else opt.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+{% endmacro %}
+
+
+
+
+{% macro text_filter(label, id, name, value='', placeholder='', width='col-md-3') %}
+    <div class="{{ width }}">
+        <label for="{{ id }}" class="form-label">{{ label }}</label>
+        <input type="text"
+               id="{{ id }}"
+               class="form-control form-control-sm"
+               name="{{ name }}"
+               value="{{ value }}"
+               placeholder="{{ placeholder }}">
+    </div>
+{% endmacro %}
+
+
+{% macro button_row(show_reset=False, reset_url='') %}
+    <div class="col-12 d-flex gap-2 justify-content-end">
+        <button type="submit" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-filter me-1"></i> Filtrovat
+        </button>
+        {% if show_reset %}
+            <a href="{{ reset_url }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-times me-1"></i> Reset
+            </a>
+        {% endif %}
+    </div>
+{% endmacro %}

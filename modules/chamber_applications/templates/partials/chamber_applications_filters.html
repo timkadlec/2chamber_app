@@ -1,124 +1,66 @@
-<div class="card-header bg-white">
+{% from "macros/_filters.jinja" import select_filter, text_filter, button_row with context %}
+{% from "macros/_modals.jinja" import confirm_modal with context %}
 
+<div class="card-header bg-white">
     <form method="get" class="p-3 mb-4">
         <div class="row g-3 align-items-end">
 
-            <!-- Search -->
-            <div class="col-md-3">
-                <label for="filter-q" class="form-label">Hledat hráče</label>
-                <input id="filter-q" name="q" type="text"
-                       class="form-control form-control-sm"
-                       placeholder="Jméno studenta nebo hráče..."
-                       value="{{ q or '' }}">
-            </div>
+            {{ text_filter('Hledat hráče', 'filter-q', 'q', q,
+                placeholder='Jméno studenta nebo hráče...') }}
 
-            <!-- Nástroj -->
-            <div class="col-md-3">
-                <label for="filter-instrument" class="form-label">Nástroj žadatele</label>
-                <select id="filter-instrument" name="instrument_ids" class="form-select form-select-sm" multiple>
-                    {% for inst in instruments %}
-                        <option value="{{ inst.id }}"
-                                {% if instrument_filter and inst.id in instrument_filter %}selected{% endif %}>
-                            {{ inst.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
+            {{ select_filter('Nástroj žadatele', 'filter-instrument', 'instrument_ids',
+                instruments, instrument_filter, placeholder='Vyberte nástroj...', multiple=True) }}
 
-            <!-- Status -->
-            <div class="col-md-3">
-                <label for="filter-status" class="form-label">Status žádosti</label>
-                <select id="filter-status" name="status" class="form-select form-select-sm">
-                    <option value="">Všechny</option>
-                    <option value="pending" {% if status_filter=='pending' %}selected{% endif %}>Čeká na vyřízení
-                    </option>
-                    <option value="approved" {% if status_filter=='approved' %}selected{% endif %}>Schválené</option>
-                    <option value="rejected" {% if status_filter=='rejected' %}selected{% endif %}>Zamítnuté</option>
-                </select>
-            </div>
+            {{ select_filter('Status žádosti', 'filter-status', 'status',
+                [
+                    {'id': '', 'name': 'Všechny'},
+                    {'id': 'pending', 'name': 'Čeká na vyřízení'},
+                    {'id': 'approved', 'name': 'Schválené'},
+                    {'id': 'rejected', 'name': 'Zamítnuté'}
+                ],
+                [status_filter] if status_filter else [], multiple=False, placeholder='Vyberte status') }}
 
-            {#<!-- Health -->
-            <div class="col-md-3">
-                <label for="filter-health" class="form-label">Health check</label>
-                <select id="filter-health" name="health" class="form-select form-select-sm">
-                    <option value="">Všechny</option>
-                    <option value="ok" {% if health_filter=='ok' %}selected{% endif %}>OK</option>
-                    <option value="minimum" {% if health_filter=='minimum' %}selected{% endif %}>Minimum hráčů nesplněno
-                    </option>
-                    <option value="guests" {% if health_filter=='guests' %}selected{% endif %}>Příliš hostů</option>
-                </select>
-            </div>#}
+            {# Optional: Health filter (commented out by default) #}
+            {#
+            {{ select_filter('Health check', 'filter-health', 'health',
+                [
+                    {'id': '', 'name': 'Všechny'},
+                    {'id': 'ok', 'name': 'OK'},
+                    {'id': 'minimum', 'name': 'Minimum hráčů nesplněno'},
+                    {'id': 'guests', 'name': 'Příliš hostů'}
+                ],
+                [health_filter] if health_filter else [], multiple=False, placeholder='Vyberte stav') }}
+            #}
 
-            <!-- Actions -->
-            <div class="col-12 d-flex gap-2 justify-content-end">
-                <button type="submit" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-filter me-1"></i> Filtrovat
-                </button>
+            {{ button_row(show_reset=(q or instrument_filter or status_filter or health_filter),
+                          reset_url=url_for('chamber_applications.index')) }}
 
-                {% if q or instrument_filter or status_filter or health_filter %}
-                    <a href="{{ url_for('chamber_applications.index') }}" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-times me-1"></i> Reset
-                    </a>
-                {% endif %}
-                {% if current_user.has_permission('app_decline_all_unresolved') %}
+            {% if current_user.has_permission('app_decline_all_unresolved') %}
+                <div class="col-auto">
                     <button type="button"
-                            class="btn btn-outline-danger"
+                            class="btn btn-outline-danger btn-sm"
                             data-bs-toggle="modal"
                             data-bs-target="#RejectAllApplicationsModal">
                         <i class="fas fa-circle-xmark"></i> Zamítnout nevyřízené
                     </button>
-                {% endif %}
-            </div>
+                </div>
+            {% endif %}
         </div>
     </form>
 
-    <!-- Reject all modal -->
-    {% if current_user.has_permission('app_decline_all_unresolved') %}
-        <div class="modal fade" id="RejectAllApplicationsModal" tabindex="-1"
-             aria-labelledby="RejectAllApplicationsModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h1 class="modal-title fs-5" id="RejectAllApplicationsModal">
-                            Zamítnout nevyřízené
-                        </h1>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body text-start">
-                        Opravdu si přejete zamítnout všechny zbývající nevyřízené žádosti?
-                    </div>
-                    <div class="modal-footer">
-                        <form action="{{ url_for("chamber_applications.reject_all") }}"
-                              method="post" class="d-inline">
-                            <button type="button" class="btn btn-secondary"
-                                    data-bs-dismiss="modal">Zavřít
-                            </button>
-                            <button type="submit" class="btn btn-danger">Zamítnout</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% endif %}
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            new TomSelect("#filter-q", {
-                create: true,
-                maxItems: 1,
-                persist: false,
-                placeholder: "Jméno studenta nebo hráče..."
-            });
-
-            new TomSelect("#filter-instrument", {
-                maxItems: null,
-                placeholder: "Vyberte nástroj...",
-                plugins: {remove_button: {title: "Odebrat"}}
-            });
-
-            new TomSelect("#filter-status", {sortField: {field: "text", direction: "asc"}});
-            new TomSelect("#filter-health", {sortField: {field: "text", direction: "asc"}});
-        });
-    </script>
+    {% include "partials/_tomselect_init.html" %}
 </div>
+
+{% if current_user.has_permission('app_decline_all_unresolved') %}
+    {{ confirm_modal(
+        id='RejectAllApplicationsModal',
+        title='Zamítnout nevyřízené žádosti',
+        message='Opravdu si přejete zamítnout všechny zbývající nevyřízené žádosti?',
+        action_url=url_for('chamber_applications.reject_all'),
+        button_label='Zamítnout',
+        button_class='danger',
+        icon='circle-xmark'
+    ) }}
+{% endif %}
+
+

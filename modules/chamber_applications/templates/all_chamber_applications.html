@@ -2,6 +2,10 @@
 {% block title %}
     Žádosti o komorní hru
 {% endblock %}
+
+{% from "macros/_auth.jinja" import if_perm, if_any_perm %}
+{% from "macros/_buttons.jinja" import export_button, add_button, action_button, delete_button %}
+
 {% block content %}
     <main>
         <div class="container-xl">
@@ -9,12 +13,10 @@
             <div class="container-xl pb-4">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                     <h1 class="text-secondary">Žádosti o komorní hru</h1>
-                    {% if current_user.has_permission('app_create') %}
-                        <a href="{{ url_for("chamber_applications.new") }}"
-                           class="btn btn-primary d-flex align-items-center">
-                            <i class="fas fa-plus me-2"></i> Založit žádost
-                        </a>
-                    {% endif %}
+                    {# Založit žádost #}
+                    {% call if_perm('app_create', current_user) %}
+                        {{ add_button(url_for('chamber_applications.new') ~ '?' ~ request.query_string.decode(), 'Založit žádost') }}
+                    {% endcall %}
                 </div>
 
             </div>

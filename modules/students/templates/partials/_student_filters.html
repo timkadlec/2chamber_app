@@ -1,132 +1,45 @@
+{% from "macros/_filters.jinja" import select_filter, text_filter, button_row with context %}
+
 <div class="card-header bg-white">
-    <form method="get" class="p-3 mb-4">
-        <div class="row g-3 align-items-end">
+  <form method="get" class="p-3 mb-4">
+    <div class="row g-3 align-items-end">
 
-            <!-- Semester filter -->
-            <div class="col-md-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <label for="semester_id" class="form-label mb-0">Semestr</label>
-                    <a href="{{ url_for('students.index', semester_all=1) }}"
-                       class="small text-decoration-none text-secondary">
-                        Zobrazit všechny
-                    </a>
-                </div>
+      {{ select_filter('Semestr', 'semester_id', 'semester_id',
+                       semesters, selected_semester_ids,
+                       placeholder='Vyberte semestr(y)',
+                       label_action_url=url_for('students.index', semester_all=1),
+                       label_action_text='Zobrazit všechny') }}
 
-                <select class="form-select form-select-sm" id="semester_id" name="semester_id" multiple>
-                    <option value="" disabled>— Vyberte semestr(y) —</option>
-                    {% for sem in semesters %}
-                        <option value="{{ sem.id }}"
-                                {% if sem.id in (selected_semester_ids or []) %}selected{% endif %}>
-                            {{ sem.name }} {{ sem.academic_year.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
+      {{ select_filter('Nástroj', 'instrument_id', 'instrument_id',
+                       instruments, selected_instrument_ids,
+                       placeholder='Vyberte nástroj(e)') }}
 
+      {{ select_filter('Katedra', 'department_id', 'department_id',
+                       departments, selected_department_ids,
+                       placeholder='Vyberte katedru(y)') }}
 
-            <!-- Instrument filter -->
-            <div class="col-md-3">
-                <label for="instrument_id" class="form-label">Nástroj</label>
-                <select class="form-select form-select-sm" id="instrument_id" name="instrument_id" multiple>
-                    {% for inst in instruments %}
-                        <option value="{{ inst.id }}"
-                                {% if inst.id in (selected_instrument_ids or []) %}selected{% endif %}>
-                            {{ inst.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
+      {{ select_filter('Předmět', 'subject_id', 'subject_id',
+                       subjects, selected_subject_ids,
+                       placeholder='Vyberte předmět(y)') }}
 
-            <!-- Department filter -->
-            <div class="col-md-3">
-                <label for="department_id" class="form-label">Katedra</label>
-                <select class="form-select form-select-sm" id="department_id" name="department_id" multiple>
-                    {% for dept in departments %}
-                        <option value="{{ dept.id }}"
-                                {% if dept.id in (selected_department_ids or []) %}selected{% endif %}>
-                            {{ dept.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
+      {# Has Ensemble filter (single select) #}
+      <div class="col-md-3">
+        <label for="has_ensemble" class="form-label">Soubor</label>
+        <select class="form-select form-select-sm" id="has_ensemble" name="has_ensemble">
+          <option value="">-- Má / nemá soubor --</option>
+          <option value="1" {% if selected_has_ensemble == '1' %}selected{% endif %}>Má soubor</option>
+          <option value="0" {% if selected_has_ensemble == '0' %}selected{% endif %}>Nemá soubor</option>
+        </select>
+      </div>
 
+      {{ text_filter('Hledat studenta', 'filter-q', 'q',
+                     search_query, placeholder='Jméno studenta...') }}
 
-            <!-- Subject filter -->
-            <div class="col-md-3">
-                <label for="subject_id" class="form-label">Předmět</label>
-                <select class="form-select form-select-sm" id="subject_id" name="subject_id" multiple>
-                    {% for subj in subjects %}
-                        <option value="{{ subj.id }}"
-                                {% if subj.id in (selected_subject_ids or []) %}selected{% endif %}>
-                            {{ subj.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
+      {{ button_row(show_reset=(selected_semester_ids or selected_instrument_ids or selected_subject_ids or selected_has_ensemble or search_query),
+                    reset_url=url_for('students.index')) }}
 
-            <!-- Has Ensemble filter -->
-            <div class="col-md-3">
-                <label for="has_ensemble" class="form-label">Soubor</label>
-                <select class="form-select form-select-sm" id="has_ensemble" name="has_ensemble">
-                    <option value="">-- Má / nemá soubor --</option>
-                    <option value="1" {% if selected_has_ensemble == '1' %}selected{% endif %}>Má soubor</option>
-                    <option value="0" {% if selected_has_ensemble == '0' %}selected{% endif %}>Nemá soubor</option>
-                </select>
-            </div>
+    </div>
+  </form>
 
-            <!-- Search field -->
-            <div class="col-md-3">
-                <label for="filter-q" class="form-label">Hledat studenta</label>
-                <input type="text"
-                       id="filter-q"
-                       class="form-control form-control-sm"
-                       name="q"
-                       value="{{ search_query or '' }}"
-                       placeholder="Jméno studenta...">
-            </div>
-
-            <!-- Actions -->
-            <div class="col-12 d-flex gap-2 justify-content-end">
-                <button type="submit" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-filter me-1"></i> Filtrovat
-                </button>
-
-                {% if selected_semester_ids or selected_instrument_ids or selected_subject_ids or selected_has_ensemble or search_query %}
-                    <a href="{{ url_for('students.index') }}" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-times me-1"></i> Reset
-                    </a>
-                {% endif %}
-            </div>
-        </div>
-    </form>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            new TomSelect("#semester_id", {
-                plugins: {remove_button: {title: "Odebrat"}},
-                placeholder: "Vyberte semestr(y)"
-            });
-
-            new TomSelect("#instrument_id", {
-                plugins: {remove_button: {title: "Odebrat"}},
-                placeholder: "Vyberte nástroj(e)"
-            });
-
-            new TomSelect("#subject_id", {
-                plugins: {remove_button: {title: "Odebrat"}},
-                placeholder: "Vyberte předmět(y)"
-            });
-
-            new TomSelect("#has_ensemble", {
-                maxItems: 1,
-                plugins: {remove_button: {title: "Odebrat"}},
-                placeholder: "Má / nemá soubor"
-            });
-            new TomSelect("#department_id", {
-                plugins: {remove_button: {title: "Odebrat"}},
-                placeholder: "Vyberte katedru(y)"
-            });
-
-        });
-    </script>
+  {% include "partials/_tomselect_init.html" %}
 </div>

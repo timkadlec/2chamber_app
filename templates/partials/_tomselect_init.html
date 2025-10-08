@@ -1,0 +1,40 @@
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const selectConfigs = [
+        // Common ones (students / ensembles)
+        {id: "#instrument_id", placeholder: "Vyberte nástroj(e)", multiple: true},
+        {id: "#teacher_id", placeholder: "Vyberte pedagoga", multiple: true},
+        {id: "#department_id", placeholder: "Vyberte katedru", multiple: true},
+        {id: "#incomplete", placeholder: "Vyberte stav kompletnosti", multiple: true},
+        {id: "#health", placeholder: "Vyberte stav", multiple: false},
+        {id: "#semester_id", placeholder: "Vyberte semestr(y)", multiple: true},
+        {id: "#subject_id", placeholder: "Vyberte předmět(y)", multiple: true},
+        {id: "#has_ensemble", placeholder: "Má / nemá soubor", multiple: false},
+
+        // Specific for chamber_applications
+        {id: "#filter-instrument", placeholder: "Vyberte nástroj(e)", multiple: true},
+        {id: "#filter-status", placeholder: "Vyberte status", multiple: false}
+    ];
+
+    for (const cfg of selectConfigs) {
+        const el = document.querySelector(cfg.id);
+        if (!el) continue;
+
+        const options = {
+            placeholder: cfg.placeholder || "",
+            allowEmptyOption: true,
+            sortField: {field: "text", direction: "asc"},
+            searchField: ["text"]
+        };
+
+        if (cfg.multiple) {
+            options.plugins = {remove_button: {title: "Odebrat"}};
+        } else {
+            options.maxItems = 1;
+        }
+
+        new TomSelect(cfg.id, options);
+    }
+});
+</script>

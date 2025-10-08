@@ -1,23 +1,43 @@
-{% macro confirm_modal(id, title, message, action_url, button_label='Smazat', button_class='danger', form_hidden={}) %}
-    <div class="modal fade" id="{{ id }}" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <form method="post" action="{{ action_url }}" class="modal-content">
+{% macro confirm_modal(
+    id,
+    title,
+    message,
+    action_url,
+    button_label='Smazat',
+    button_class='danger',
+    form_hidden={},
+    icon='trash',
+    icon_class='me-1',
+    method='post',
+    centered=True
+) %}
+    <div class="modal fade" id="{{ id }}" tabindex="-1" aria-labelledby="{{ id }}Label" aria-hidden="true">
+        <div class="modal-dialog {% if centered %}modal-dialog-centered{% endif %}">
+            <form method="{{ method }}" action="{{ action_url }}" class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">{{ title }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="{{ id }}Label">
+                        <i class="fas fa-{{ icon }} text-{{ button_class }} {{ icon_class }}"></i>
+                        {{ title }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zavřít"></button>
                 </div>
+
                 <div class="modal-body">
-                    <p>{{ message }}</p>
+                    <p class="mb-0">{{ message }}</p>
                     {% for key, val in form_hidden.items() %}
                         <input type="hidden" name="{{ key }}" value="{{ val }}">
                     {% endfor %}
                 </div>
+
                 <div class="modal-footer">
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
                         Zrušit
                     </button>
                     <button type="submit" class="btn btn-sm btn-{{ button_class }}">
-                        <i class="fas fa-trash me-1"></i> {{ button_label }}
+                        {% if icon %}
+                            <i class="fas fa-{{ icon }} {{ icon_class }}"></i>
+                        {% endif %}
+                        {{ button_label }}
                     </button>
                 </div>
             </form>

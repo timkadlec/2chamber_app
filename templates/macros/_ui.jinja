@@ -1,8 +1,17 @@
-{% macro badge(icon, text, color='secondary', extra_class='') %}
-    <span class="badge bg-{{ color }} {{ extra_class }}">
-  {% if icon %}<i class="fas fa-{{ icon }} me-1"></i>{% endif %}
-        {{ text }}
-</span>
+{# templates/macros/_badges.jinja #}
+
+{% macro badge(icon='', text='', color='secondary', outline=True, extra_class='') %}
+    {% if outline %}
+        <span class="badge border border-{{ color }} text-{{ color }} {{ extra_class }}">
+            {% if icon %}<i class="fas fa-{{ icon }} me-1"></i>{% endif %}
+            {{ text }}
+        </span>
+    {% else %}
+        <span class="badge bg-{{ color }} {{ extra_class }}">
+            {% if icon %}<i class="fas fa-{{ icon }} me-1"></i>{% endif %}
+            {{ text }}
+        </span>
+    {% endif %}
 {% endmacro %}
 
 
@@ -11,4 +20,15 @@
         <i class="fas fa-{{ icon }} me-2"></i>
         <span>{{ text|safe }}</span>
     </div>
+{% endmacro %}
+
+
+{% macro ensemble_status(ensemble) %}
+    {% if ensemble.exception and ensemble.exception.status == "approved" %}
+        {{ badge('circle-user', 'Výjimka', color='info', outline=True) }}
+    {% elif ensemble.health_check == "OK" %}
+        {{ badge('check-circle', 'OK', color='success', outline=True) }}
+    {% else %}
+        {{ badge('exclamation-triangle', 'Nesplňuje', color='danger', outline=True, extra_class='cursor-help') }}
+    {% endif %}
 {% endmacro %}

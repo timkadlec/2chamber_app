@@ -1,47 +1,19 @@
+{% from "macros/_filters.jinja" import select_filter, text_filter, button_row with context %}
+
 <div class="card-header bg-white">
     <form method="get" class="p-3 mb-4">
         <div class="row g-3 align-items-end">
 
-            <!-- Instrument filter -->
-            <div class="col-md-3">
-                <label for="instrument_id" class="form-label">Nástroj</label>
-                <select class="form-select form-select-sm" id="instrument_id" name="instrument_id" multiple>
-                    {% for inst in instruments %}
-                        <option value="{{ inst.id }}"
-                                {% if inst.id in (selected_instrument_ids or []) %}selected{% endif %}>
-                            {{ inst.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
+            {{ select_filter('Nástroj', 'instrument_id', 'instrument_id',
+                       instruments, selected_instrument_ids, placeholder='Vyberte nástroj(e)') }}
 
-            <!-- Teacher filter -->
-            <div class="col-md-3">
-                <label for="teacher_id" class="form-label">Pedagog</label>
-                <select class="form-select form-select-sm" id="teacher_id" name="teacher_id" multiple>
-                    {% for teacher in teachers %}
-                        <option value="{{ teacher.id }}"
-                                {% if teacher.id in (selected_teacher_ids or []) %}selected{% endif %}>
-                            {{ teacher.full_name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
+            {{ select_filter('Pedagog', 'teacher_id', 'teacher_id',
+                       teachers, selected_teacher_ids, placeholder='Vyberte pedagoga') }}
 
-            <!-- Department filter -->
-            <div class="col-md-3">
-                <label for="department_id" class="form-label">Katedra pedagoga</label>
-                <select class="form-select form-select-sm" id="department_id" name="department_id" multiple>
-                    {% for dep in departments %}
-                        <option value="{{ dep.id }}"
-                                {% if dep.id in (selected_department_ids or []) %}selected{% endif %}>
-                            {{ dep.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
+            {{ select_filter('Katedra pedagoga', 'department_id', 'department_id',
+                       departments, selected_department_ids, placeholder='Vyberte katedru') }}
 
-            <!-- Incomplete ensemble filter -->
+            {# Incomplete ensembles #}
             <div class="col-md-3">
                 <label for="incomplete" class="form-label">Kompletnost</label>
                 <select class="form-select form-select-sm" id="incomplete" name="incomplete" multiple>
@@ -51,8 +23,7 @@
                 </select>
             </div>
 
-
-            <!-- Health check filter -->
+            {# Health check filter #}
             <div class="col-md-3">
                 <label for="health" class="form-label">Stav souboru</label>
                 <select class="form-select form-select-sm" id="health" name="health">
@@ -69,59 +40,13 @@
                 </select>
             </div>
 
+            {{ text_filter('Hledat hráče nebo soubor', 'filter-q', 'q',
+                     search_query, placeholder='Jméno hráče nebo název souboru...') }}
 
-            <!-- Search field -->
-            <div class="col-md-3">
-                <label for="filter-q" class="form-label">Hledat hráče nebo soubor</label>
-                <input type="text"
-                       id="filter-q"
-                       class="form-control form-control-sm"
-                       name="q"
-                       value="{{ search_query or '' }}"
-                       placeholder="Jméno hráče nebo název souboru...">
-            </div>
+            {{ button_row(show_reset=request.args, reset_url=url_for('ensemble.index')) }}
 
-            <!-- Actions -->
-            <div class="col-12 d-flex gap-2 justify-content-end">
-                <button type="submit" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-filter me-1"></i> Filtrovat
-                </button>
-
-                {% if request.args %}
-                    <a href="{{ url_for('ensemble.index') }}" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-times me-1"></i> Reset
-                    </a>
-                {% endif %}
-            </div>
         </div>
     </form>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            new TomSelect("#instrument_id", {
-                plugins: {remove_button: {title: "Odebrat"}},
-                placeholder: "Vyberte nástroj(e)"
-            });
-
-            new TomSelect("#teacher_id", {
-                plugins: {remove_button: {title: "Odebrat"}},
-                placeholder: "Vyberte pedagoga"
-            });
-            new TomSelect("#health", {
-                placeholder: "Vyberte stav",
-                allowEmptyOption: true
-            });
-            new TomSelect("#incomplete", {
-                placeholder: "Vyberte stav kompletnosti",
-                plugins: {remove_button: {title: "Odebrat"}},
-                allowEmptyOption: true
-            });
-
-            new TomSelect("#department_id", {
-                plugins: {remove_button: {title: "Odebrat"}},
-                placeholder: "Vyberte katedru"
-            });
-
-        });
-    </script>
+    {% include "partials/_tomselect_init.html" %}
 </div>

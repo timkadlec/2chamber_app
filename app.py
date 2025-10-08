@@ -155,18 +155,24 @@ def create_app():
             view_func = app.view_functions[rule.endpoint]
 
             if hasattr(view_func, "_nav_title"):
-                # role-based filtering
-                required_role = getattr(view_func, "_required_role", None)
-                if required_role and (not current_user.is_authenticated or not current_user.has_role(required_role)):
-                    continue  # skip this nav item
+                # --- Permission-based filtering ---
+                required_permission = getattr(view_func, "_nav_permission", None)
+                if required_permission and (
+                        not current_user.is_authenticated or not current_user.has_permission(required_permission)
+                ):
+                    continue  # skip if no permission
 
-                if not is_allowed(view_func):
-                    continue
+                # --- Role-based filtering ---
+                required_roles = getattr(view_func, "_nav_roles", None)
+                if required_roles and (
+                        not current_user.is_authenticated or not current_user.has_any_role(required_roles)
+                ):
+                    continue  # skip if role mismatch
 
                 entry = {
                     "name": view_func._nav_title,
                     "url": url_for(rule.endpoint),
-                    "weight": getattr(view_func, "_nav_weight", 100)
+                    "weight": getattr(view_func, "_nav_weight", 100),
                 }
 
                 group = getattr(view_func, "_nav_group", None)
@@ -175,15 +181,17 @@ def create_app():
                 else:
                     flat_links.append(entry)
 
+        # --- Grouped nav entries ---
         nav_links = []
         for group_name, children in groups.items():
             nav_links.append({
                 "name": group_name,
                 "url": "#",
                 "weight": min(child["weight"] for child in children),
-                "children": sorted(children, key=lambda x: x["weight"])
+                "children": sorted(children, key=lambda x: x["weight"]),
             })
 
+        # --- Flat links ---
         nav_links += flat_links
         nav_links = sorted(nav_links, key=lambda x: x["weight"])
 

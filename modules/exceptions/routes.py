@@ -12,8 +12,7 @@ from datetime import datetime
 #   INDEX – view all exceptions
 # ---------------------------------------------------------
 @exceptions_bp.route("/", methods=["GET"])
-@navlink("Výjimky", weight=100, roles=["admin", "reviewer"])
-@permission_required("exc_can_view_all")
+@navlink("Výjimky", weight=100, permission='exc_can_view_all')
 def index():
     page = request.args.get("page", 1, type=int)
     per_page = 20
@@ -149,8 +148,8 @@ def exception_delete(exception_id):
     try:
         db.session.delete(exc)
         db.session.commit()
+        flash("Výjimka byla úspěšně smazána", "success")
+        return redirect(url_for("exceptions.index"))
     except ValueError as e:
         flash(str(e), "danger")
         return redirect(url_for("exceptions.detail", exception_id=exception_id))
-
-    return redirect(url_for("exceptions.index"))

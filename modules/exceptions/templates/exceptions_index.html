@@ -27,7 +27,9 @@
                             <th>Spoluhráči</th>
                             <th>Důvod</th>
                             <th>Stav</th>
-                            <th class="text-end">Akce</th>
+                            {% if current_user.has_permission('exc_can_decide') or current_user.has_permission('exc_can_view_detail') or current_user.has_permission('exc_can_delete') %}
+                                <th class="text-end">Akce</th>
+                            {% endif %}
                         </tr>
                         </thead>
                         <tbody>

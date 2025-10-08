@@ -1,12 +1,12 @@
 {# --- Generic icon button --- #}
 {% macro icon_button(url='#', icon='', text='', color='light', size='sm', title='', disabled=False, target='') %}
-<a href="{{ url if not disabled else '#' }}"
-   class="btn btn-{{ size }} btn-{{ color }} d-flex align-items-center {% if disabled %}disabled{% endif %}"
-   {% if title %}title="{{ title }}"{% endif %}
-   {% if target %}target="{{ target }}"{% endif %}>
-    {% if icon %}<i class="fas fa-{{ icon }} me-1"></i>{% endif %}
-    {% if text %}<span>{{ text }}</span>{% endif %}
-</a>
+    <a href="{{ url if not disabled else '#' }}"
+       class="btn btn-{{ size }} btn-{{ color }} d-flex align-items-center {% if disabled %}disabled{% endif %}"
+       {% if title %}title="{{ title }}"{% endif %}
+       {% if target %}target="{{ target }}"{% endif %}>
+        {% if icon %}<i class="fas fa-{{ icon }} me-1"></i>{% endif %}
+        {% if text %}<span>{{ text }}</span>{% endif %}
+    </a>
 {% endmacro %}
 
 
@@ -20,9 +20,18 @@
 {% endmacro %}
 
 {% macro delete_button(modal_target, title='Smazat', icon='trash', color='light') %}
-<a href="#" class="btn btn-{{ color }} btn-sm"
-   data-bs-toggle="modal" data-bs-target="#{{ modal_target }}"
-   title="{{ title }}">
-    <i class="fas fa-{{ icon }} text-danger"></i>
-</a>
+    <a href="#" class="btn btn-{{ color }} btn-sm"
+       data-bs-toggle="modal" data-bs-target="#{{ modal_target }}"
+       title="{{ title }}">
+        <i class="fas fa-{{ icon }} text-danger"></i>
+    </a>
+{% endmacro %}
+{% macro export_button(url, label='Export PDF', icon='file-pdf', color='outline-secondary') %}
+    {{ icon_button(url, icon=icon, text=label, color=color, title=label) }}
+{% endmacro %}
+
+{% macro action_button(url, icon, title='', color='outline-primary') %}
+    <a href="{{ url }}" class="btn btn-{{ color }} btn-sm" title="{{ title }}">
+        <i class="fas fa-{{ icon }}"></i>
+    </a>
 {% endmacro %}

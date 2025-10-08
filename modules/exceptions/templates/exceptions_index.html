@@ -123,7 +123,7 @@
                                                             (ID {{ exception.id }})?
                                                         </div>
                                                         <div class="modal-footer">
-                                                            <form action="#"
+                                                            <form action="{{ url_for('exceptions.exception_delete', exception_id=exception.id) }}"
                                                                   method="post" class="d-inline">
                                                                 <button type="button" class="btn btn-secondary"
                                                                         data-bs-dismiss="modal">Zavřít

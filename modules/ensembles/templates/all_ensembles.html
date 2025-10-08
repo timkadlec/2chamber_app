@@ -26,11 +26,12 @@
                                 <i class="fas fa-file-pdf me-2"></i> Úvazky
                             </a>
                         </div>
-
-                        <a href="{{ url_for('ensemble.ensemble_add') }}"
-                           class="btn btn-primary d-flex align-items-center">
-                            <i class="fas fa-plus me-2"></i> Přidat soubor
-                        </a>
+                        {% if current_user.has_permission('ens_add') %}
+                            <a href="{{ url_for('ensemble.ensemble_add') }}"
+                               class="btn btn-primary d-flex align-items-center">
+                                <i class="fas fa-plus me-2"></i> Přidat soubor
+                            </a>
+                        {% endif %}
                     </div>
 
 

@@ -42,7 +42,7 @@ def index():
             .join(EnsembleTeacher)
             .where(
                 EnsembleTeacher.ensemble_id == Ensemble.id,
-                EnsembleTeacher.semester_id == current_semester,
+                EnsembleTeacher.semester_id == current_semester_id,
             )
             .limit(1)
             .correlate(Ensemble)

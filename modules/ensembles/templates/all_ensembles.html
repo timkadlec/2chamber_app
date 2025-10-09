@@ -260,4 +260,22 @@
             </div>
         </div>
     </main>
+    {% from "macros/_modals.jinja" import confirm_modal with context %}
+
+    {% for ensemble in ensembles %}
+        {% call if_perm('ens_delete', current_user) %}
+            {{ confirm_modal(
+            id='deleteEnsembleModal' ~ ensemble.id,
+            title='Smazat komorní soubor',
+            message='Opravdu chcete smazat soubor <strong>' ~ ensemble.name ~ '</strong>?',
+            action_url=url_for('ensemble.ensemble_delete', ensemble_id=ensemble.id),
+            button_label='Smazat',
+            button_class='danger',
+            icon='trash'
+        ) }}
+        {% endcall %}
+    {% endfor %}
 {% endblock %}
+
+
+

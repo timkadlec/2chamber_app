@@ -13,6 +13,7 @@ from config import ProductionConfig
 from models import db, User
 import os
 import oracledb
+from utils.session_helpers import get_or_set_current_semester, get_or_set_current_semester_id
 from extensions import login_manager, oauth, migrate
 from modules.library import library_bp
 from modules.auth import auth_bp
@@ -209,20 +210,7 @@ def create_app():
 
     @app.context_processor
     def inject_semester_context():
-        current = None
-        if (sid := session.get('semester_id')):
-            current = Semester.query.get(sid)
-
-        if not current:
-            # fallback if table empty or session value stale
-            current = (
-                Semester.query
-                .order_by(Semester.start_date.desc())
-                .first()
-            )
-            if current:
-                # >>> TADY nastavíme defaultní semestr do session
-                session['semester_id'] = current.id
+        current = get_or_set_current_semester()
 
         years = (
             AcademicYear.query
@@ -251,7 +239,7 @@ def create_app():
 
     @app.route("/")
     def index():
-        current_sem = session.get("semester_id")
+        current_sem = get_or_set_current_semester_id()
         data = get_dashboard_data(current_sem)
         return render_template("dashboard.html", **data)
 

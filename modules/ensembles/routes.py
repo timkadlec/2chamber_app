@@ -12,21 +12,22 @@ from utils.decorators import permission_required
 from sqlalchemy import or_, func, select
 from utils.export_helpers import render_pdf
 from utils.filter_helpers import get_common_filters, apply_common_filters
+from utils.session_helpers import get_or_set_current_semester, get_or_set_current_semester_id
 
 
 @ensemble_bp.route("/all")
 @navlink("Soubory", weight=10)
 def index():
-    current_semester = session["semester_id"]
+    current_semester_id = get_or_set_current_semester_id()
     page = request.args.get("page", 1, type=int)
     per_page = 20
 
     # --- Collect and apply filters (shared helper) ---
     filters = get_common_filters()
     ensembles = db.session.query(Ensemble).filter(
-        Ensemble.semester_links.any(EnsembleSemester.semester_id == current_semester)
+        Ensemble.semester_links.any(EnsembleSemester.semester_id == current_semester_id)
     )
-    ensembles = apply_common_filters(ensembles, filters, current_semester)
+    ensembles = apply_common_filters(ensembles, filters, current_semester_id)
 
     # --- Sorting ---
     sort_by = request.args.get("sort_by", "name")
@@ -88,18 +89,18 @@ def index():
 @ensemble_bp.route("/all/pdf")
 @permission_required('ens_export_pdf')
 def export_pdf():
-    current_semester = session["semester_id"]
+    current_semester_id = get_or_set_current_semester_id()
     filters = get_common_filters()
 
     ensembles = db.session.query(Ensemble).filter(
-        Ensemble.semester_links.any(EnsembleSemester.semester_id == current_semester)
+        Ensemble.semester_links.any(EnsembleSemester.semester_id == current_semester_id)
     )
-    ensembles = apply_common_filters(ensembles, filters, current_semester)
+    ensembles = apply_common_filters(ensembles, filters, current_semester_id)
     ensembles = ensembles.order_by(Ensemble.name).all()
 
     return render_pdf(
         "pdf_export/all_ensembles.html",
-        {"ensembles": ensembles, "current_semester": Semester.query.get(current_semester)},
+        {"ensembles": ensembles, "current_semester": Semester.query.get(current_semester_id)},
         "SKH_KomorniSoubory_vse",
     )
 
@@ -107,7 +108,7 @@ def export_pdf():
 @ensemble_bp.route("/by_teacher/pdf")
 @permission_required('ens_export_pdf')
 def export_pdf_by_teacher():
-    current_semester_id = session["semester_id"]
+    current_semester_id = get_or_set_current_semester_id()
     filters = get_common_filters()
 
     teachers = (
@@ -146,7 +147,7 @@ def export_pdf_by_teacher():
 @ensemble_bp.route("/teacher-hours/pdf")
 @permission_required('ens_export_pdf')
 def export_pdf_teacher_hours():
-    current_semester_id = session["semester_id"]
+    current_semester_id = get_or_set_current_semester_id()
     filters = get_common_filters()
 
     teachers = (
@@ -305,7 +306,7 @@ def _get_or_create_ensemble_instrumentation_by_ids(ensemble_id: int, instrument_
 def add_player_to_ensemble(ensemble_id, ensemble_instrumentation_id, mode="student"):
     ensemble = Ensemble.query.get(ensemble_id)
     instrumentation = EnsembleInstrumentation.query.get(ensemble_instrumentation_id)
-    current_semester = Semester.query.filter_by(id=session.get("semester_id")).first()
+    current_semester = Semester.query.filter_by(id=get_or_set_current_semester()).first()
     if request.method == "GET":
         if mode == "student":
             available_players = (
@@ -533,7 +534,7 @@ def count_hour_donation(ensemble):
 def ensemble_assign_teacher(ensemble_id):
     ensemble = Ensemble.query.get_or_404(ensemble_id)
     teacher_form = TeacherForm()
-    current_semester = Semester.query.filter_by(id=session.get("semester_id")).first()
+    current_semester = Semester.query.filter_by(id=get_or_set_current_semester()).first()
 
     if teacher_form.validate_on_submit():
         # Check if assignment already exists

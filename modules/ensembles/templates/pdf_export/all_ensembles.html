@@ -94,6 +94,47 @@
     </div>
 </header>
 
+<!-- Filters -->
+{% if filters %}
+    <div style="font-size: 9pt; margin-bottom: 15px;">
+        <span style="color: #555;">
+        {% set parts = [] %}
+
+            {% if filters.instrument_names %}
+                {% set _ = parts.append("Nástroje: " + (filters.instrument_names | join(", "))) %}
+            {% endif %}
+
+            {% if filters.teacher_names %}
+                {% set _ = parts.append("Pedagogové: " + (filters.teacher_names | join(", "))) %}
+            {% endif %}
+
+            {% if filters.department_names %}
+                {% set _ = parts.append("Katedry: " + (filters.department_names | join(", "))) %}
+            {% endif %}
+
+            {% if filters.search_query %}
+                {% set _ = parts.append("Hledání: „" + filters.search_query + "“") %}
+            {% endif %}
+
+            {% if filters.incomplete_filter %}
+                {% set _ = parts.append("Kompletnost: " + ("Nekompletní" if filters.incomplete_filter == "1" else "Kompletní")) %}
+            {% endif %}
+
+            {% if filters.health_filter %}
+                {% set _ = parts.append("Stav: " + filters.health_filter) %}
+            {% endif %}
+
+            {% if parts %}
+                {{ parts | join("; ") }}
+            {% else %}
+                Žádné
+            {% endif %}
+    </span>
+    </div>
+{% endif %}
+
+
+
 <!-- Main table -->
 <table>
     <thead>
@@ -112,7 +153,8 @@
             <td>
                 {% for pl in ens.player_links %}
                     {% if pl.player %}
-                        <em>{{ pl.player.instrument.abbreviation }}. </em>{{ pl.player.first_name[0] }}. {{ pl.player.last_name }}{% if not loop.last %}, {% endif %}
+                        <em>{{ pl.player.instrument.abbreviation }}. </em>{{ pl.player.first_name[0] }}.
+                        {{ pl.player.last_name }}{% if not loop.last %}, {% endif %}
                     {% endif %}
                 {% endfor %}
             </td>

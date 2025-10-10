@@ -92,17 +92,48 @@ def export_pdf():
     current_semester_id = get_or_set_current_semester_id()
     filters = get_common_filters()
 
+    # Base query
     ensembles = db.session.query(Ensemble).filter(
         Ensemble.semester_links.any(EnsembleSemester.semester_id == current_semester_id)
     )
     ensembles = apply_common_filters(ensembles, filters, current_semester_id)
     ensembles = ensembles.order_by(Ensemble.name).all()
 
-    return render_pdf(
-        "pdf_export/all_ensembles.html",
-        {"ensembles": ensembles, "current_semester": Semester.query.get(current_semester_id)},
-        "SKH_KomorniSoubory_vse",
-    )
+    # --- Enrich filters with human-readable labels ---
+    # (resolve IDs into names for the PDF header)
+    if filters["instrument_ids"]:
+        from models import Instrument
+        filters["instrument_names"] = [
+            i.name for i in Instrument.query.filter(Instrument.id.in_(filters["instrument_ids"])).all()
+        ]
+    else:
+        filters["instrument_names"] = []
+
+    if filters["teacher_ids"]:
+        from models import Teacher
+        filters["teacher_names"] = [
+            t.full_name if hasattr(t, "full_name") else f"{t.first_name} {t.last_name}"
+            for t in Teacher.query.filter(Teacher.id.in_(filters["teacher_ids"])).all()
+        ]
+    else:
+        filters["teacher_names"] = []
+
+    if filters["department_ids"]:
+        from models import Department
+        filters["department_names"] = [
+            d.name for d in Department.query.filter(Department.id.in_(filters["department_ids"])).all()
+        ]
+    else:
+        filters["department_names"] = []
+
+    # Prepare context
+    context = {
+        "ensembles": ensembles,
+        "current_semester": Semester.query.get(current_semester_id),
+        "filters": filters,
+    }
+
+    return render_pdf("pdf_export/all_ensembles.html", context, "SKH_KomorniSoubory_vse")
 
 
 @ensemble_bp.route("/by_teacher/pdf")
@@ -150,33 +181,48 @@ def export_pdf_teacher_hours():
     current_semester_id = get_or_set_current_semester_id()
     filters = get_common_filters()
 
+    # --- Query teachers for current semester ---
     teachers = (
         Teacher.query.join(EnsembleTeacher)
         .filter(EnsembleTeacher.semester_id == current_semester_id)
         .distinct()
     )
+
     if filters["teacher_ids"]:
         teachers = teachers.filter(Teacher.id.in_(filters["teacher_ids"]))
     if filters["department_ids"]:
         teachers = teachers.filter(Teacher.department_id.in_(filters["department_ids"]))
-    teachers = teachers.order_by(Teacher.last_name, Teacher.first_name).all()
 
+    teachers = teachers.order_by(Teacher.department_id, Teacher.last_name, Teacher.first_name).all()
+
+    # --- Build filtered list with ensembles per teacher ---
     filtered_teachers = []
     for teacher in teachers:
-        q = db.session.query(Ensemble).join(EnsembleTeacher).filter(
-            EnsembleTeacher.semester_id == current_semester_id,
-            EnsembleTeacher.teacher_id == teacher.id,
+        q = (
+            db.session.query(Ensemble)
+            .join(EnsembleTeacher)
+            .filter(
+                EnsembleTeacher.semester_id == current_semester_id,
+                EnsembleTeacher.teacher_id == teacher.id,
+            )
         )
         q = apply_common_filters(q, filters, current_semester_id)
         ensembles = q.order_by(Ensemble.name).all()
+
         if ensembles:
             teacher.filtered_ensembles = ensembles
             filtered_teachers.append(teacher)
 
+    # --- Group teachers by department ---
+    grouped = {}
+    for t in filtered_teachers:
+        dept = t.department.name if t.department else "Neurčeno"
+        grouped.setdefault(dept, []).append(t)
+
     return render_pdf(
         "pdf_export/ensemble_teacher_hours.html",
         {
-            "teachers": filtered_teachers,
+            "grouped_teachers": grouped,  # 👈 main change
             "current_semester": Semester.query.get(current_semester_id),
         },
         "SKH_Uvazky",

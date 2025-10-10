@@ -119,4 +119,3 @@ def apply_common_filters(query, filters, current_semester):
         query = query.filter(Ensemble.health_check_label == health_filter)
 
     return query
-

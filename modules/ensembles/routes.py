@@ -534,7 +534,7 @@ def count_hour_donation(ensemble):
 def ensemble_assign_teacher(ensemble_id):
     ensemble = Ensemble.query.get_or_404(ensemble_id)
     teacher_form = TeacherForm()
-    current_semester = Semester.query.filter_by(id=get_or_set_current_semester()).first()
+    current_semester = get_or_set_current_semester()
 
     if teacher_form.validate_on_submit():
         # Check if assignment already exists

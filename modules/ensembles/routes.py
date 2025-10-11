@@ -3,7 +3,8 @@ from flask_login import current_user
 from .forms import EnsembleForm, TeacherForm, NoteForm
 from utils.nav import navlink
 from models import db, Ensemble, EnsembleSemester, Player, Student, EnsemblePlayer, EnsembleInstrumentation, Instrument, \
-    StudentSubjectEnrollment, Semester, EnsembleTeacher, Teacher, EnsembleNote, Department, Permission
+    StudentSubjectEnrollment, Semester, EnsembleTeacher, Teacher, EnsembleNote, Department, Permission, Composition, \
+    EnsembleRepertoire, Composer, CompositionInstrumentation
 from . import ensemble_bp
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
@@ -343,7 +344,7 @@ def _get_or_create_ensemble_instrumentation_by_ids(ensemble_id: int, instrument_
         comment=None,
     )
     db.session.add(epi)
-    db.session.flush()  # get epi.id
+    db.session.flush()
     return epi, True
 
 
@@ -654,4 +655,80 @@ def delete_note(ensemble_id, note_id):
     db.session.delete(note)
     db.session.commit()
     flash("Poznámka byla smazána.", "info")
+    return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble_id))
+
+
+@ensemble_bp.route("/<int:ensemble_id>/add_composition", methods=["GET", "POST"])
+def add_composition_to_ensemble(ensemble_id):
+    ensemble = Ensemble.query.get_or_404(ensemble_id)
+    current_semester = get_or_set_current_semester()
+
+    if request.method == "POST":
+        comp_id = int(request.form["selected_composition_id"])
+        composition = Composition.query.get_or_404(comp_id)
+
+        existing = EnsembleRepertoire.query.filter_by(
+            ensemble_id=ensemble.id,
+            composition_id=composition.id,
+            semester_id=current_semester.id
+        ).first()
+
+        if not existing:
+            db.session.add(EnsembleRepertoire(
+                ensemble_id=ensemble.id,
+                composition_id=composition.id,
+                semester_id=current_semester.id
+            ))
+            db.session.commit()
+            flash(f"Skladba '{composition.name}' byla přidána do souboru {ensemble.name}.", "success")
+
+        return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
+
+    # === Filtering ===
+    q = request.args.get("q", "").strip()
+    instrument_filter = request.args.getlist("instrument_ids", type=int)
+
+    query = Composition.query.join(Composer).outerjoin(CompositionInstrumentation)
+
+    if q:
+        ilike = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                Composition.name.ilike(ilike),
+                Composer.first_name.ilike(ilike),
+                Composer.last_name.ilike(ilike),
+            )
+        )
+
+    if instrument_filter:
+        query = query.filter(CompositionInstrumentation.instrument_id.in_(instrument_filter))
+
+    query = query.order_by(Composer.last_name, Composition.name)
+    available_compositions = query.all()
+
+    instruments = Instrument.query.order_by(Instrument.weight).all()
+
+    return render_template(
+        "add_composition_to_ensemble.html",
+        ensemble=ensemble,
+        current_semester=current_semester,
+        available_compositions=available_compositions,
+        instruments=instruments,
+        q=q,
+        instrument_filter=instrument_filter,
+    )
+
+
+@ensemble_bp.route("/<int:ensemble_id>/remove_composition/<int:composition_id>/<int:semester_id>", methods=["POST"])
+def remove_composition_from_ensemble(ensemble_id, composition_id, semester_id):
+    link = EnsembleRepertoire.query.filter_by(
+        ensemble_id=ensemble_id,
+        composition_id=composition_id,
+        semester_id=semester_id
+    ).first_or_404()
+
+    db.session.delete(link)
+    db.session.commit()
+    flash("Skladba byla odebrána ze souboru.", "info")
+
     return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble_id))

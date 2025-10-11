@@ -146,7 +146,27 @@ def composition_add():
 @library_bp.route("/composition/<int:composition_id>/detail")
 def composition_detail(composition_id):
     composition = Composition.query.get_or_404(composition_id)
-    return render_template("composition_detail.html", composition=composition)
+    from itertools import groupby
+    from operator import attrgetter
+
+    # Sort by ensemble + semester (newest first)
+    links_sorted = sorted(
+        composition.ensemble_links,
+        key=lambda l: (l.ensemble_id, l.semester.start_date if l.semester else None),
+        reverse=True
+    )
+
+    # Group by ensemble and keep only the latest semester entry per ensemble
+    latest_links = []
+    for ensemble_id, group in groupby(links_sorted, key=attrgetter("ensemble_id")):
+        latest_links.append(next(group))  # first (newest) in each group
+
+    # Pass to template
+    return render_template(
+        "composition_detail.html",
+        composition=composition,
+        latest_links=latest_links
+    )
 
 
 @library_bp.route("/composition/<int:composition_id>/edit", methods=["POST", "GET"])

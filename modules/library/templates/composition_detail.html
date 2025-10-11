@@ -111,6 +111,93 @@
         #}
                 </div>
             </div>
+
+            {% if composition.ensemble_links %}
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-users me-2 text-secondary"></i>Soubory, které skladbu hrály
+                        </h5>
+                        <span class="badge bg-light text-dark border">
+                {{ composition.ensemble_links|length }} soubor{{ 'ů' if composition.ensemble_links|length != 1 else '' }}
+            </span>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light text-uppercase small text-muted">
+                                <tr>
+                                    <th style="width:30%">Soubor</th>
+                                    <th style="width:45%">Hráči</th>
+                                    <th style="width:15%">Semestr</th>
+                                    <th style="width:10%">Rok</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for link in latest_links %}
+                                    <tr>
+                                        <!-- Ensemble -->
+                                        <td>
+                                            <a href="{{ url_for('ensemble.ensemble_detail', ensemble_id=link.ensemble.id) }}"
+                                               class="fw-semibold text-decoration-none text-dark">
+                                                {{ link.ensemble.name }}
+                                            </a>
+                                            {% if link.ensemble.instrumentation %}
+                                                <div class="small text-muted">{{ link.ensemble.instrumentation }}</div>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- Players -->
+                                        <td>
+                                            {% if link.ensemble.player_links %}
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    {% for ep in link.ensemble.player_links %}
+                                                        {% set p = ep.player %}
+                                                        <span class="badge rounded-pill bg-light text-dark border fw-normal">
+                                                {{ p.first_name }} {{ p.last_name }}
+                                                            {% if p.instrument %}
+                                                                <span class="text-muted small">
+                                                        ({{ p.instrument.abbreviation or p.instrument.name }})
+                                                    </span>
+                                                            {% endif %}
+                                            </span>
+                                                    {% endfor %}
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted small">— bez hráčů —</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- Semester -->
+                                        <td>
+                                            {% if "letní" in link.semester.name|lower %}
+                                                <span class="badge bg-info text-dark border">
+                                        <i class="fas fa-sun me-1"></i>{{ link.semester.name }}
+                                    </span>
+                                            {% elif "zimní" in link.semester.name|lower %}
+                                                <span class="badge bg-primary text-light border">
+                                        <i class="fas fa-snowflake me-1"></i>{{ link.semester.name }}
+                                    </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ link.semester.name }}</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- Academic Year -->
+                                        <td class="text-muted small">
+                                            {{ link.semester.academic_year.name }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+
         </div>
     </main>
 {% endblock %}

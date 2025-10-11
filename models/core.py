@@ -70,6 +70,12 @@ class Semester(db.Model):
         Index("ix_semester_start_end", "start_date", "end_date"),
     )
 
+    repertoire_links = db.relationship(
+        "EnsembleRepertoire",
+        back_populates="semester",
+        cascade="all, delete-orphan"
+    )
+
     @property
     def ensembles(self):
         return [link.ensemble for link in self.ensemble_links]

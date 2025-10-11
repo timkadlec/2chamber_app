@@ -79,6 +79,12 @@ class Composition(db.Model):
         cascade="all, delete-orphan"
     )
 
+    ensemble_links = db.relationship(
+        "EnsembleRepertoire",
+        back_populates="composition",
+        cascade="all, delete-orphan"
+    )
+
     @property
     def chamber_instrumentation(self):
         if not self.instrumentation_entries:

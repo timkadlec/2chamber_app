@@ -91,6 +91,21 @@ class Ensemble(db.Model):
         passive_deletes=True
     )
 
+    repertoire_links = db.relationship(
+        "EnsembleRepertoire",
+        back_populates="ensemble",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    def repertoire_for_semester(self, semester_id):
+        """Return all compositions assigned to this ensemble for the given semester."""
+        return [
+            link.composition
+            for link in self.repertoire_links
+            if link.semester_id == semester_id
+        ]
+
     @property
     def semesters(self):
         return sorted((link.semester for link in self.semester_links),
@@ -224,6 +239,44 @@ class EnsembleInstrumentation(Instrumentation):
     __mapper_args__ = {
         'polymorphic_identity': 'ensemble_instrumentation',
     }
+
+
+class EnsembleRepertoire(db.Model):
+    __tablename__ = "ensemble_repertoires"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    ensemble_id = db.Column(
+        db.Integer,
+        db.ForeignKey("ensembles.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    composition_id = db.Column(
+        db.Integer,
+        db.ForeignKey("compositions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    semester_id = db.Column(
+        db.Integer,
+        db.ForeignKey("semesters.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    ensemble = db.relationship("Ensemble", back_populates="repertoire_links")
+    composition = db.relationship("Composition", back_populates="ensemble_links")
+    semester = db.relationship("Semester", back_populates="repertoire_links")
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "ensemble_id", "composition_id", "semester_id",
+            name="uq_ensemble_repertoire_per_semester"
+        ),
+    )
 
 
 class EnsembleSemester(db.Model):

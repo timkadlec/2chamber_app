@@ -110,7 +110,9 @@
                                     {% set teachers = ensemble.semester_teachers(session["semester_id"]) %}
                                     {% if teachers %}
                                         {% for teacher in teachers %}
+                                            <a href="{{ url_for('teachers.teacher_detail', teacher_id=teacher.id) }}">
                                             {{ teacher.full_name }}
+                                            </a>
                                             {% if teacher.department %}
                                                 <small class="text-muted">({{ teacher.department.name }})</small>
                                             {% endif %}
@@ -122,20 +124,27 @@
                                 </td>
 
                                 <td>
-                                    {% for ie in ensemble.instrumentation_entries %}
-                                        {% set assigned = ie.player_links|selectattr("player_id")|list %}
-                                        {% if assigned %}
-                                            {% set pl = assigned[0].player %}
-                                            <em>{{ pl.instrument.abbreviation }}.</em>
-                                            {{ pl.first_name[0] }}. {{ pl.last_name }}
+                                    {% for ep in ensemble.player_links %}
+                                        {% set pl = ep.player %}
+                                        {% set instr = ep.ensemble_instrumentation.instrument if ep.ensemble_instrumentation else None %}
+
+                                        {% if pl %}
+                                            <em>{{ instr.abbreviation if instr else (pl.instrument.abbreviation if pl.instrument else '–') }}.</em>
+                                            {% if pl.student %}
+                                                {{ pl.student.first_name[0] }}. {{ pl.student.last_name }}
+                                            {% else %}
+                                                {{ pl.first_name[0] }}. {{ pl.last_name }}
+                                            {% endif %}
                                         {% else %}
-                                            <em>{{ ie.instrument.abbreviation }}.</em>
+                                            <em>{{ instr.abbreviation if instr else '–' }}.</em>
                                             <span class="badge bg-light text-muted border">
-                                                <i class="fas fa-user-slash me-1"></i> Neobsazeno
-                                            </span>
+            <i class="fas fa-user-slash me-1"></i> Neobsazeno
+        </span>
                                         {% endif %}
+
                                         {% if not loop.last %}, {% endif %}
                                     {% endfor %}
+
                                 </td>
 
                                 <td>{{ ensemble_status(ensemble) }}</td>

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}
+    Detail pedagoga | {{ teacher.first_name }} {{ teacher.last_name }}
+{% endblock %}
+{% block content %}
+    <main class="py-4">
+        <div class="container-xl">
+
+            {% from "macros/_back_button.html" import back_link %}
+            {{ back_link("teachers.index", "Zpět na přehled pedagogů", request.args) }}
+
+            <!-- Teacher Detail Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Detail pedagoga</h5>
+                    {% if current_user.has_permission('tc_can_edit') %}
+                        <a href="{{ url_for('teachers.edit_teacher', teacher_id=teacher.id) }}"
+                           class="btn btn-sm btn-info">
+                            <i class="fas fa-edit me-1"></i> Upravit pedagoga
+                        </a>
+                    {% endif %}
+                </div>
+
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Jméno</label>
+                            <div class="fw-semibold">{{ teacher.first_name }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Příjmení</label>
+                            <div class="fw-semibold">{{ teacher.last_name }}</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4 mt-2">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-muted">Osobní číslo</label>
+                            <div>{{ teacher.osobni_cislo or "—" }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-muted">Katedra</label>
+                            <div>{{ teacher.department.name if teacher.department else "—" }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-muted">Hlavní předměty</label>
+                            <div>
+                                {% if teacher.subjects %}
+                                    {{ teacher.subjects | map(attribute='name') | join(', ') }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ensembles taught this semester -->
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Komorní soubory v tomto semestru</h5>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light text-uppercase small text-muted">
+                        <tr>
+                            <th>Soubor</th>
+                            <th>Obsazení</th>
+                            <th>Počet studentů</th>
+                            <th>Stav</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for link in teacher.ensemble_links if link.semester_id == session['semester_id']|int %}
+                            {% set ensemble = link.ensemble %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('ensemble.ensemble_detail', ensemble_id=ensemble.id) }}"
+                                       class="fw-semibold text-decoration-none">
+                                        {{ ensemble.name }}
+                                    </a>
+                                </td>
+                                <td>{{ ensemble.instrumentation or "—" }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        {{ ensemble.student_count }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if ensemble.is_complete %}
+                                        <span class="badge bg-success text-light">
+                                            <i class="fas fa-check me-1"></i> Kompletní
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-exclamation-triangle me-1"></i> Neúplné
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-muted text-center py-3">
+                                    Pedagog nemá v tomto semestru přiřazen žádný soubor.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+{% endblock %}

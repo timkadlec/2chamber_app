@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: "DejaVu Sans", "Noto Sans", sans-serif;
+            font-size: 10pt;
+            margin: 0;
+        }
+
+        h1, h2, p {
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 17pt;
+            font-weight: normal;
+            text-align: right;
+        }
+
+        h2 {
+            font-size: 11pt;
+            border-bottom: .6pt solid #333;
+            margin: 1em 0 .4em;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 6px 0;
+        }
+
+        header img {
+            height: 50px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: .3em;
+            font-size: 9pt;
+        }
+
+        th, td {
+            border: .4pt solid #999;
+            padding: 3px 5px;
+            vertical-align: top;
+        }
+
+        th {
+            background: #eee;
+        }
+
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        /* === PAGE LAYOUT === */
+        @page {
+            size: A4;
+            margin: 20mm 15mm 20mm 15mm;
+            font-family: "DejaVu Sans", "Noto Sans", sans-serif;   /* ✅ added */
+            font-size: 9pt;                                       /* ✅ added */
+            color: #444;                                          /* ✅ consistent color */
+            @top-center {
+                content: "{{ title }} – {{ current_semester.name }} {{ current_semester.academic_year.name }}";
+            }
+
+            @bottom-center {
+                content: "Vygenerováno {{ today.strftime('%d.%m.%Y') }} · Strana " counter(page) " z " counter(pages);
+            }
+        }
+
+        /* Disable the running header on the first page (show the logo header instead) */
+        @page :first {
+            @top-center {
+                content: none;
+            }
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+<header>
+    <img src="{{ logo_url }}" alt="HAMU Logo">
+    <div style="text-align:right;">
+        <h1>{{ title }}</h1>
+        <p style="color:#666;">Akademie múzických umění v Praze</p>
+        <p style="font-size:14pt; font-weight:bold;">{{ current_semester.name }} {{ current_semester.academic_year.name }}</p>
+    </div>
+</header>
+
+{% block content %}
+{% endblock %}
+
+</body>
+</html>

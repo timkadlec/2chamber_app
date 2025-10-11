@@ -1,23 +1,11 @@
-<!DOCTYPE html>
-<html lang="cs">
-<head>
-    <meta charset="utf-8">
+{% extends 'pdf_export/pdf_base.html' %}
+{% set title = "Přehled úvazků komorních souborů" %}
+
+{% block head %}
     <style>
-        body {
-            font-family: "DejaVu Sans", "Noto Sans", sans-serif;
-            font-size: 9pt;
-            margin: 25px;
-        }
-
-        h1 {
-            text-align: end;
-            margin: 0 0 4px 0;
-            font-size: 16pt;
-        }
-
         h2 {
-            border-bottom: 0.6pt solid #444;
-            margin: 1.0em 0 0.3em 0;
+            border-bottom: .6pt solid #444;
+            margin: 1.0em 0 .3em 0;
             font-size: 10pt;
             font-weight: bold;
             padding-bottom: 1px;
@@ -26,12 +14,13 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 0.2em;
+            margin-top: .2em;
+            font-size: 8.5pt;
             page-break-inside: avoid;
         }
 
         th, td {
-            border: 0.3pt solid #aaa;
+            border: .3pt solid #aaa;
             padding: 2px 4px;
             vertical-align: top;
         }
@@ -39,12 +28,7 @@
         th {
             background: #f2f2f2;
             text-align: center;
-            font-size: 8.5pt;
             font-weight: normal;
-        }
-
-        td {
-            font-size: 8.5pt;
         }
 
         tr:nth-child(even) {
@@ -55,42 +39,16 @@
             color: #666;
             font-style: italic;
             font-size: 8.5pt;
-            margin: 0;
         }
 
-        footer {
-            text-align: center;
-            margin-top: 1.2em;
-            font-size: 8pt;
-            color: #888;
-        }
-
-        th.hours, td.hours {
+        .hours {
             width: 60px;
             text-align: right;
             white-space: nowrap;
         }
 
-        header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-        }
-
-        header img {
-            height: 45px;
-        }
-
-        header .title {
-            text-align: right;
-            flex: 1;
-            font-size: 9pt;
-            color: #555;
-        }
-
         .summary-title {
-            margin-top: 0.5em;
+            margin-top: .5em;
             font-size: 11pt;
             font-weight: bold;
             text-align: left;
@@ -114,137 +72,97 @@
             background: #f9f9f9;
         }
     </style>
-</head>
-<body>
+{% endblock %}
 
-<!-- =========================================
-     HEADER
-     ========================================= -->
-<header>
-    <div><img src="{{ logo_url }}" alt="HAMU Logo"></div>
-    <div class="title">
-        <h1>Přehled úvazků komorních souborů</h1>
-        <div>Akademie múzických umění v Praze</div>
-        <div style="font-size:13pt;font-weight:bold;margin-top:2px;">
-            {{ current_semester.name }} {{ current_semester.academic_year.name }}
-        </div>
-    </div>
-</header>
-
-<!-- =========================================
-     SUMMARY PAGE (GROUPED BY DEPARTMENT)
-     ========================================= -->
-<div class="summary-section">
-    <div class="summary-title">Souhrn úvazků pedagogů podle kateder</div>
-
-    <table>
-        <thead>
-        <tr>
-            <th>Katedra</th>
-            <th>Pedagog</th>
-            <th class="hours">Celkem hodin</th>
-        </tr>
-        </thead>
-        <tbody>
-
-        {% set grand_total = namespace(value=0) %}
-
-        {% for dept, teachers in grouped_teachers|dictsort %}
-            {% set dept_total = namespace(value=0) %}
-
-            {% for teacher in teachers %}
-                {% set ensemb_links = teacher.ensemble_links | selectattr("semester_id", "equalto", current_semester.id) | list %}
-                {% set hours = ensemb_links | map(attribute='hour_donation') | select('number') | sum %}
-                {% set dept_total.value = dept_total.value + (hours or 0) %}
-                <tr>
-                    <td>{{ dept if loop.first else '' }}</td>
-                    <td>{{ teacher.full_name }}</td>
-                    <td class="hours">{{ "%.1f"|format(hours or 0) }}</td>
-                </tr>
-            {% endfor %}
-
-            <tr class="dept-subtotal">
-                <td colspan="2" style="text-align:right;">Mezisoučet {{ dept }}</td>
-                <td class="hours">{{ "%.1f"|format(dept_total.value) }}</td>
+{% block content %}
+    <!-- === SUMMARY PAGE === -->
+    <div class="summary-section">
+        <div class="summary-title">Souhrn úvazků pedagogů podle kateder</div>
+        <table>
+            <thead>
+            <tr>
+                <th>Katedra</th>
+                <th>Pedagog</th>
+                <th class="hours">Celkem hodin</th>
             </tr>
-
-            {% set grand_total.value = grand_total.value + dept_total.value %}
-        {% endfor %}
-
-        <tr style="font-weight:bold;">
-            <td colspan="2" style="text-align:right;">Součet všech kateder</td>
-            <td class="hours">{{ "%.1f"|format(grand_total.value) }}</td>
-        </tr>
-
-        </tbody>
-    </table>
-</div>
-
-<!-- =========================================
-     PAGE BREAK BETWEEN SUMMARY & DETAIL
-     ========================================= -->
-<div class="page-break"></div>
-
-<!-- =========================================
-     DETAILED SECTION (PER DEPARTMENT)
-     ========================================= -->
-{% for dept, teachers in grouped_teachers|dictsort %}
-    <h2 class="dept-title">{{ dept }}</h2>
-
-    {% for teacher in teachers %}
-        {% set ensemb_links = teacher.ensemble_links | selectattr("semester_id", "equalto", current_semester.id) | list %}
-        {% set total_hours = ensemb_links | map(attribute='hour_donation') | select('number') | sum %}
-
-        <h2 style="margin-top:0.8em;">
-            {{ teacher.full_name }}
-            {% if ensemb_links %}
-                <span style="font-weight:normal;color:#666;">– Celkem {{ "%.1f"|format(total_hours or 0) }} h</span>
-            {% endif %}
-        </h2>
-
-        {% if ensemb_links %}
-            <table>
-                <thead>
-                <tr>
-                    <th>Soubor</th>
-                    <th>Členové</th>
-                    <th class="hours">Hodiny</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for link in ensemb_links %}
-                    {% set ens = link.ensemble %}
+            </thead>
+            <tbody>
+            {% set grand_total = namespace(value=0) %}
+            {% for dept, teachers in grouped_teachers|dictsort %}
+                {% set dept_total = namespace(value=0) %}
+                {% for teacher in teachers %}
+                    {% set ensemb_links = teacher.ensemble_links | selectattr("semester_id","equalto",current_semester.id) | list %}
+                    {% set hours = ensemb_links | map(attribute='hour_donation') | select('number') | sum %}
+                    {% set dept_total.value = dept_total.value + (hours or 0) %}
                     <tr>
-                        <td><b>{{ ens.name }}</b></td>
-                        <td>
-                            {% for pl in ens.player_links if pl.player %}
-                                <em>{{ pl.player.instrument.abbreviation }}.</em>
-                                {{ pl.player.last_name }} {{ pl.player.first_name[0] }}.
-                                {% if not loop.last %}, {% endif %}
-                            {% endfor %}
-                        </td>
-                        <td class="hours">{{ "%.1f"|format(link.hour_donation or 0) }}</td>
+                        <td>{{ dept if loop.first else '' }}</td>
+                        <td>{{ teacher.full_name }}</td>
+                        <td class="hours">{{ "%.1f"|format(hours or 0) }}</td>
                     </tr>
                 {% endfor %}
-                <tr>
-                    <td colspan="2" style="text-align:right;font-weight:bold;">Celkem</td>
-                    <td class="hours" style="font-weight:bold;">{{ "%.1f"|format(total_hours or 0) }}</td>
+                <tr class="dept-subtotal">
+                    <td colspan="2" style="text-align:right;">Mezisoučet {{ dept }}</td>
+                    <td class="hours">{{ "%.1f"|format(dept_total.value) }}</td>
                 </tr>
-                </tbody>
-            </table>
-        {% else %}
-            <p class="no-ensembles">Žádné soubory v tomto semestru.</p>
-        {% endif %}
+                {% set grand_total.value = grand_total.value + dept_total.value %}
+            {% endfor %}
+            <tr style="font-weight:bold;">
+                <td colspan="2" style="text-align:right;">Součet všech kateder</td>
+                <td class="hours">{{ "%.1f"|format(grand_total.value) }}</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- === DETAIL SECTION === -->
+    {% for dept, teachers in grouped_teachers|dictsort %}
+        <h2 class="dept-title">{{ dept }}</h2>
+        {% for teacher in teachers %}
+            {% set ensemb_links = teacher.ensemble_links | selectattr("semester_id","equalto",current_semester.id) | list %}
+            {% set total_hours = ensemb_links | map(attribute='hour_donation') | select('number') | sum %}
+            <h2 style="margin-top:.8em;">
+                {{ teacher.full_name }}
+                {% if ensemb_links %}
+                    <span style="font-weight:normal;color:#666;">– Celkem {{ "%.1f"|format(total_hours or 0) }} h</span>
+                {% endif %}
+            </h2>
+
+            {% if ensemb_links %}
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Soubor</th>
+                        <th>Členové</th>
+                        <th class="hours">Hodiny</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for link in ensemb_links %}
+                        <tr>
+                            <td><b>{{ link.ensemble.name }}</b></td>
+                            <td>
+                                {% for pl in link.ensemble.player_links if pl.player %}
+                                    <em>{{ pl.player.instrument.abbreviation }}.</em>
+                                    {{ pl.player.last_name }} {{ pl.player.first_name[0] }}.{% if not loop.last %},
+                                {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td class="hours">{{ "%.1f"|format(link.hour_donation or 0) }}</td>
+                        </tr>
+                    {% endfor %}
+                    <tr>
+                        <td colspan="2" style="text-align:right;font-weight:bold;">Celkem</td>
+                        <td class="hours" style="font-weight:bold;">{{ "%.1f"|format(total_hours or 0) }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="no-ensembles">Žádné soubory v tomto semestru.</p>
+            {% endif %}
+        {% endfor %}
+        {% if not loop.last %}
+            <div class="page-break"></div>{% endif %}
     {% endfor %}
-
-    {% if not loop.last %}
-        <div class="page-break"></div>
-    {% endif %}
-{% endfor %}
-
-<!-- =========================================
-     FOOTER
-     ========================================= -->
-<footer>Vygenerováno {{ today.strftime('%d.%m.%Y') }}</footer>
-</body>
-</html>
+{% endblock %}

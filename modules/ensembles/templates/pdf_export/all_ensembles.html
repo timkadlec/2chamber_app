@@ -1,45 +1,7 @@
-<!DOCTYPE html>
-<html lang="cs">
-<head>
-    <meta charset="utf-8">
+{% extends 'pdf_export/pdf_base.html' %}
+{% set title = 'Přehled komorních souborů' %}
+{% block head %}
     <style>
-        body {
-            font-family: "DejaVu Sans", "Noto Sans", sans-serif;
-            font-size: 10pt;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 0;
-        }
-
-        h2 {
-            border-bottom: 1pt solid #333;
-            margin-top: 1.5em;
-            margin-bottom: 0.5em;
-            font-size: 11pt;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 0.3em;
-        }
-
-        th, td {
-            border: 0.4pt solid #999;
-            padding: 4px 6px;
-            vertical-align: top;
-        }
-
-        th {
-            background: #eee;
-            text-align: center;
-        }
-
-        tr:nth-child(even) {
-            background: #fafafa;
-        }
 
         .ok {
             color: #198754;
@@ -60,40 +22,10 @@
             color: #666;
             font-style: italic;
         }
-
-        footer {
-            text-align: center;
-            margin-top: 2em;
-            font-size: 8pt;
-            color: #888;
-        }
     </style>
-</head>
-<body>
+{% endblock %}
 
-<!-- Header with logo and semester -->
-<header style="
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 0 10px 0;
-  margin-bottom: 25px;
-">
-    <!-- Left: logo -->
-    <div style="flex: 0 0 auto;">
-        <img src="{{ logo_url }}" alt="HAMU Logo" style="height: 55px;">
-    </div>
-
-    <!-- Right: title -->
-    <div style="text-align: right; flex: 1;">
-        <h1 style="margin: 0; font-size: 18pt; font-weight: normal; text-align: right">Přehled komorních souborů</h1>
-        <p style="margin: 2px 0 0 0; font-size: 10pt; color: #666; text-align: right">
-            Akademie múzických umění v Praze
-        </p>
-        <p style="font-size: 20pt; font-weight: bold; text-align:right">{{ current_semester.name }} {{ current_semester.academic_year.name }}</p>
-    </div>
-</header>
-
+{% block content %}
 <!-- Filters -->
 {% if filters %}
     <div style="font-size: 9pt; margin-bottom: 15px;">
@@ -126,8 +58,6 @@
 
             {% if parts %}
                 {{ parts | join("; ") }}
-            {% else %}
-                Žádné
             {% endif %}
     </span>
     </div>
@@ -163,9 +93,4 @@
     </tbody>
 </table>
 
-<footer>
-    Vygenerováno {{ today.strftime('%d.%m.%Y') }}
-</footer>
-
-</body>
-</html>
+{% endblock %}

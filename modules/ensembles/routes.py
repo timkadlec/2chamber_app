@@ -352,7 +352,7 @@ def _get_or_create_ensemble_instrumentation_by_ids(ensemble_id: int, instrument_
 def add_player_to_ensemble(ensemble_id, ensemble_instrumentation_id, mode="student"):
     ensemble = Ensemble.query.get(ensemble_id)
     instrumentation = EnsembleInstrumentation.query.get(ensemble_instrumentation_id)
-    current_semester = Semester.query.filter_by(id=get_or_set_current_semester()).first()
+    current_semester = get_or_set_current_semester()
     if request.method == "GET":
         if mode == "student":
             available_players = (

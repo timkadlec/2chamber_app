@@ -1,5 +1,5 @@
 from . import db
-from sqlalchemy import Index
+from sqlalchemy import Index, func
 
 
 class Teacher(db.Model):
@@ -36,6 +36,19 @@ class Teacher(db.Model):
 
     def __repr__(self):
         return f"<Teacher {self.id} {self.full_name or (self.first_name or '') + ' ' + (self.last_name or '')}>"
+
+    def hours_in_semester(self, semester_id):
+        """Return total number of hours this teacher has in the given semester."""
+
+        total_hours = (
+            db.session.query(func.sum(TeacherSubject.hours))
+            .filter(
+                TeacherSubject.teacher_id == self.id,
+                TeacherSubject.semester_id == semester_id
+            )
+            .scalar()
+        )
+        return total_hours or 0
 
 
 class TeacherSubject(db.Model):

@@ -1,4 +1,4 @@
-from . import db
+from . import db, EnsembleTeacher
 from sqlalchemy import Index, func
 
 
@@ -41,10 +41,10 @@ class Teacher(db.Model):
         """Return total number of hours this teacher has in the given semester."""
 
         total_hours = (
-            db.session.query(func.sum(TeacherSubject.hours))
+            db.session.query(func.sum(EnsembleTeacher.hour_donation))
             .filter(
-                TeacherSubject.teacher_id == self.id,
-                TeacherSubject.semester_id == semester_id
+                EnsembleTeacher.teacher_id == self.id,
+                EnsembleTeacher.semester_id == semester_id
             )
             .scalar()
         )

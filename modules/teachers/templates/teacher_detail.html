@@ -69,7 +69,7 @@
                             <th>Soubor</th>
                             <th>Obsazení</th>
                             <th>Počet studentů</th>
-                            <th>Darované hodiny</th>
+                            <th>Hodinová dotace</th>
                             <th>Stav</th>
                         </tr>
                         </thead>
@@ -121,7 +121,7 @@
                         {% if total_hours > 0 %}
                             <tfoot>
                             <tr class="fw-semibold">
-                                <td colspan="3" class="text-end">Celkem darovaných hodin:</td>
+                                <td colspan="3" class="text-end">Celkem hodin v tomto semestru:</td>
                                 <td>{{ "%.1f"|format(total_hours) }}</td>
                                 <td></td>
                             </tr>

@@ -69,12 +69,15 @@
                             <th>Soubor</th>
                             <th>Obsazení</th>
                             <th>Počet studentů</th>
+                            <th>Darované hodiny</th>
                             <th>Stav</th>
                         </tr>
                         </thead>
                         <tbody>
+                        {% set total_hours = 0 %}
                         {% for link in teacher.ensemble_links if link.semester_id == session['semester_id']|int %}
                             {% set ensemble = link.ensemble %}
+                            {% set total_hours = total_hours + (link.hour_donation or 0) %}
                             <tr>
                                 <td>
                                     <a href="{{ url_for('ensemble.ensemble_detail', ensemble_id=ensemble.id) }}"
@@ -84,33 +87,50 @@
                                 </td>
                                 <td>{{ ensemble.instrumentation or "—" }}</td>
                                 <td>
-                                    <span class="badge bg-light text-dark border">
-                                        {{ ensemble.student_count }}
-                                    </span>
+                        <span class="badge bg-light text-dark border">
+                            {{ ensemble.student_count }}
+                        </span>
+                                </td>
+                                <td>
+                                    {% if link.hour_donation %}
+                                        {{ "%.1f"|format(link.hour_donation) }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     {% if ensemble.is_complete %}
                                         <span class="badge bg-success text-light">
-                                            <i class="fas fa-check me-1"></i> Kompletní
-                                        </span>
+                                <i class="fas fa-check me-1"></i> Kompletní
+                            </span>
                                     {% else %}
                                         <span class="badge bg-warning text-dark">
-                                            <i class="fas fa-exclamation-triangle me-1"></i> Neúplné
-                                        </span>
+                                <i class="fas fa-exclamation-triangle me-1"></i> Neúplné
+                            </span>
                                     {% endif %}
                                 </td>
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="4" class="text-muted text-center py-3">
+                                <td colspan="5" class="text-muted text-center py-3">
                                     Pedagog nemá v tomto semestru přiřazen žádný soubor.
                                 </td>
                             </tr>
                         {% endfor %}
                         </tbody>
+                        {% if total_hours > 0 %}
+                            <tfoot>
+                            <tr class="fw-semibold">
+                                <td colspan="3" class="text-end">Celkem darovaných hodin:</td>
+                                <td>{{ "%.1f"|format(total_hours) }}</td>
+                                <td></td>
+                            </tr>
+                            </tfoot>
+                        {% endif %}
                     </table>
                 </div>
             </div>
+
 
         </div>
     </main>

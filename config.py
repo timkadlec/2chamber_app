@@ -7,7 +7,10 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv("/etc/skh/.env")
 
 def construct_oracle_db_uri(user, password, host, port, service_name):
+    if not all([user, password, host, port, service_name]):
+        return None
     return f"oracle+oracledb://{user}:{password}@{host}:{port}/?service_name={service_name}"
+
 
 
 def construct_sqlite_db_uri(db_file):
@@ -19,7 +22,7 @@ def construct_mysql_db_uri(user, password, host, port, db_name):
 
 
 def construct_postgres_db_uri(user, password, host, port, db_name):
-    return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
+    return f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db_name}"
 
 
 class BaseConfig:

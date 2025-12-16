@@ -7,6 +7,18 @@ from utils.import_oracle import (get_or_create_academic_year, get_or_create_seme
                                  status_allows_enrollment, student_semester_enrollment)
 from sqlalchemy.exc import IntegrityError, DBAPIError
 from collections import defaultdict
+from flask import current_app
+
+def require_oracle_enabled():
+    """Abort CLI command if Oracle is disabled/unavailable."""
+    if not current_app.config.get("ORACLE_ENABLED", False):
+        click.echo(
+            "Oracle is disabled (missing Instant Client / ORACLE_DRIVER / init failed). "
+            "Run without Oracle or configure Instant Client.",
+            err=True,
+        )
+        raise SystemExit(2)
+
 
 
 @click.command("format-academic-year")
@@ -49,6 +61,7 @@ def cli_get_or_create_subject(subject_name: str, subject_code: str):
 @with_appcontext
 def cli_oracle_ping():
     """Check Oracle connection by fetching one record."""
+    require_oracle_enabled()
     try:
         exists = db.session.query(KomorniHraStud).first()
         click.echo("Oracle OK" if exists else "Oracle connected but no rows")
@@ -65,6 +78,7 @@ def cli_oracle_students_update(dry_run):
     Sync students & enrollments from Oracle view, enrolling only statuses S/K,
     skipping P, and cleaning up stale enrollments per (semester, subject).
     """
+    require_oracle_enabled()
     created_students = 0
     created_players = 0
     created_sse = 0  # StudentSemesterEnrollment (per-semester)
@@ -254,6 +268,7 @@ def cli_oracle_students_update(dry_run):
 @with_appcontext
 def cli_oracle_semesters():
     """Show distinct semesters currently present in Oracle view."""
+    require_oracle_enabled()
     semesters = (
         db.session.query(KomorniHraStud.SEMESTR_ID)
         .distinct()
@@ -274,6 +289,7 @@ def cli_oracle_semesters():
 @with_appcontext
 def cli_oracle_teachers():
     """Show distinct teachers currently present in Oracle view."""
+    require_oracle_enabled()
     oracle_teachers = db.session.query(KomorniHraUcitel).all()
     for teacher in oracle_teachers:
         new_teacher = get_or_create_teacher(teacher)

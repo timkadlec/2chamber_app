@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship, object_session
 from models import db
 from sqlalchemy.ext.hybrid import hybrid_method
 from flask import session
-
+from sqlalchemy import CheckConstraint
 
 class Student(db.Model):
     __tablename__ = 'students'
@@ -49,6 +49,13 @@ class Student(db.Model):
         cascade='all, delete-orphan'
     )
 
+    requests = relationship(
+        "StudentRequest",
+        back_populates="student",
+        cascade="all, delete-orphan",
+        order_by="desc(StudentRequest.request_date)",
+    )
+
     @property
     def full_name(self): return f"{self.last_name} {self.first_name}"
 
@@ -74,7 +81,7 @@ class Student(db.Model):
     def ensembles_in_semester(self):
         from models import Ensemble, EnsemblePlayer, EnsembleSemester
         sid = session.get("semester_id")
-        if not sid:
+        if not sid or not self.player:
             return []
         return (
             Ensemble.query
@@ -247,6 +254,35 @@ class StudentChamberApplication(db.Model):
         else:
             return "Soubor obsahuje vysoké procento hostů."
 
+class StudentRequest(db.Model):
+    __tablename__ = 'student_requests'
+    id = db.Column(db.Integer, primary_key=True)
+
+    performance_type = db.Column(db.String(255))
+    performance_date = db.Column(db.DateTime)
+    suggested_mark = db.Column(db.String(255))
+    request_date = db.Column(db.Date, nullable=False)
+
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
+    student = relationship('Student', back_populates='requests')
+    ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete='CASCADE'), nullable=False)
+    ensemble = relationship("Ensemble")
+    status = db.Column(db.String(32), nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    created_by_id = db.Column(db.String, db.ForeignKey('users.id', ondelete='SET NULL'))
+    created_by = relationship(
+        'User',
+        foreign_keys=[created_by_id]
+    )
+
+    __table_args__ = (
+        CheckConstraint("status IN ('pending','approved','rejected')", name="ck_student_request_status"),
+        UniqueConstraint("student_id", "ensemble_id", "performance_date", "performance_type",
+                         name="uq_student_request_unique"),
+        Index("ix_student_requests_student_date", "student_id", "request_date"),
+        Index("ix_student_requests_ensemble_date", "ensemble_id", "request_date"),
+        Index("ix_student_requests_status", "status"),
+    )
 
 class ChamberException(db.Model):
     __tablename__ = 'chamber_exceptions'

@@ -38,6 +38,27 @@ from models import (
     EnsemblePlayer, Player, Teacher, Instrument
 )
 
+def _init_oracle_optional(app) -> bool:
+    """Try to enable python-oracledb Thick mode. If it fails, keep app running."""
+    try:
+        import oracledb
+
+        lib_dir = os.environ.get("ORACLE_DRIVER")  # path to Instant Client dir
+        if not lib_dir:
+            app.logger.warning("Oracle disabled: ORACLE_DRIVER not set (thin mode only).")
+            return False
+
+        if not os.path.isdir(lib_dir):
+            app.logger.warning("Oracle disabled: ORACLE_DRIVER is not a directory: %s", lib_dir)
+            return False
+
+        oracledb.init_oracle_client(lib_dir=lib_dir)
+        app.logger.info("Oracle enabled (thick mode). lib_dir=%s", lib_dir)
+        return True
+
+    except Exception as e:
+        app.logger.warning("Oracle disabled: init_oracle_client failed: %s", e)
+        return False
 
 def create_app():
     app = Flask(__name__)
@@ -46,7 +67,8 @@ def create_app():
     app.config.from_object(config_class)
 
     db.init_app(app)
-    oracledb.init_oracle_client(lib_dir=os.environ.get("ORACLE_DRIVER"))
+    oracle_enabled = _init_oracle_optional(app)
+    app.config["ORACLE_ENABLED"] = oracle_enabled
     migrate.init_app(app, db)
     oauth.init_app(app)
 
@@ -66,14 +88,21 @@ def create_app():
     app.register_blueprint(exceptions_bp, url_prefix="/exceptions")
     app.register_blueprint(rules_bp, url_prefix="/rules")
 
+    # Always-available CLI
     app.cli.add_command(cli_format_academic_year)
     app.cli.add_command(cli_get_or_create_academic_year)
-    app.cli.add_command(cli_oracle_ping)
     app.cli.add_command(cli_get_or_create_semester)
     app.cli.add_command(cli_get_or_create_subject)
-    app.cli.add_command(cli_oracle_students_update)
-    app.cli.add_command(cli_oracle_semesters)
-    app.cli.add_command(cli_oracle_teachers)
+
+    # Oracle-only CLI
+    if oracle_enabled:
+        app.cli.add_command(cli_oracle_ping)
+        app.cli.add_command(cli_oracle_students_update)
+        app.cli.add_command(cli_oracle_semesters)
+        app.cli.add_command(cli_oracle_teachers)
+    else:
+        app.logger.warning("Oracle CLI commands not registered (Oracle disabled).")
+
     with app.app_context():
         db.create_all(bind_key=None)
         # seed_instruments()

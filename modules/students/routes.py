@@ -129,6 +129,7 @@ def edit_enrollment(enrollment_id):
         return redirect(url_for("students.student_detail", student_id=enrollment.student_id))
 
 @students_bp.route("/detail/<int:student_id>/requests/ensemble-selection", methods=["GET"])
+@permission_required("st_requests")
 def request_ensemble_selection(student_id):
     student = Student.query.filter_by(id=student_id).first()
     ensembles = student.ensembles_in_semester

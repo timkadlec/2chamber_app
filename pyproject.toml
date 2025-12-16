@@ -34,7 +34,7 @@ dependencies = [
     "multidict==6.4.4",
     "oracledb==3.3.0",
     "propcache==0.3.1",
-    "psycopg2==2.9.10",
+    "psycopg[binary]>=3.3.2",
     "py-vapid==1.9.2",
     "pycparser==2.22",
     "python-dotenv==1.1.1",

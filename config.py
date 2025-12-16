@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 # Load .env file
-load_dotenv("/etc/skh/.env")
+load_dotenv(".env")
 
 def construct_oracle_db_uri(user, password, host, port, service_name):
     if not all([user, password, host, port, service_name]):

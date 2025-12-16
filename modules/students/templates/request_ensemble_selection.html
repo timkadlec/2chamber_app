@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}
+    Detail studenta | {{ student.first_name }} {{ student.last_name }}
+{% endblock %}
+{% block content %}
+    <main class="py-4">
+        <div class="container-xl">
+
+            <!-- Student Detail Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Žádost o uznání zkoušky z komorní hry</h5>
+                </div>
+
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Jméno</label>
+                            <div class="fw-semibold">{{ student.first_name }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Příjmení</label>
+                            <div class="fw-semibold">{{ student.last_name }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subject Enrollments -->
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Aktivní soubory</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light text-uppercase small text-muted">
+                        <tr>
+                            <th>Název</th>
+                            <th>Obsazení</th>
+                            <th>Hráči</th>
+                            <th class="text-end">Akce</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% if ensembles %}
+                            {% for e in ensembles %}
+                                <tr>
+                                    <td>{{ e.name }}</td>
+                                    <td>{{ e.instrumentation }} </td>
+                                    <td>
+                                        {% for ep in e.player_links %}
+                                            {% set pl = ep.player %}
+                                            {% set instr = ep.ensemble_instrumentation.instrument if ep.ensemble_instrumentation else None %}
+
+                                            {% if pl %}
+                                                <em>{{ instr.abbreviation if instr else (pl.instrument.abbreviation if pl.instrument else '–') }}.</em>
+                                                {% if pl.student %}
+                                                    {{ pl.student.first_name[0] }}. {{ pl.student.last_name }}
+                                                {% else %}
+                                                    {{ pl.first_name[0] }}. {{ pl.last_name }}
+                                                {% endif %}
+                                            {% else %}
+                                                <em>{{ instr.abbreviation if instr else '–' }}.</em>
+                                                <span class="badge bg-light text-muted border">
+            <i class="fas fa-user-slash me-1"></i> Neobsazeno
+        </span>
+                                            {% endif %}
+
+                                            {% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i> Vybrat
+                                        </button>
+                                    </td>
+                                </tr>
+
+
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-muted text-center py-3">
+                                        Žádné aktivní soubory.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+{% endblock %}

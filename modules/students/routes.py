@@ -127,3 +127,9 @@ def edit_enrollment(enrollment_id):
         db.session.commit()
         flash("Zápis předmětu byl aktualizován.", "success")
         return redirect(url_for("students.student_detail", student_id=enrollment.student_id))
+
+@students_bp.route("/detail/<int:student_id>/requests/ensemble-selection", methods=["GET"])
+def request_ensemble_selection(student_id):
+    student = Student.query.filter_by(id=student_id).first()
+    ensembles = student.ensembles_in_semester
+    return render_template("request_ensemble_selection.html", student=student, ensembles=ensembles)

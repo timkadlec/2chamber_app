@@ -36,6 +36,7 @@ class BaseConfig:
         service_name=os.environ.get('ORACLE_DB_SERVICE_NAME')
     )
     SQLALCHEMY_BINDS = {}
+    OAUTH_TENANT_ID = os.environ.get("OAUTH_TENANT_ID")
     if ORACLE_URL:
         SQLALCHEMY_BINDS["oracle"] = ORACLE_URL
 

@@ -1,4 +1,4 @@
-from flask import Blueprint, session, url_for, redirect, flash, request
+from flask import Blueprint, session, url_for, redirect, flash, request, current_app
 from flask_login import login_user, logout_user, login_required
 from datetime import datetime
 from models import db, User
@@ -11,7 +11,7 @@ from urllib.parse import urlparse, urljoin
 from flask import request, current_app
 import json
 
-TENANT = os.environ["OAUTH_TENANT_ID"]
+TENANT = os.environ.get("OAUTH_TENANT_ID")
 AUTH_BASE = f"https://login.microsoftonline.com/{TENANT}/oauth2/v2.0"
 
 

@@ -40,6 +40,9 @@ class BaseConfig:
         port=os.environ.get('ORACLE_DB_PORT'),
         service_name=os.environ.get('ORACLE_DB_SERVICE_NAME')
     )
+    if not ORACLE_URL:
+        raise RuntimeError("Missing ORACLE_DB_* env vars; cannot start app.")
+
     SQLALCHEMY_BINDS = {}
     OAUTH_TENANT_ID = os.environ.get("OAUTH_TENANT_ID")
     if ORACLE_URL:
@@ -52,6 +55,8 @@ class BaseConfig:
         port=os.environ.get('POSTGRES_DB_PORT'),
         db_name=os.environ.get('POSTGRES_DB_NAME')
     )
+    if not SQLALCHEMY_DATABASE_URI:
+        raise RuntimeError("Missing POSTGRES_DB_* env vars; cannot start app.")
 
 
 class DevelopmentConfig(BaseConfig):

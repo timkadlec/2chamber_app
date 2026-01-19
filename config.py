@@ -5,8 +5,7 @@ from urllib.parse import quote_plus
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 # Load .env file
-load_dotenv(".env")
-
+load_dotenv(os.path.join(basedir, ".env"))
 
 def _enc(x):
     return quote_plus(str(x)) if x is not None else None

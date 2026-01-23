@@ -9,7 +9,8 @@ from cli import (
     cli_oracle_teachers
 )
 from flask import Flask, url_for, request, redirect, render_template, session
-from config import ProductionConfig
+from config import ProductionConfig, DevelopmentConfig
+from logging_setup import configure_logging
 from models import db, User
 import os
 import oracledb
@@ -38,6 +39,7 @@ from models import (
     EnsemblePlayer, Player, Teacher, Instrument
 )
 
+
 def _init_oracle_optional(app) -> bool:
     """Try to enable python-oracledb Thick mode. If it fails, keep app running."""
     try:
@@ -60,11 +62,15 @@ def _init_oracle_optional(app) -> bool:
         app.logger.warning("Oracle disabled: init_oracle_client failed: %s", e)
         return False
 
+
 def create_app():
     app = Flask(__name__)
 
-    config_class = ProductionConfig
+    is_dev = os.environ.get("APP_ENV", "").lower() in ("dev", "development") or os.environ.get("FLASK_DEBUG") == "1"
+    config_class = DevelopmentConfig if is_dev else ProductionConfig
+
     app.config.from_object(config_class)
+    configure_logging(app)
 
     db.init_app(app)
     oracle_enabled = _init_oracle_optional(app)
@@ -271,40 +277,5 @@ def create_app():
         current_sem = get_or_set_current_semester_id()
         data = get_dashboard_data(current_sem)
         return render_template("dashboard.html", **data)
-
-    # ------------------------------
-    # LOGGING CONFIGURATION
-    # ------------------------------
-    import logging
-    from logging.handlers import RotatingFileHandler
-    from flask import got_request_exception
-
-    logs_dir = os.path.join(os.path.dirname(__file__), "logs")
-    os.makedirs(logs_dir, exist_ok=True)
-    log_path = os.path.join(logs_dir, "app.log")
-
-    # Log rotation: keeps last 10 logs of up to 1 MB
-    file_handler = RotatingFileHandler(log_path, maxBytes=1_000_000, backupCount=10)
-    formatter = logging.Formatter(
-        "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-    )
-    file_handler.setFormatter(formatter)
-
-    # Set level (INFO in production, DEBUG for development)
-    file_handler.setLevel(logging.INFO)
-    app.logger.addHandler(file_handler)
-
-    # Also send Flask's own logs to this handler
-    werkzeug_logger = logging.getLogger("werkzeug")
-    werkzeug_logger.addHandler(file_handler)
-
-    app.logger.setLevel(logging.INFO)
-    app.logger.info("✅ Application startup complete.")
-
-    # Capture *all* unhandled exceptions and log them
-    def log_exception(sender, exception, **extra):
-        sender.logger.exception("Unhandled Exception: %s", exception)
-
-    got_request_exception.connect(log_exception, app)
 
     return app

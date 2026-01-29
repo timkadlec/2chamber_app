@@ -130,6 +130,9 @@ class Ensemble(db.Model):
             if link.semester_id == semester_id and link.teacher is not None
         ]
 
+    def semester_teacher_links(self, semester_id):
+        return [link for link in self.teacher_links if link.semester_id == semester_id]
+
     @property
     def players(self):
         return [ep.player for ep in self.player_links]

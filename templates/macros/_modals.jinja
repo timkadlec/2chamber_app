@@ -44,3 +44,54 @@
         </div>
     </div>
 {% endmacro %}
+
+{% macro info_modal(id, title) %}
+  <div class="modal fade" id="{{ id }}" tabindex="-1" aria-labelledby="{{ id }}Label" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="{{ id }}Label">{{ title }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zavřít"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="d-flex align-items-center gap-2 text-muted js-loading d-none">
+            <div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
+            <span>Načítám…</span>
+          </div>
+
+          <div class="alert alert-danger d-none js-error"></div>
+          <div class="alert alert-success d-none js-success"></div>
+
+          <div class="js-content d-none">
+            <div class="mb-2">
+              <span class="badge bg-light text-dark border me-1">Aktuální</span>
+              <span class="js-current-semester"></span>
+            </div>
+            <div class="mb-3">
+              <span class="badge bg-light text-dark border me-1">Nadcházející</span>
+              <span class="js-upcoming-semester"></span>
+            </div>
+
+            <hr>
+
+            <div class="small text-muted mb-2">Hráči a aktivita v nadcházejícím semestru</div>
+            <div class="list-group js-players"></div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+            Zavřít
+          </button>
+
+          <button type="button" class="btn btn-sm btn-primary js-move-to-upcoming" disabled>
+            <i class="fas fa-arrow-right me-1"></i>
+            Přesunout do dalšího semestru
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endmacro %}
+

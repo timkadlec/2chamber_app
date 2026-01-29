@@ -20,6 +20,16 @@ from utils.session_helpers import get_or_set_current_semester, get_or_set_curren
 @navlink("Soubory", weight=10)
 def index():
     current_semester_id = get_or_set_current_semester_id()
+    current_semester = Semester.query.get_or_404(current_semester_id)
+    upcoming_semester = (
+        Semester.query
+        .filter(Semester.start_date > current_semester.end_date)
+        .order_by(Semester.start_date.asc())
+        .first()
+    )
+
+    has_upcoming_semester = upcoming_semester is not None
+
     page = request.args.get("page", 1, type=int)
     per_page = 20
 
@@ -69,6 +79,106 @@ def index():
     # --- Render ---
     return render_template(
         "all_ensembles.html",
+        ensembles=ensembles,
+        pagination=pagination,
+        instruments=Instrument.query.order_by(Instrument.weight)
+        .filter_by(is_primary=True)
+        .all(),
+        teachers=Teacher.query.order_by(Teacher.last_name, Teacher.first_name).all(),
+        departments=Department.query.order_by(Department.name).all(),
+        selected_instrument_ids=filters["instrument_ids"],
+        selected_teacher_ids=filters["teacher_ids"],
+        selected_department_ids=filters["department_ids"],
+        search_query=filters["search_query"],
+        health_filter=filters["health_filter"],
+        incomplete_filter=filters["incomplete_filter"],
+        sort_by=sort_by,
+        sort_order=sort_order,
+        has_upcoming_semester=has_upcoming_semester
+    )
+
+
+@ensemble_bp.route("/end-semester", methods=['GET'])
+@permission_required("ens_end_semester")
+def end_semester():
+    current_semester_id = get_or_set_current_semester_id()
+    current_semester = Semester.query.get_or_404(current_semester_id)
+
+    upcoming_semester = (
+        Semester.query
+        .filter(Semester.start_date > current_semester.end_date)
+        .order_by(Semester.start_date.asc())
+        .first()
+    )
+
+    upcoming_semester = (
+        Semester.query
+        .filter(Semester.start_date > current_semester.end_date)
+        .order_by(Semester.start_date.asc())
+        .first()
+    )
+    if not upcoming_semester:
+        flash("Není dostupný nadcházející semestr.", "warning")
+        return redirect(url_for("ensemble.index"))
+
+    upcoming_semester_id = upcoming_semester.id if upcoming_semester else None
+    page = request.args.get("page", 1, type=int)
+    per_page = 20
+
+    # --- Collect and apply filters (shared helper) ---
+    filters = get_common_filters()
+    ensembles = db.session.query(Ensemble).filter(
+        # must be in current semester
+        Ensemble.semester_links.any(EnsembleSemester.semester_id == current_semester_id)
+    )
+
+    # if upcoming exists, exclude ensembles already linked there (already moved)
+    if upcoming_semester_id:
+        ensembles = ensembles.filter(
+            ~Ensemble.semester_links.any(EnsembleSemester.semester_id == upcoming_semester_id)
+        )
+
+    ensembles = apply_common_filters(ensembles, filters, current_semester_id)
+
+    # --- Sorting ---
+    sort_by = request.args.get("sort_by", "name")
+    sort_order = request.args.get("sort_order", "asc")
+
+    if sort_by == "name":
+        order_column = Ensemble.name
+    elif sort_by == "teacher":
+        # Sort by first teacher’s last name for the semester
+        order_column = func.lower(
+            select(Teacher.last_name)
+            .join(EnsembleTeacher)
+            .where(
+                EnsembleTeacher.ensemble_id == Ensemble.id,
+                EnsembleTeacher.semester_id == current_semester_id,
+            )
+            .limit(1)
+            .correlate(Ensemble)
+            .scalar_subquery()
+        )
+    elif sort_by == "health":
+        order_column = Ensemble.health_check_label
+    elif sort_by == "complete":
+        order_column = Ensemble.is_complete
+    else:
+        order_column = Ensemble.name
+
+    if sort_order == "desc":
+        order_column = order_column.desc()
+
+    # --- Pagination ---
+    pagination = (
+        ensembles.order_by(order_column)
+        .paginate(page=page, per_page=per_page, error_out=False)
+    )
+    ensembles = pagination.items
+
+    # --- Render ---
+    return render_template(
+        "end_semester.html",
         ensembles=ensembles,
         pagination=pagination,
         instruments=Instrument.query.order_by(Instrument.weight)
@@ -571,9 +681,16 @@ def ensemble_delete(ensemble_id):
     return redirect(url_for("ensemble.index"))
 
 
-def count_hour_donation(ensemble):
-    count_of_teachers = len(ensemble.teacher_links)
-    return 1 / (count_of_teachers)
+def count_hour_donation_for_semester(ensemble_id: int, semester_id: int) -> float:
+    cnt = (
+        db.session.query(func.count(EnsembleTeacher.id))
+        .filter(
+            EnsembleTeacher.ensemble_id == ensemble_id,
+            EnsembleTeacher.semester_id == semester_id
+        )
+        .scalar()
+    )
+    return (1 / cnt) if cnt else 0.0
 
 
 @ensemble_bp.route("/<int:ensemble_id>/teacher/assign", methods=["POST"])
@@ -584,30 +701,42 @@ def ensemble_assign_teacher(ensemble_id):
     current_semester = get_or_set_current_semester()
 
     if teacher_form.validate_on_submit():
-        # Check if assignment already exists
-        existing = EnsembleTeacher.query.filter_by(
-            teacher_id=teacher_form.teacher.data.id,
-            ensemble_id=ensemble.id,
-            semester_id=current_semester.id
-        ).first()
+        teacher_id = teacher_form.teacher.data.id
 
-        if existing:
-            flash("Tento pedagog je již přiřazen k souboru v aktuálním semestru.", "warning")
-        else:
-            assignment = EnsembleTeacher(
-                teacher_id=teacher_form.teacher.data.id,
+        existing = (
+            EnsembleTeacher.query
+            .filter_by(
+                teacher_id=teacher_id,
                 ensemble_id=ensemble.id,
                 semester_id=current_semester.id
             )
-            db.session.add(assignment)
-            db.session.flush()  # ensure new assignment is included in teacher_links
+            .first()
+        )
 
-            # update all teachers
-            for teacher in ensemble.teacher_links:
-                teacher.hour_donation = count_hour_donation(ensemble)
+        if existing:
+            flash("Tento pedagog je již přiřazen k souboru v aktuálním semestru.", "warning")
+            return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
 
-            db.session.commit()
-            flash("Pedagog byl úspěšně přiřazen k souboru", "success")
+        db.session.add(EnsembleTeacher(
+            teacher_id=teacher_id,
+            ensemble_id=ensemble.id,
+            semester_id=current_semester.id
+        ))
+        db.session.flush()
+
+        # Recompute donation ONLY for current semester links
+        links_current = (
+            EnsembleTeacher.query
+            .filter_by(ensemble_id=ensemble.id, semester_id=current_semester.id)
+            .all()
+        )
+
+        donation = 1 / len(links_current) if links_current else 0.0
+        for link in links_current:
+            link.hour_donation = donation
+
+        db.session.commit()
+        flash("Pedagog byl úspěšně přiřazen k souboru", "success")
 
     return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
 
@@ -616,18 +745,28 @@ def ensemble_assign_teacher(ensemble_id):
 @permission_required('ens_teacher_remove')
 def ensemble_remove_teacher(assignment_id):
     assignment = EnsembleTeacher.query.get_or_404(assignment_id)
-    ensemble = Ensemble.query.get_or_404(assignment.ensemble_id)
+
+    ensemble_id = assignment.ensemble_id
+    semester_id = assignment.semester_id
 
     db.session.delete(assignment)
     db.session.flush()
 
-    # update all remaining teachers
-    for teacher in ensemble.teacher_links:
-        teacher.hour_donation = count_hour_donation(ensemble)
+    # Recompute donation ONLY for the same semester as the removed assignment
+    links_remaining = (
+        EnsembleTeacher.query
+        .filter_by(ensemble_id=ensemble_id, semester_id=semester_id)
+        .all()
+    )
+
+    donation = 1 / len(links_remaining) if links_remaining else 0.0
+    for link in links_remaining:
+        link.hour_donation = donation
 
     db.session.commit()
     flash("Pedagog byl úspěšně odebrán ze souboru", "success")
-    return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
+
+    return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble_id))
 
 
 @ensemble_bp.route("/<int:ensemble_id>/add_note", methods=["POST"])

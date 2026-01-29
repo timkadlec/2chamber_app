@@ -185,8 +185,9 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% if teacher_assignment %}
-                            {% for ta in ensemble.teacher_links %}
+                        {% set teacher_links = ensemble.semester_teacher_links(session["semester_id"]) %}
+                        {% if teacher_links %}
+                            {% for ta in teacher_links %}
                                 <tr>
                                 <td>
                                     <a href="{{ url_for('teachers.teacher_detail', teacher_id=ta.teacher.id) }}">

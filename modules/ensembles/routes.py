@@ -20,6 +20,16 @@ from utils.session_helpers import get_or_set_current_semester, get_or_set_curren
 @navlink("Soubory", weight=10)
 def index():
     current_semester_id = get_or_set_current_semester_id()
+    current_semester = Semester.query.get_or_404(current_semester_id)
+    upcoming_semester = (
+        Semester.query
+        .filter(Semester.start_date > current_semester.end_date)
+        .order_by(Semester.start_date.asc())
+        .first()
+    )
+
+    has_upcoming_semester = upcoming_semester is not None
+
     page = request.args.get("page", 1, type=int)
     per_page = 20
 
@@ -84,6 +94,7 @@ def index():
         incomplete_filter=filters["incomplete_filter"],
         sort_by=sort_by,
         sort_order=sort_order,
+        has_upcoming_semester=has_upcoming_semester
     )
 
 
@@ -99,6 +110,16 @@ def end_semester():
         .order_by(Semester.start_date.asc())
         .first()
     )
+
+    upcoming_semester = (
+        Semester.query
+        .filter(Semester.start_date > current_semester.end_date)
+        .order_by(Semester.start_date.asc())
+        .first()
+    )
+    if not upcoming_semester:
+        flash("Není dostupný nadcházející semestr.", "warning")
+        return redirect(url_for("ensemble.index"))
 
     upcoming_semester_id = upcoming_semester.id if upcoming_semester else None
     page = request.args.get("page", 1, type=int)

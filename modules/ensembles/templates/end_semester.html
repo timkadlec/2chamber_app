@@ -235,78 +235,88 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-(function () {
-  const modalEl = document.getElementById('semesterMoveInfoModal');
-  if (!modalEl) return;
+    <script>
+        (function () {
+            const modalEl = document.getElementById('semesterMoveInfoModal');
+            if (!modalEl) return;
 
-  const loadingEl = modalEl.querySelector('.js-loading');
-  const errorEl = modalEl.querySelector('.js-error');
-  const successEl = modalEl.querySelector('.js-success');
-  const contentEl = modalEl.querySelector('.js-content');
+            const loadingEl = modalEl.querySelector('.js-loading');
+            const errorEl = modalEl.querySelector('.js-error');
+            const successEl = modalEl.querySelector('.js-success');
+            const contentEl = modalEl.querySelector('.js-content');
 
-  const currentEl = modalEl.querySelector('.js-current-semester');
-  const upcomingEl = modalEl.querySelector('.js-upcoming-semester');
-  const playersEl = modalEl.querySelector('.js-players');
+            const currentEl = modalEl.querySelector('.js-current-semester');
+            const upcomingEl = modalEl.querySelector('.js-upcoming-semester');
+            const playersEl = modalEl.querySelector('.js-players');
 
-  const moveBtn = modalEl.querySelector('.js-move-to-upcoming');
+            const moveBtn = modalEl.querySelector('.js-move-to-upcoming');
+            const deactivateBtn = modalEl.querySelector('.js-deactivate-ensemble');
 
-  let currentEnsembleId = null;
-  let latestInfo = null; // keep last GET response (optional)
+            let currentEnsembleId = null;
+            let latestInfo = null;
 
-  function resetModal() {
-    errorEl.classList.add('d-none');
-    errorEl.textContent = '';
+            // --- optional CSRF support (Flask-WTF) ---
+            function csrfHeaders() {
+                // If you use Flask-WTF and render <meta name="csrf-token" content="...">
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                return token ? {'X-CSRFToken': token} : {};
+            }
 
-    successEl.classList.add('d-none');
-    successEl.textContent = '';
+            function resetModal() {
+                errorEl?.classList.add('d-none');
+                if (errorEl) errorEl.textContent = '';
 
-    contentEl.classList.add('d-none');
-    loadingEl.classList.remove('d-none');
+                successEl?.classList.add('d-none');
+                if (successEl) successEl.textContent = '';
 
-    currentEl.textContent = '';
-    upcomingEl.textContent = '';
-    playersEl.innerHTML = '';
+                contentEl?.classList.add('d-none');
+                loadingEl?.classList.remove('d-none');
 
-    if (moveBtn) moveBtn.disabled = true;
-  }
+                if (currentEl) currentEl.textContent = '';
+                if (upcomingEl) upcomingEl.textContent = '';
+                if (playersEl) playersEl.innerHTML = '';
 
-  function setError(msg) {
-    loadingEl.classList.add('d-none');
-    contentEl.classList.add('d-none');
-    successEl.classList.add('d-none');
+                if (moveBtn) moveBtn.disabled = true;
+                if (deactivateBtn) deactivateBtn.disabled = true;
+            }
 
-    errorEl.classList.remove('d-none');
-    errorEl.textContent = msg;
+            function setError(msg) {
+                loadingEl?.classList.add('d-none');
+                contentEl?.classList.add('d-none');
+                successEl?.classList.add('d-none');
 
-    // allow retry (unless we don't have an id)
-    if (moveBtn && currentEnsembleId) moveBtn.disabled = false;
-  }
+                if (errorEl) {
+                    errorEl.classList.remove('d-none');
+                    errorEl.textContent = msg;
+                }
+            }
 
-  function setSuccess(msg) {
-    loadingEl.classList.add('d-none');
-    errorEl.classList.add('d-none');
+            function setSuccess(msg) {
+                loadingEl?.classList.add('d-none');
+                errorEl?.classList.add('d-none');
 
-    successEl.classList.remove('d-none');
-    successEl.textContent = msg;
-  }
+                if (successEl) {
+                    successEl.classList.remove('d-none');
+                    successEl.textContent = msg;
+                }
+            }
 
-  function renderPlayerItem(p) {
-    const hasActive = !!p.has_active_subject_in_upcoming_semester;
+            function renderPlayerItem(p) {
+                const hasActive = !!p.has_active_subject_in_upcoming_semester;
 
-    const instr = p.instrument
-      ? (p.instrument.abbr || p.instrument.name || '–')
-      : '–';
+                const instr = p.instrument
+                    ? (p.instrument.abbr || p.instrument.name || '–')
+                    : '–';
 
-    const badge = hasActive
-      ? '<span class="badge bg-success ms-2">aktivní</span>'
-      : '<span class="badge bg-warning text-dark ms-2">bez předmětů</span>';
+                const badge = hasActive
+                    ? '<span class="badge bg-success ms-2">aktivní</span>'
+                    : '<span class="badge bg-warning text-dark ms-2">bez předmětů</span>';
 
-    const guest = p.is_guest
-      ? '<span class="badge bg-light text-muted border ms-2">host</span>'
-      : '';
+                const guest = p.is_guest
+                    ? '<span class="badge bg-light text-muted border ms-2">host</span>'
+                    : '';
 
-    return `
+                return `
       <div class="list-group-item d-flex justify-content-between align-items-center">
         <div>
           <span class="text-muted me-2"><em>${instr}.</em></span>
@@ -316,137 +326,188 @@
         <div>${badge}</div>
       </div>
     `;
-  }
+            }
 
-  function setMoveButtonEnabled(enabled, title) {
-    if (!moveBtn) return;
-    moveBtn.disabled = !enabled;
-    if (title !== undefined) moveBtn.title = title || '';
-  }
+            function setMoveButtonEnabled(enabled, title) {
+                if (!moveBtn) return;
+                moveBtn.disabled = !enabled;
+                if (title !== undefined) moveBtn.title = title || '';
+            }
 
-  async function loadInfo(ensembleId) {
-    currentEnsembleId = ensembleId;
-    latestInfo = null;
-    resetModal();
+            function setDeactivateButtonEnabled(enabled, title) {
+                if (!deactivateBtn) return;
+                deactivateBtn.disabled = !enabled;
+                if (title !== undefined) deactivateBtn.title = title || '';
+            }
 
-    try {
-      const resp = await fetch(`/api/ensemble/${ensembleId}/get-semester-move-info`, {
-        headers: { 'Accept': 'application/json' }
-      });
+            async function loadInfo(ensembleId) {
+                currentEnsembleId = ensembleId;
+                latestInfo = null;
+                resetModal();
 
-      if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status}`);
-      }
+                try {
+                    const resp = await fetch(`/api/ensemble/${ensembleId}/get-semester-move-info`, {
+                        headers: {'Accept': 'application/json'}
+                    });
 
-      const data = await resp.json();
-      latestInfo = data;
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
 
-      loadingEl.classList.add('d-none');
+                    const data = await resp.json();
+                    latestInfo = data;
 
-      if (!data.upcoming_semester) {
-        setMoveButtonEnabled(false, 'Není k dispozici nadcházející semestr');
-        setError('Nenalezen nadcházející semestr.');
-        return;
-      }
+                    loadingEl?.classList.add('d-none');
 
-      currentEl.textContent = `${data.current_semester.name} (#${data.current_semester.id})`;
-      upcomingEl.textContent = `${data.upcoming_semester.name} (#${data.upcoming_semester.id})`;
+                    if (!data.upcoming_semester) {
+                        setMoveButtonEnabled(false, 'Není k dispozici nadcházející semestr');
+                    } else {
+                        setMoveButtonEnabled(true, 'Přesunout soubor do nadcházejícího semestru');
+                    }
 
-      // If you want to block move unless ensemble is linked to current semester:
-      if (data.ensemble_is_in_current_semester === false) {
-        playersEl.innerHTML = `
+                    // Deactivate is always possible if we have an id
+                    setDeactivateButtonEnabled(true, 'Deaktivovat soubor');
+
+                    if (currentEl) currentEl.textContent = `${data.current_semester.name} (#${data.current_semester.id})`;
+                    if (upcomingEl) {
+                        upcomingEl.textContent = data.upcoming_semester
+                            ? `${data.upcoming_semester.name} (#${data.upcoming_semester.id})`
+                            : '—';
+                    }
+
+                    if (data.ensemble_is_in_current_semester === false) {
+                        playersEl.innerHTML = `
           <div class="list-group-item text-warning">
             Soubor není přiřazen k aktuálnímu semestru (chybí vazba EnsembleSemester).
           </div>
         `;
-        contentEl.classList.remove('d-none');
-        setMoveButtonEnabled(false, 'Nelze přesunout: soubor není v aktuálním semestru');
-        return;
-      }
+                        contentEl?.classList.remove('d-none');
+                        // Here I’d still allow deactivate, but block move:
+                        setMoveButtonEnabled(false, 'Nelze přesunout: soubor není v aktuálním semestru');
+                        return;
+                    }
 
-      const players = data.players || [];
-      if (!players.length) {
-        playersEl.innerHTML = `
-          <div class="list-group-item text-muted">
-            Soubor nemá hráče.
-          </div>
-        `;
-      } else {
-        playersEl.innerHTML = players.map(renderPlayerItem).join('');
-      }
+                    const players = data.players || [];
+                    playersEl.innerHTML = players.length
+                        ? players.map(renderPlayerItem).join('')
+                        : `<div class="list-group-item text-muted">Soubor nemá hráče.</div>`;
 
-      contentEl.classList.remove('d-none');
+                    contentEl?.classList.remove('d-none');
 
-      // enable move button
-      setMoveButtonEnabled(true, 'Přesunout soubor do nadcházejícího semestru');
+                } catch (e) {
+                    setMoveButtonEnabled(false);
+                    setDeactivateButtonEnabled(false);
+                    setError(`Nepodařilo se načíst data. (${e.message})`);
+                }
+            }
 
-    } catch (e) {
-      setMoveButtonEnabled(false);
-      setError(`Nepodařilo se načíst data. (${e.message})`);
-    }
-  }
+            async function moveToUpcomingSemester(ensembleId) {
+                if (!ensembleId) return;
 
-  async function moveToUpcomingSemester(ensembleId) {
-    if (!ensembleId) return;
+                setMoveButtonEnabled(false, 'Probíhá přesun…');
+                setDeactivateButtonEnabled(false, 'Prosím počkejte…');
+                successEl?.classList.add('d-none');
+                errorEl?.classList.add('d-none');
 
-    // optimistic UI
-    setMoveButtonEnabled(false, 'Probíhá přesun…');
-    successEl.classList.add('d-none');
-    errorEl.classList.add('d-none');
+                try {
+                    const resp = await fetch(`/api/ensemble/${ensembleId}/move-to-upcoming-semester`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            ...csrfHeaders()
+                        }
+                    });
 
-    try {
-      // If you use Flask-WTF CSRF, add token here:
-      // const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-      // const headers = {'Accept': 'application/json', 'X-CSRFToken': csrf};
+                    const data = await resp.json().catch(() => ({}));
+                    if (!resp.ok) throw new Error(data.message || `HTTP ${resp.status}`);
 
-      const resp = await fetch(`/api/ensemble/${ensembleId}/move-to-upcoming-semester`, {
-        method: 'POST',
-        headers: { 'Accept': 'application/json' }
-      });
+                    setSuccess(data.message || 'Soubor byl přesunut do dalšího semestru.');
+                    setMoveButtonEnabled(false, 'Hotovo');
+                    setDeactivateButtonEnabled(true, 'Deaktivovat soubor');
 
-      const data = await resp.json().catch(() => ({}));
+                    // IMPORTANT: remove the row from the table immediately so user sees result
+                    removeEnsembleRowFromTable(ensembleId);
 
-      if (!resp.ok) {
-        throw new Error(data.message || `HTTP ${resp.status}`);
-      }
+                } catch (e) {
+                    setError(`Nepodařilo se přesunout soubor. (${e.message})`);
+                    const canRetry = !!(latestInfo && latestInfo.upcoming_semester && latestInfo.ensemble_is_in_current_semester !== false);
+                    setMoveButtonEnabled(canRetry, canRetry ? 'Zkusit znovu' : '');
+                    setDeactivateButtonEnabled(true, 'Deaktivovat soubor');
+                }
+            }
 
-      setSuccess(data.message || 'Soubor byl přesunut do dalšího semestru.');
+            async function deactivateEnsemble(ensembleId) {
+                if (!ensembleId) return;
 
-      // Option A: keep disabled (prevents accidental double click)
-      setMoveButtonEnabled(false, 'Hotovo');
+                setDeactivateButtonEnabled(false, 'Deaktivuji…');
+                setMoveButtonEnabled(false, 'Prosím počkejte…');
+                successEl?.classList.add('d-none');
+                errorEl?.classList.add('d-none');
 
-      // Option B: refresh modal data (uncomment if you want)
-      // await loadInfo(ensembleId);
+                try {
+                    const resp = await fetch(`/api/ensemble/${ensembleId}/deactivate`, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            ...csrfHeaders()
+                        }
+                    });
 
-    } catch (e) {
-      setError(`Nepodařilo se přesunout soubor. (${e.message})`);
-      // allow retry if we still have a valid upcoming semester
-      const canRetry = !!(latestInfo && latestInfo.upcoming_semester && latestInfo.ensemble_is_in_current_semester !== false);
-      setMoveButtonEnabled(canRetry, canRetry ? 'Zkusit znovu' : '');
-    }
-  }
+                    const data = await resp.json().catch(() => ({}));
+                    if (!resp.ok || data.success === false) {
+                        throw new Error(data.message || `HTTP ${resp.status}`);
+                    }
 
-  // Your existing delegated click listener (keeps working)
-  document.addEventListener('click', (ev) => {
-    const btn = ev.target.closest('.js-semester-move-info');
-    if (!btn) return;
+                    setSuccess(data.message || 'Soubor byl deaktivován.');
+                    setDeactivateButtonEnabled(false, 'Deaktivováno');
+                    setMoveButtonEnabled(false, 'Deaktivováno');
 
-    const ensembleId = btn.dataset.ensembleId;
-    if (!ensembleId) return;
+                    // remove row from the table
+                    removeEnsembleRowFromTable(ensembleId);
 
-    loadInfo(ensembleId);
-  });
+                } catch (e) {
+                    setError(`Nepodařilo se deaktivovat soubor. (${e.message})`);
+                    setDeactivateButtonEnabled(true, 'Zkusit znovu');
+                    // move may still be possible depending on info
+                    const canMove = !!(latestInfo && latestInfo.upcoming_semester && latestInfo.ensemble_is_in_current_semester !== false);
+                    setMoveButtonEnabled(canMove, canMove ? 'Přesunout soubor' : '');
+                }
+            }
 
-  // Move button click
-  if (moveBtn) {
-    moveBtn.addEventListener('click', () => {
-      moveToUpcomingSemester(currentEnsembleId);
-    });
-  }
+            // Remove the ensemble row from the desktop table (and optionally reload on mobile)
+            function removeEnsembleRowFromTable(ensembleId) {
+                const btn = document.querySelector(`.js-semester-move-info[data-ensemble-id="${ensembleId}"]`);
+                const row = btn ? btn.closest('tr') : null;
+                if (row) row.remove();
 
-})();
-</script>
+                // Optional: if you want to force refresh list (simple but blunt):
+                // window.location.reload();
+            }
 
+            // Delegated listener for "eye" buttons
+            document.addEventListener('click', (ev) => {
+                const btn = ev.target.closest('.js-semester-move-info');
+                if (!btn) return;
+                const ensembleId = btn.dataset.ensembleId;
+                if (!ensembleId) return;
+                loadInfo(ensembleId);
+            });
+
+            // Move button
+            if (moveBtn) {
+                moveBtn.addEventListener('click', () => moveToUpcomingSemester(currentEnsembleId));
+            }
+
+            // Deactivate button (+ confirm)
+            if (deactivateBtn) {
+                deactivateBtn.addEventListener('click', () => {
+                    if (!currentEnsembleId) return;
+                    const ok = confirm("Opravdu chcete deaktivovat tento soubor?");
+                    if (!ok) return;
+                    deactivateEnsemble(currentEnsembleId);
+                });
+            }
+
+        })();
+    </script>
 {% endblock %}
 
 

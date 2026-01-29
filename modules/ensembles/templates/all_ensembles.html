@@ -3,7 +3,7 @@
 {% block title %}Komorní soubory{% endblock %}
 
 {% from "macros/_auth.jinja" import if_perm, if_any_perm %}
-{% from "macros/_buttons.jinja" import export_button, add_button, action_button, delete_button %}
+{% from "macros/_buttons.jinja" import icon_button, export_button, add_button, action_button, delete_button %}
 {% from "macros/_ui.jinja" import ensemble_status %}
 
 {% block content %}
@@ -27,6 +27,11 @@
                         {# Přidat soubor #}
                         {% call if_perm('ens_add', current_user) %}
                             {{ add_button(url_for('ensemble.ensemble_add') ~ '?' ~ request.query_string.decode(), 'Přidat soubor') }}
+                        {% endcall %}
+
+                        {# Konec semestru - Přidat soubor #}
+                        {% call if_perm('ens_end_semester', current_user) %}
+                            {{ icon_button(url=url_for('ensemble.end_semester'), icon='house-lock', text='Ukončit semestr') }}
                         {% endcall %}
                     </div>
                 </div>

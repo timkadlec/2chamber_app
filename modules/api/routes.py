@@ -173,3 +173,19 @@ def move_ensemble_to_upcoming_semester(ensemble_id):
         "created_link": (not exists_in_upcoming),
         "message": "Ensemble moved to upcoming semester." if not exists_in_upcoming else "Ensemble already linked to upcoming semester."
     }), 200
+
+@api_bp.route('/ensemble/<int:ensemble_id>/deactivate', methods=['POST'])
+def deactivate_ensemble(ensemble_id):
+    ensemble = Ensemble.query.get_or_404(ensemble_id)
+
+    try:
+        ensemble.active = False
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 400
+
+    return jsonify({"success": True}), 200

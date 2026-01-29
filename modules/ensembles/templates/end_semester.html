@@ -1,0 +1,453 @@
+{# end_semester.html #}
+{% extends 'base.html' %}
+{% block title %}Komorní soubory{% endblock %}
+
+{% from "macros/_auth.jinja" import if_perm, if_any_perm %}
+{% from "macros/_buttons.jinja" import icon_button, export_button, add_button, action_button, delete_button %}
+{% from "macros/_ui.jinja" import ensemble_status %}
+{% from "macros/_modals.jinja" import info_modal %}
+
+
+{% block content %}
+    <div class="container-xl">
+        <!-- Horní lišta -->
+        <div class="container-xl pb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <h1 class="text-secondary mb-0">Ukončení semestru</h1>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            {% include 'partials/ensemble_filters.html' %}
+
+            <!-- Desktop/tablet view -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light text-uppercase small text-muted">
+                    {% set args = request.args.to_dict(flat=False) %}
+                    {% set _ = args.pop('sort_by', None) %}
+                    {% set _ = args.pop('sort_order', None) %}
+                    <tr>
+                        <th>
+                            <a href="{{ url_for('ensemble.index',
+                                                     sort_by='name',
+                                                     sort_order='desc' if sort_by=='name' and sort_order=='asc' else 'asc',
+                                                     **args) }}"
+                               class="text-decoration-none text-dark">
+                                Název souboru
+                                {% if sort_by == 'name' %}
+                                    <i class="fas fa-sort-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                {% else %}
+                                    <i class="fas fa-sort text-muted"></i>
+                                {% endif %}
+                            </a>
+                        </th>
+
+                        <th>Instrumentace</th>
+
+                        <th class="text-end">Info</th>
+
+                        <th>Členové</th>
+
+                        <th>
+                            <a href="{{ url_for('ensemble.index',
+                                                     sort_by='health',
+                                                     sort_order='desc' if sort_by=='health' and sort_order=='asc' else 'asc',
+                                                     **args) }}"
+                               class="text-decoration-none text-dark">
+                                Kontrola
+                                {% if sort_by == 'health' %}
+                                    <i class="fas fa-sort-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                                {% else %}
+                                    <i class="fas fa-sort text-muted"></i>
+                                {% endif %}
+                            </a>
+                        </th>
+
+                        {% call if_any_perm(['ens_detail','ens_edit','ens_delete'], current_user) %}
+                            <th class="text-end">Akce</th>
+                        {% endcall %}
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    {% for ensemble in ensembles %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold text-dark">{{ ensemble.name }}</div>
+                            </td>
+                            <td>{{ ensemble.instrumentation }}</td>
+
+                            <td>
+                                {% set teachers = ensemble.semester_teachers(session["semester_id"]) %}
+                                {% if teachers %}
+                                    {% for teacher in teachers %}
+                                        <a href="{{ url_for('teachers.teacher_detail', teacher_id=teacher.id) }}">
+                                            {{ teacher.full_name }}
+                                        </a>
+                                        {% if teacher.department %}
+                                            <small class="text-muted">({{ teacher.department.name }})</small>
+                                        {% endif %}
+                                        {% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted">–</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% for ep in ensemble.player_links %}
+                                    {% set pl = ep.player %}
+                                    {% set instr = ep.ensemble_instrumentation.instrument if ep.ensemble_instrumentation else None %}
+
+                                    {% if pl %}
+                                        <em>{{ instr.abbreviation if instr else (pl.instrument.abbreviation if pl.instrument else '–') }}.</em>
+                                        {% if pl.student %}
+                                            {{ pl.student.first_name[0] }}. {{ pl.student.last_name }}
+                                        {% else %}
+                                            {{ pl.first_name[0] }}. {{ pl.last_name }}
+                                        {% endif %}
+                                    {% else %}
+                                        <em>{{ instr.abbreviation if instr else '–' }}.</em>
+                                        <span class="badge bg-light text-muted border">
+            <i class="fas fa-user-slash me-1"></i> Neobsazeno
+        </span>
+                                    {% endif %}
+
+                                    {% if not loop.last %}, {% endif %}
+                                {% endfor %}
+
+                            </td>
+
+                            <td>{{ ensemble_status(ensemble) }}</td>
+
+                            {% call if_any_perm(['ens_detail','ens_edit','ens_delete'], current_user) %}
+                                <td class="text-end">
+                                    <button
+                                            type="button"
+                                            class="btn btn-outline-primary btn-sm js-semester-move-info"
+                                            data-ensemble-id="{{ ensemble.id }}"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#semesterMoveInfoModal"
+                                            title="Info k přesunu do dalšího semestru"
+                                    >
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+
+                            {% endcall %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile/card view -->
+            <div class="d-md-none p-2">
+                {% for ensemble in ensembles %}
+                    <div class="card mb-3">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="fw-bold mb-1">{{ ensemble.name }}</h6>
+                                {{ ensemble_status(ensemble) }}
+                            </div>
+
+                            <p class="mb-1 small text-muted">
+                                <i class="fas fa-users me-1"></i>
+                                {% for pl in ensemble.player_links %}
+                                    {% if pl.player.first_name or pl.player.last_name %}
+                                        {{ pl.player.first_name[0] }}. {{ pl.player.last_name }}
+                                    {% else %}
+                                        <span class="badge bg-light text-muted border">
+                                            <i class="fas fa-user-slash me-1"></i> Neobsazeno
+                                        </span>
+                                    {% endif %}
+                                    {% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            </p>
+
+                            <p class="mb-1 small text-muted">
+                                <i class="fas fa-music me-1"></i> {{ ensemble.instrumentation }}
+                            </p>
+
+                            <div class="d-flex justify-content-end mt-2">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('ensemble.ensemble_detail', ensemble_id=ensemble.id) }}"
+                                       class="btn btn-outline-primary" title="Detail">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            <div class="card-footer bg-white">
+                <div class="d-flex flex-column flex-md-row align-items-center justify-content-between">
+                    <div class="text-muted small">
+                        Zobrazeno
+                        <span class="fw-semibold">{{ pagination.page * pagination.per_page - pagination.per_page + 1 }}</span>
+                        až
+                        <span class="fw-semibold">
+                            {{ pagination.page * pagination.per_page if pagination.total > pagination.page * pagination.per_page else pagination.total }}
+                        </span>
+                        z
+                        <span class="fw-semibold">{{ pagination.total }}</span> souborů
+                    </div>
+
+                    {% set args = request.args.to_dict(flat=False) %}
+                    {% set _ = args.pop('page', None) %}
+
+                    <nav aria-label="Stránkování">
+                        <ul class="pagination pagination-sm mb-0 mt-3 mt-md-0">
+                            {% if pagination.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="{{ url_for('ensemble.end_semester', page=pagination.prev_num, **args) }}"
+                                       aria-label="Předchozí">&laquo;</a>
+                                </li>
+                            {% endif %}
+
+                            {% for p in range(1, pagination.pages + 1) %}
+                                <li class="page-item {% if pagination.page == p %}active{% endif %}">
+                                    <a class="page-link"
+                                       href="{{ url_for('ensemble.end_semester', page=p, **args) }}">{{ p }}</a>
+                                </li>
+                            {% endfor %}
+
+                            {% if pagination.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="{{ url_for('ensemble.end_semester', page=pagination.next_num, **args) }}"
+                                       aria-label="Další">&raquo;</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{ info_modal("semesterMoveInfoModal", "Informace k přesunu souboru do dalšího semestru") }}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  const modalEl = document.getElementById('semesterMoveInfoModal');
+  if (!modalEl) return;
+
+  const loadingEl = modalEl.querySelector('.js-loading');
+  const errorEl = modalEl.querySelector('.js-error');
+  const successEl = modalEl.querySelector('.js-success');
+  const contentEl = modalEl.querySelector('.js-content');
+
+  const currentEl = modalEl.querySelector('.js-current-semester');
+  const upcomingEl = modalEl.querySelector('.js-upcoming-semester');
+  const playersEl = modalEl.querySelector('.js-players');
+
+  const moveBtn = modalEl.querySelector('.js-move-to-upcoming');
+
+  let currentEnsembleId = null;
+  let latestInfo = null; // keep last GET response (optional)
+
+  function resetModal() {
+    errorEl.classList.add('d-none');
+    errorEl.textContent = '';
+
+    successEl.classList.add('d-none');
+    successEl.textContent = '';
+
+    contentEl.classList.add('d-none');
+    loadingEl.classList.remove('d-none');
+
+    currentEl.textContent = '';
+    upcomingEl.textContent = '';
+    playersEl.innerHTML = '';
+
+    if (moveBtn) moveBtn.disabled = true;
+  }
+
+  function setError(msg) {
+    loadingEl.classList.add('d-none');
+    contentEl.classList.add('d-none');
+    successEl.classList.add('d-none');
+
+    errorEl.classList.remove('d-none');
+    errorEl.textContent = msg;
+
+    // allow retry (unless we don't have an id)
+    if (moveBtn && currentEnsembleId) moveBtn.disabled = false;
+  }
+
+  function setSuccess(msg) {
+    loadingEl.classList.add('d-none');
+    errorEl.classList.add('d-none');
+
+    successEl.classList.remove('d-none');
+    successEl.textContent = msg;
+  }
+
+  function renderPlayerItem(p) {
+    const hasActive = !!p.has_active_subject_in_upcoming_semester;
+
+    const instr = p.instrument
+      ? (p.instrument.abbr || p.instrument.name || '–')
+      : '–';
+
+    const badge = hasActive
+      ? '<span class="badge bg-success ms-2">aktivní</span>'
+      : '<span class="badge bg-warning text-dark ms-2">bez předmětů</span>';
+
+    const guest = p.is_guest
+      ? '<span class="badge bg-light text-muted border ms-2">host</span>'
+      : '';
+
+    return `
+      <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+          <span class="text-muted me-2"><em>${instr}.</em></span>
+          <span class="fw-semibold">${p.full_name || '–'}</span>
+          ${guest}
+        </div>
+        <div>${badge}</div>
+      </div>
+    `;
+  }
+
+  function setMoveButtonEnabled(enabled, title) {
+    if (!moveBtn) return;
+    moveBtn.disabled = !enabled;
+    if (title !== undefined) moveBtn.title = title || '';
+  }
+
+  async function loadInfo(ensembleId) {
+    currentEnsembleId = ensembleId;
+    latestInfo = null;
+    resetModal();
+
+    try {
+      const resp = await fetch(`/api/ensemble/${ensembleId}/get-semester-move-info`, {
+        headers: { 'Accept': 'application/json' }
+      });
+
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      latestInfo = data;
+
+      loadingEl.classList.add('d-none');
+
+      if (!data.upcoming_semester) {
+        setMoveButtonEnabled(false, 'Není k dispozici nadcházející semestr');
+        setError('Nenalezen nadcházející semestr.');
+        return;
+      }
+
+      currentEl.textContent = `${data.current_semester.name} (#${data.current_semester.id})`;
+      upcomingEl.textContent = `${data.upcoming_semester.name} (#${data.upcoming_semester.id})`;
+
+      // If you want to block move unless ensemble is linked to current semester:
+      if (data.ensemble_is_in_current_semester === false) {
+        playersEl.innerHTML = `
+          <div class="list-group-item text-warning">
+            Soubor není přiřazen k aktuálnímu semestru (chybí vazba EnsembleSemester).
+          </div>
+        `;
+        contentEl.classList.remove('d-none');
+        setMoveButtonEnabled(false, 'Nelze přesunout: soubor není v aktuálním semestru');
+        return;
+      }
+
+      const players = data.players || [];
+      if (!players.length) {
+        playersEl.innerHTML = `
+          <div class="list-group-item text-muted">
+            Soubor nemá hráče.
+          </div>
+        `;
+      } else {
+        playersEl.innerHTML = players.map(renderPlayerItem).join('');
+      }
+
+      contentEl.classList.remove('d-none');
+
+      // enable move button
+      setMoveButtonEnabled(true, 'Přesunout soubor do nadcházejícího semestru');
+
+    } catch (e) {
+      setMoveButtonEnabled(false);
+      setError(`Nepodařilo se načíst data. (${e.message})`);
+    }
+  }
+
+  async function moveToUpcomingSemester(ensembleId) {
+    if (!ensembleId) return;
+
+    // optimistic UI
+    setMoveButtonEnabled(false, 'Probíhá přesun…');
+    successEl.classList.add('d-none');
+    errorEl.classList.add('d-none');
+
+    try {
+      // If you use Flask-WTF CSRF, add token here:
+      // const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      // const headers = {'Accept': 'application/json', 'X-CSRFToken': csrf};
+
+      const resp = await fetch(`/api/ensemble/${ensembleId}/move-to-upcoming-semester`, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' }
+      });
+
+      const data = await resp.json().catch(() => ({}));
+
+      if (!resp.ok) {
+        throw new Error(data.message || `HTTP ${resp.status}`);
+      }
+
+      setSuccess(data.message || 'Soubor byl přesunut do dalšího semestru.');
+
+      // Option A: keep disabled (prevents accidental double click)
+      setMoveButtonEnabled(false, 'Hotovo');
+
+      // Option B: refresh modal data (uncomment if you want)
+      // await loadInfo(ensembleId);
+
+    } catch (e) {
+      setError(`Nepodařilo se přesunout soubor. (${e.message})`);
+      // allow retry if we still have a valid upcoming semester
+      const canRetry = !!(latestInfo && latestInfo.upcoming_semester && latestInfo.ensemble_is_in_current_semester !== false);
+      setMoveButtonEnabled(canRetry, canRetry ? 'Zkusit znovu' : '');
+    }
+  }
+
+  // Your existing delegated click listener (keeps working)
+  document.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.js-semester-move-info');
+    if (!btn) return;
+
+    const ensembleId = btn.dataset.ensembleId;
+    if (!ensembleId) return;
+
+    loadInfo(ensembleId);
+  });
+
+  // Move button click
+  if (moveBtn) {
+    moveBtn.addEventListener('click', () => {
+      moveToUpcomingSemester(currentEnsembleId);
+    });
+  }
+
+})();
+</script>
+
+{% endblock %}
+
+
+

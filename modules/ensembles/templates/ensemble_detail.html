@@ -565,8 +565,9 @@
                     <table class="table align-middle mb-0">
                         <thead class="table-light text-uppercase small text-muted">
                         <tr>
-                            <th style="width:50%">Akademický rok</th>
-                            <th style="width:50%">Semestr</th>
+                            <th style="width:30%">Akademický rok</th>
+                            <th style="width:30%">Semestr</th>
+                            <th style="width:40%">Pedagog</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -587,6 +588,14 @@
                             </span>
                                     {% else %}
                                         <span class="badge bg-secondary">{{ semester.name }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% set tl = ensemble.semester_teacher_links(semester.id) %}
+                                    {% if tl %}
+                                    {% for ta in tl %}
+                                        {{ ta.teacher.full_name }} ({{ ta.hour_donation }}h){% if not loop.last %}, {% endif %}
+                                    {% endfor %}
                                     {% endif %}
                                 </td>
                             </tr>

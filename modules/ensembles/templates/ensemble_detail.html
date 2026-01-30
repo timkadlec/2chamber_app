@@ -130,7 +130,8 @@
                             <!-- Takeover Teacher Modal -->
                             <div class="modal fade" id="takeoverTeacherModal" tabindex="-1"
                                  aria-labelledby="assignTeacherModalLabel" aria-hidden="true"
-                            data-ensemble-id="{{ ensemble.id }}" data-prev-semester-id="{{ session["previous_semester_id"] if session["previous_semester_id"] else '' }}">
+                                 data-ensemble-id="{{ ensemble.id }}"
+                                 data-prev-semester-id="{{ session["previous_semester_id"] if session["previous_semester_id"] else '' }}">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
 
@@ -409,6 +410,7 @@
                         <tr>
                             <th class="d-none d-lg-table-cell">Jméno</th>
                             <th class="d-none d-lg-table-cell">Nástroj</th>
+                            <th class="d-none d-lg-table-cell">Zapsaný předmět</th>
                             {% if current_user.has_permission('ens_player_assign')
                                     or current_user.has_permission('ens_player_remove') %}
                                 <th class="d-none d-lg-table-cell">Akce</th>
@@ -443,6 +445,9 @@
                                         <span class="text-muted">–</span>
                                     {% endif %}
                                 </td>
+                            <td>
+                                {# TODO Here needs to go the students subject, the student will be grayed out if no subject present #}
+                            </td>
                                 {% if current_user.has_permission('ens_player_assign')
                                     or current_user.has_permission('ens_player_remove') %}
                                     <td>

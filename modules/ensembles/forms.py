@@ -56,6 +56,9 @@ class TeacherForm(FlaskForm):
     )
     submit = SubmitField("Přiřadit pedagoga")
 
+class TakeOverForm(FlaskForm):
+    submit = SubmitField("Převzít pedagogy")
+
 
 class NoteForm(FlaskForm):
     text = TextAreaField("Text poznámky", validators=[DataRequired()])

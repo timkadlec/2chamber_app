@@ -601,10 +601,12 @@
                                     {% endif %}
                                 </td>
                                 <td>
+                                    {% set semester_repertoire = ensemble.repertoire_for_semester(semester.id) %}
                                     {% if semester_repertoire %}
                                         {% for composition in semester_repertoire %}
                                             <i>{{ composition.composer.full_name }}: </i>{{ composition.name }} (
-                                            {{ "%.1f"|format(composition.durata) }} min){% if not loop.last %}, {% endif %}
+                                            {{ "%.1f"|format(composition.durata) }} min){% if not loop.last %},
+                                        {% endif %}
                                         {% endfor %}
                                     {% else %}
                                         -

@@ -1,10 +1,10 @@
 from flask import flash, redirect, url_for, jsonify, render_template, request, session
 from flask_login import current_user
-from .forms import EnsembleForm, TeacherForm, NoteForm
+from .forms import EnsembleForm, TeacherForm, NoteForm, TakeOverForm
 from utils.nav import navlink
 from models import db, Ensemble, EnsembleSemester, Player, Student, EnsemblePlayer, EnsembleInstrumentation, Instrument, \
     StudentSubjectEnrollment, Semester, EnsembleTeacher, Teacher, EnsembleNote, Department, Permission, Composition, \
-    EnsembleRepertoire, Composer, CompositionInstrumentation
+    EnsembleRepertoire, Composer, CompositionInstrumentation, EnsembleTeacher
 from . import ensemble_bp
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
@@ -13,7 +13,8 @@ from utils.decorators import permission_required
 from sqlalchemy import or_, func, select
 from utils.export_helpers import render_pdf
 from utils.filter_helpers import get_common_filters, apply_common_filters
-from utils.session_helpers import get_or_set_current_semester, get_or_set_current_semester_id
+from utils.session_helpers import get_or_set_current_semester, get_or_set_current_semester_id, \
+    get_or_set_previous_semester_id
 
 
 @ensemble_bp.route("/all")
@@ -380,8 +381,10 @@ def ensemble_edit(ensemble_id):
 @permission_required('ens_detail')
 def ensemble_detail(ensemble_id):
     ensemble = Ensemble.query.filter_by(id=ensemble_id).first_or_404()
+    previous_semester_id = get_or_set_previous_semester_id()
 
     teacher_form = TeacherForm()
+    takeover_form = TakeOverForm()
     note_form = NoteForm()
 
     instrumentations = ensemble.instrumentation_entries
@@ -419,7 +422,85 @@ def ensemble_detail(ensemble_id):
         available_instruments=available_instruments,
         teacher_form=teacher_form,
         note_form=note_form,
+        takeover_form=takeover_form,
     )
+
+
+from sqlalchemy.exc import IntegrityError
+
+
+def _get_previous_semester(semester: Semester):
+    return (
+        Semester.query
+        .filter(Semester.end_date < semester.start_date)
+        .order_by(Semester.end_date.desc())
+        .first()
+    )
+
+@ensemble_bp.route("/<int:ensemble_id>/takeover_teachers/target/<int:semester_id>", methods=["POST"])
+@permission_required("ens_teacher_assign")
+def takeover_teachers_previous_semester(ensemble_id, semester_id):
+    target_semester = Semester.query.get_or_404(semester_id)
+
+    # source semester is the one immediately before the target (by dates)
+    source_semester = _get_previous_semester(target_semester)
+    if not source_semester:
+        flash("Neexistuje předchozí semestr, ze kterého by šlo pedagogy převzít.", "warning")
+        return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble_id))
+
+    # sanity: if someone calls target=current but you want to allow it, keep it;
+    # if you want to block weird cases, do it here.
+
+    source_links = (
+        EnsembleTeacher.query
+        .filter_by(ensemble_id=ensemble_id, semester_id=source_semester.id)
+        .all()
+    )
+
+    if not source_links:
+        flash("V předchozím semestru nejsou žádní pedagogové k převzetí.", "warning")
+        return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble_id))
+
+    existing_teacher_ids = set(
+        t_id for (t_id,) in (
+            db.session.query(EnsembleTeacher.teacher_id)
+            .filter_by(ensemble_id=ensemble_id, semester_id=target_semester.id)
+            .all()
+        )
+        if t_id is not None
+    )
+
+    created = 0
+    for ta in source_links:
+        if not ta.teacher_id:
+            continue
+        if ta.teacher_id in existing_teacher_ids:
+            continue
+
+        db.session.add(EnsembleTeacher(
+            ensemble_id=ensemble_id,
+            teacher_id=ta.teacher_id,
+            semester_id=target_semester.id,
+            hour_donation=ta.hour_donation,  # copy donation too
+        ))
+        created += 1
+
+    try:
+        db.session.commit()
+    except IntegrityError as e:
+        db.session.rollback()
+        flash(f"Došlo k chybě při ukládání: {e}", "danger")
+        return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble_id))
+
+    if created:
+        flash(
+            f"Pedagogové byli převzati ze semestru {source_semester.name} do {target_semester.name} ({created}×).",
+            "success"
+        )
+    else:
+        flash("Všichni pedagogové už jsou v cílovém semestru přiřazeni.", "info")
+
+    return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble_id))
 
 
 def _get_or_create_player_for_student(student):

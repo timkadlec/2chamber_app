@@ -2,7 +2,7 @@ from . import api_bp
 from flask import jsonify, session, abort
 from models import db
 from models.core import Semester
-from models.ensembles import Ensemble, EnsembleSemester, EnsemblePlayer
+from models.ensembles import Ensemble, EnsembleSemester, EnsemblePlayer, EnsembleTeacher
 from models.students import StudentSubjectEnrollment
 from models.players import Player
 from models.core import Instrument
@@ -23,6 +23,15 @@ def _get_upcoming_semester(current_semester: Semester):
         .order_by(Semester.start_date.asc())
         .first()
     )
+
+def _get_previous_semester(current_semester: Semester):
+    return (
+        Semester.query
+        .filter(Semester.end_date < current_semester.start_date)
+        .order_by(Semester.end_date.desc())
+        .first()
+    )
+
 
 @api_bp.route('/ensemble/<int:ensemble_id>/get-semester-move-info', methods=['GET'])
 def get_ensemble_semester_move_info(ensemble_id):
@@ -192,3 +201,40 @@ def deactivate_ensemble(ensemble_id):
         }), 400
 
     return jsonify({"success": True}), 200
+
+
+from models.teachers import Teacher  # adjust import to your project
+
+@api_bp.route('/ensemble/<int:ensemble_id>/teachers/semester/<int:semester_id>', methods=['GET'])
+def get_ensemble_teachers_for_semester(ensemble_id, semester_id):
+    ensemble = Ensemble.query.get_or_404(ensemble_id)
+
+    rows = (
+        db.session.query(EnsembleTeacher)
+        .join(Teacher, Teacher.id == EnsembleTeacher.teacher_id)
+        .filter(
+            EnsembleTeacher.ensemble_id == ensemble.id,
+            EnsembleTeacher.semester_id == semester_id,
+        )
+        .order_by(Teacher.last_name.asc(), Teacher.first_name.asc())
+        .all()
+    )
+
+
+    payload = []
+    for link in rows:
+        t = link.teacher
+        payload.append({
+            "assignment_id": link.id,
+            "teacher_id": t.id if t else None,
+            "full_name": t.full_name if t else "—",
+            "hour_donation": link.hour_donation,
+        })
+
+        print(payload)
+
+    return jsonify({
+        "ensemble_id": ensemble.id,
+        "semester_id": semester_id,
+        "teachers": payload,
+    }), 200

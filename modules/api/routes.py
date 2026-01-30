@@ -7,6 +7,7 @@ from models.students import StudentSubjectEnrollment
 from models.players import Player
 from models.core import Instrument
 from sqlalchemy.orm import joinedload
+from utils.decorators import permission_required
 
 def _get_current_semester_or_400():
     current_semester_id = session.get("semester_id")
@@ -119,6 +120,7 @@ def get_ensemble_semester_move_info(ensemble_id):
 
 
 @api_bp.route('/ensemble/<int:ensemble_id>/move-to-upcoming-semester', methods=['POST'])
+@permission_required("ens_move_ensemble_upcoming_semester")
 def move_ensemble_to_upcoming_semester(ensemble_id):
     ensemble = Ensemble.query.get_or_404(ensemble_id)
 

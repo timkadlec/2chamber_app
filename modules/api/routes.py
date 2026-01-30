@@ -177,6 +177,7 @@ def move_ensemble_to_upcoming_semester(ensemble_id):
     }), 200
 
 @api_bp.route('/ensemble/<int:ensemble_id>/deactivate', methods=['POST'])
+@permission_required("ens_deactivate")
 def deactivate_ensemble(ensemble_id):
     ensemble = Ensemble.query.get_or_404(ensemble_id)
 

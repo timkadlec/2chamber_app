@@ -565,9 +565,10 @@
                     <table class="table align-middle mb-0">
                         <thead class="table-light text-uppercase small text-muted">
                         <tr>
-                            <th style="width:30%">Akademický rok</th>
-                            <th style="width:30%">Semestr</th>
-                            <th style="width:40%">Pedagog</th>
+                            <th style="width:20%">Akademický rok</th>
+                            <th style="width:20%">Semestr</th>
+                            <th style="width:30%">Pedagog</th>
+                            <th style="width:30%">Repertoár</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -593,9 +594,20 @@
                                 <td>
                                     {% set tl = ensemble.semester_teacher_links(semester.id) %}
                                     {% if tl %}
-                                    {% for ta in tl %}
-                                        {{ ta.teacher.full_name }} ({{ ta.hour_donation }}h){% if not loop.last %}, {% endif %}
-                                    {% endfor %}
+                                        {% for ta in tl %}
+                                            {{ ta.teacher.full_name }} ({{ ta.hour_donation }}h){% if not loop.last %},
+                                        {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if semester_repertoire %}
+                                        {% for composition in semester_repertoire %}
+                                            <i>{{ composition.composer.full_name }}: </i>{{ composition.name }} (
+                                            {{ "%.1f"|format(composition.durata) }} min){% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        -
                                     {% endif %}
                                 </td>
                             </tr>

@@ -1,6 +1,7 @@
 from sqlalchemy import UniqueConstraint, Index
 from sqlalchemy.orm import relationship, object_session
 from models import db
+from models.core import Subject, Semester, Department, Instrument
 from sqlalchemy.ext.hybrid import hybrid_method
 from flask import session
 from sqlalchemy import CheckConstraint
@@ -55,6 +56,40 @@ class Student(db.Model):
         cascade="all, delete-orphan",
         order_by="desc(StudentRequest.request_date)",
     )
+
+    @property
+    def current_semester_id(self):
+        # keep your existing fallback if you want
+        return session.get("semester_id") or session.get("current_semester")
+
+    @property
+    def enrolled_subjects_current(self):
+        """
+        Return Subject objects the student is enrolled in for the current semester (from Flask session).
+        Efficient: uses a DB query if the instance is attached to a session; otherwise falls back to in-memory list.
+        """
+        semester_id = self.current_semester_id
+        if not semester_id:
+            return []
+
+        sa_sess = object_session(self)
+
+        # If attached to SQLAlchemy session, do an efficient query
+        if sa_sess is not None:
+            return (
+                sa_sess.query(Subject)
+                .join(StudentSubjectEnrollment, StudentSubjectEnrollment.subject_id == Subject.id)
+                .filter(StudentSubjectEnrollment.student_id == self.id)
+                .filter(StudentSubjectEnrollment.semester_id == semester_id)
+                .order_by(Subject.weight.asc().nullslast(), Subject.name.asc())
+                .all()
+            )
+
+        # Fallback: use already-loaded relationship list (may be less efficient)
+        enrollments = [e for e in (self.subject_enrollments or []) if e.semester_id == semester_id]
+        subjects = [e.subject for e in enrollments if e.subject is not None]
+        subjects.sort(key=lambda s: ((s.weight if s.weight is not None else 10 ** 9), s.name))
+        return subjects
 
     @property
     def full_name(self): return f"{self.last_name} {self.first_name}"

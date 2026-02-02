@@ -26,9 +26,9 @@
 {% endblock %}
 
 {% block content %}
-<!-- Filters -->
-{% if filters %}
-    <div style="font-size: 9pt; margin-bottom: 15px;">
+    <!-- Filters -->
+    {% if filters %}
+        <div style="font-size: 9pt; margin-bottom: 15px;">
         <span style="color: #555;">
         {% set parts = [] %}
 
@@ -60,37 +60,48 @@
                 {{ parts | join("; ") }}
             {% endif %}
     </span>
-    </div>
-{% endif %}
+        </div>
+    {% endif %}
 
-
-
-<!-- Main table -->
-<table>
-    <thead>
-    <tr>
-        <th>Soubor</th>
-        <th>Instrumentace</th>
-        <th>Členové</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for ens in ensembles %}
-        {% set teacher = ens.semester_teacher(current_semester.id) %}
+    <!-- Main table -->
+    <table>
+        <thead>
         <tr>
-            <td><b>{{ ens.name }}</b></td>
-            <td>{{ ens.instrumentation }}</td>
-            <td>
-                {% for pl in ens.player_links %}
-                    {% if pl.player %}
-                        <em>{{ pl.player.instrument.abbreviation }}. </em>{{ pl.player.first_name[0] }}.
-                        {{ pl.player.last_name }}{% if not loop.last %}, {% endif %}
-                    {% endif %}
-                {% endfor %}
-            </td>
+            <th>Soubor</th>
+            <th>Instrumentace</th>
+            <th>Členové</th>
         </tr>
-    {% endfor %}
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+        {% for ens in ensembles %}
+            {% set eps = ens.player_links_for_semester(current_semester.id) %}
+            <tr>
+                <td><b>{{ ens.name }}</b></td>
+                <td>{{ ens.instrumentation }}</td>
+                <td>
+                    {% if eps %}
+                        {% for ep in eps %}
+                            {% set p = ep.player %}
+                            {% set instr = ep.ensemble_instrumentation.instrument if ep.ensemble_instrumentation else None %}
+
+                            {% if p %}
+                                <em>{{ (instr.abbreviation if instr else (p.instrument.abbreviation if p.instrument else '–')) }}. </em>
+                                {{ p.first_name[0] }}. {{ p.last_name }}
+                            {% else %}
+                                <em>{{ instr.abbreviation if instr else '–' }}. </em>
+                                <span class="no-ensembles">Neobsazeno</span>
+                            {% endif %}
+
+                            {% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <span class="no-ensembles">–</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
 
 {% endblock %}

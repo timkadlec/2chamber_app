@@ -11,10 +11,11 @@ from sqlalchemy.exc import IntegrityError
 from models import EnsembleInstrumentation, EnsemblePlayer
 from utils.decorators import permission_required
 from sqlalchemy import or_, func, select
-from utils.export_helpers import render_pdf
+from utils.export_helpers import render_pdf, build_ensemble_semester_pdf_maps
 from utils.filter_helpers import get_common_filters, apply_common_filters
 from utils.session_helpers import get_or_set_current_semester, get_or_set_current_semester_id, \
     get_or_set_previous_semester_id
+from sqlalchemy.orm import joinedload
 
 
 @ensemble_bp.route("/all")
@@ -239,11 +240,21 @@ def export_pdf():
         filters["department_names"] = []
 
     # Prepare context
+    ensemble_ids = [e.id for e in ensembles]
+    maps = build_ensemble_semester_pdf_maps(ensemble_ids, current_semester_id)
+
     context = {
         "ensembles": ensembles,
         "current_semester": Semester.query.get(current_semester_id),
         "filters": filters,
+
+        # ✅ NEW context vars
+        "player_links_by_ensemble": maps["player_links_by_ensemble"],
+        "student_count_by_ensemble": maps["student_count_by_ensemble"],
+        "external_count_by_ensemble": maps["external_count_by_ensemble"],
+        "teachers_by_ensemble": maps["teachers_by_ensemble"],
     }
+
 
     return render_pdf("pdf_export/all_ensembles.html", context, "SKH_KomorniSoubory_vse")
 
@@ -254,6 +265,7 @@ def export_pdf_by_teacher():
     current_semester_id = get_or_set_current_semester_id()
     filters = get_common_filters()
 
+    # Teachers that have at least one EnsembleTeacher record in current semester
     teachers = (
         Teacher.query.join(EnsembleTeacher)
         .filter(EnsembleTeacher.semester_id == current_semester_id)
@@ -267,15 +279,36 @@ def export_pdf_by_teacher():
 
     filtered_teachers = []
     for teacher in teachers:
-        q = db.session.query(Ensemble).join(EnsembleTeacher).filter(
-            EnsembleTeacher.semester_id == current_semester_id,
-            EnsembleTeacher.teacher_id == teacher.id,
+        # 1) Get ensembles for this teacher in this semester (already filtered by your filters)
+        q = (
+            db.session.query(Ensemble)
+            .join(EnsembleTeacher)
+            .filter(
+                EnsembleTeacher.semester_id == current_semester_id,
+                EnsembleTeacher.teacher_id == teacher.id,
+            )
         )
         q = apply_common_filters(q, filters, current_semester_id)
         ensembles = q.order_by(Ensemble.name).all()
-        if ensembles:
-            teacher.filtered_ensembles = ensembles
-            filtered_teachers.append(teacher)
+
+        if not ensembles:
+            continue
+
+        # 2) Load the actual EnsembleTeacher rows (so we keep hour_donation)
+        teacher_rows = (
+            db.session.query(EnsembleTeacher)
+            .options(joinedload(EnsembleTeacher.ensemble))
+            .filter(
+                EnsembleTeacher.semester_id == current_semester_id,
+                EnsembleTeacher.teacher_id == teacher.id,
+                EnsembleTeacher.ensemble_id.in_([e.id for e in ensembles]),
+            )
+            .order_by(EnsembleTeacher.ensemble_id.asc())
+            .all()
+        )
+
+        teacher.pdf_rows = teacher_rows
+        filtered_teachers.append(teacher)
 
     return render_pdf(
         "pdf_export/ensemble_by_teacher.html",
@@ -293,7 +326,6 @@ def export_pdf_teacher_hours():
     current_semester_id = get_or_set_current_semester_id()
     filters = get_common_filters()
 
-    # --- Query teachers for current semester ---
     teachers = (
         Teacher.query.join(EnsembleTeacher)
         .filter(EnsembleTeacher.semester_id == current_semester_id)
@@ -307,9 +339,9 @@ def export_pdf_teacher_hours():
 
     teachers = teachers.order_by(Teacher.department_id, Teacher.last_name, Teacher.first_name).all()
 
-    # --- Build filtered list with ensembles per teacher ---
     filtered_teachers = []
     for teacher in teachers:
+        # 1) Filter ensembles for this teacher + semester using your existing filter logic
         q = (
             db.session.query(Ensemble)
             .join(EnsembleTeacher)
@@ -321,11 +353,26 @@ def export_pdf_teacher_hours():
         q = apply_common_filters(q, filters, current_semester_id)
         ensembles = q.order_by(Ensemble.name).all()
 
-        if ensembles:
-            teacher.filtered_ensembles = ensembles
-            filtered_teachers.append(teacher)
+        if not ensembles:
+            continue
 
-    # --- Group teachers by department ---
+        # 2) Load actual EnsembleTeacher rows for those ensembles (so we keep hour_donation)
+        teacher_rows = (
+            db.session.query(EnsembleTeacher)
+            .options(joinedload(EnsembleTeacher.ensemble))
+            .filter(
+                EnsembleTeacher.semester_id == current_semester_id,
+                EnsembleTeacher.teacher_id == teacher.id,
+                EnsembleTeacher.ensemble_id.in_([e.id for e in ensembles]),
+            )
+            .order_by(EnsembleTeacher.ensemble_id.asc())
+            .all()
+        )
+
+        teacher.pdf_rows = teacher_rows
+        filtered_teachers.append(teacher)
+
+    # Group teachers by department (unchanged, but now teachers carry pdf_rows)
     grouped = {}
     for t in filtered_teachers:
         dept = t.department.name if t.department else "Neurčeno"
@@ -334,7 +381,7 @@ def export_pdf_teacher_hours():
     return render_pdf(
         "pdf_export/ensemble_teacher_hours.html",
         {
-            "grouped_teachers": grouped,  # 👈 main change
+            "grouped_teachers": grouped,
             "current_semester": Semester.query.get(current_semester_id),
         },
         "SKH_Uvazky",
@@ -381,50 +428,98 @@ def ensemble_edit(ensemble_id):
 @permission_required('ens_detail')
 def ensemble_detail(ensemble_id):
     ensemble = Ensemble.query.filter_by(id=ensemble_id).first_or_404()
+
+    current_semester_id = get_or_set_current_semester_id()
     previous_semester_id = get_or_set_previous_semester_id()
 
     teacher_form = TeacherForm()
     takeover_form = TakeOverForm()
     note_form = NoteForm()
 
-    instrumentations = ensemble.instrumentation_entries
-    player_links = sorted(
-        ensemble.player_links,
-        key=lambda ep: (
-            ep.ensemble_instrumentation.instrument.weight if ep.ensemble_instrumentation and ep.ensemble_instrumentation.instrument else 9999)
+    # --- 1) Slots (instrumentation) ---
+    instrumentations = (
+        EnsembleInstrumentation.query
+        .filter_by(ensemble_id=ensemble.id)
+        .options(selectinload(EnsembleInstrumentation.instrument))
+        .order_by(EnsembleInstrumentation.position)
+        .all()
     )
 
-    assigned_player_ids_sq = (db.session.query(EnsemblePlayer.player_id)
-                              .filter(EnsemblePlayer.ensemble_id == ensemble.id)
-                              .subquery())
+    # --- 2) Assignments in current semester (may have player_id NULL = empty slot) ---
+    assignments = (
+        EnsemblePlayer.query
+        .filter(
+            EnsemblePlayer.ensemble_id == ensemble.id,
+            EnsemblePlayer.semester_id == current_semester_id,
+            EnsemblePlayer.ensemble_instrumentation_id.isnot(None),
+        )
+        .options(
+            selectinload(EnsemblePlayer.player).selectinload(Player.student),
+            selectinload(EnsemblePlayer.player).selectinload(Player.instrument),
+        )
+        .all()
+    )
 
-    available_students = (db.session.query(Student)
-                          .outerjoin(Player, Player.student_id == Student.id)
-                          .options(
-        selectinload(Student.instrument),
-        selectinload(Student.player)  # one-to-one
+    assignment_by_instr = {a.ensemble_instrumentation_id: a for a in assignments}
+
+    # --- 3) Available students (exclude those already assigned here THIS semester) ---
+    assigned_player_ids_sq = (
+        db.session.query(EnsemblePlayer.player_id)
+        .filter(
+            EnsemblePlayer.ensemble_id == ensemble.id,
+            EnsemblePlayer.semester_id == current_semester_id,
+            EnsemblePlayer.player_id.isnot(None),
+        )
+        .subquery()
     )
-                          .filter(Student.active.is_(True))
-                          .filter(
-        or_(Player.id.is_(None),
-            ~Player.id.in_(select(assigned_player_ids_sq)))
+
+    available_students = (
+        db.session.query(Student)
+        .outerjoin(Player, Player.student_id == Student.id)
+        .options(selectinload(Student.instrument), selectinload(Student.player))
+        .filter(Student.active.is_(True))
+        .filter(
+            or_(
+                Player.id.is_(None),
+                ~Player.id.in_(select(assigned_player_ids_sq))
+            )
+        )
+        .order_by(Student.last_name, Student.first_name)
+        .all()
     )
-                          .order_by(Student.last_name, Student.first_name)
-                          .all())
-    available_instruments = Instrument.query.filter_by(is_primary=True).order_by(Instrument.weight).all()
+
+    available_instruments = (
+        Instrument.query
+        .filter_by(is_primary=True)
+        .order_by(Instrument.weight)
+        .all()
+    )
+
+    # --- 4) Semester-scoped counts (DON'T use ensemble.student_count anymore) ---
+    semester_student_count = sum(
+        1 for a in assignments
+        if a.player and a.player.student is not None
+    )
+    semester_external_count = sum(
+        1 for a in assignments
+        if a.player and a.player.student is None
+    )
 
     return render_template(
         "ensemble_detail.html",
         ensemble=ensemble,
         instrumentations=instrumentations,
-        player_links=player_links,
+        assignment_by_instr=assignment_by_instr,
         available_students=available_students,
         available_instruments=available_instruments,
         teacher_form=teacher_form,
         note_form=note_form,
         takeover_form=takeover_form,
+        current_semester_id=current_semester_id,
+        previous_semester_id=previous_semester_id,
+        semester_student_count=semester_student_count,
+        semester_external_count=semester_external_count,
     )
-
 
 from sqlalchemy.exc import IntegrityError
 
@@ -542,9 +637,12 @@ def _get_or_create_ensemble_instrumentation_by_ids(ensemble_id: int, instrument_
 @ensemble_bp.route("/<int:ensemble_id>/player/<int:ensemble_instrumentation_id>/<mode>", methods=["GET", "POST"])
 @permission_required('ens_player_assign')
 def add_player_to_ensemble(ensemble_id, ensemble_instrumentation_id, mode="student"):
-    ensemble = Ensemble.query.get(ensemble_id)
-    instrumentation = EnsembleInstrumentation.query.get(ensemble_instrumentation_id)
+    ensemble = Ensemble.query.get_or_404(ensemble_id)
+    instrumentation = EnsembleInstrumentation.query.get_or_404(ensemble_instrumentation_id)
+
+    # IMPORTANT: this is the semester the UI is currently browsing
     current_semester = get_or_set_current_semester()
+
     if request.method == "GET":
         if mode == "student":
             available_players = (
@@ -566,50 +664,64 @@ def add_player_to_ensemble(ensemble_id, ensemble_instrumentation_id, mode="stude
                 db.session.query(Player)
                 .filter(Player.student_id.is_(None))
                 .filter(Player.instrument_id == instrumentation.instrument_id)
-                .options(
-                    selectinload(Player.instrument),
-                )
+                .options(selectinload(Player.instrument))
                 .all()
             )
 
-        return render_template("ensemble_add_player.html", ensemble=ensemble, instrumentation=instrumentation,
-                               available_players=available_players)
-
-    if request.method == "POST":
-        selected_player_id = int(request.form.get("selected_player_id"))
-        player = Player.query.get(selected_player_id)
-
-        if not player:
-            flash("Hráč nebyl nalezen.", "danger")
-            return redirect(url_for("ensemble.add_player_to_ensemble",
-                                    ensemble_id=ensemble.id,
-                                    ensemble_instrumentation_id=instrumentation.id,
-                                    mode="student"))
-        current_assignment = (
-            db.session.query(EnsemblePlayer)
-            .filter_by(
-                ensemble_id=ensemble.id,
-                ensemble_instrumentation_id=ensemble_instrumentation_id
-            )
-            .first()
+        return render_template(
+            "ensemble_add_player.html",
+            ensemble=ensemble,
+            instrumentation=instrumentation,
+            available_players=available_players
         )
 
-        if current_assignment:
-            # update existing
-            current_assignment.player_id = player.id
-        else:
-            # create new assignment
-            current_assignment = EnsemblePlayer(
-                ensemble_id=ensemble.id,
-                ensemble_instrumentation_id=ensemble_instrumentation_id,
-                player_id=player.id
-            )
-            db.session.add(current_assignment)
+    # POST
+    selected_player_id = request.form.get("selected_player_id", type=int)
+    if not selected_player_id:
+        flash("Nebyl vybrán žádný hráč.", "danger")
+        return redirect(url_for(
+            "ensemble.add_player_to_ensemble",
+            ensemble_id=ensemble.id,
+            ensemble_instrumentation_id=instrumentation.id,
+            mode=mode
+        ))
 
-        db.session.commit()
+    player = Player.query.get(selected_player_id)
+    if not player:
+        flash("Hráč nebyl nalezen.", "danger")
+        return redirect(url_for(
+            "ensemble.add_player_to_ensemble",
+            ensemble_id=ensemble.id,
+            ensemble_instrumentation_id=instrumentation.id,
+            mode=mode
+        ))
 
-        flash("Hráč byl úspěšně přidán", "success")
-        return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
+    # ✅ Semester-aware upsert: one assignment per (ensemble, slot, semester)
+    current_assignment = (
+        db.session.query(EnsemblePlayer)
+        .filter_by(
+            ensemble_id=ensemble.id,
+            ensemble_instrumentation_id=ensemble_instrumentation_id,
+            semester_id=current_semester.id,
+        )
+        .first()
+    )
+
+    if current_assignment:
+        current_assignment.player_id = player.id
+    else:
+        current_assignment = EnsemblePlayer(
+            ensemble_id=ensemble.id,
+            ensemble_instrumentation_id=ensemble_instrumentation_id,
+            semester_id=current_semester.id,   # ✅ THE missing piece
+            player_id=player.id
+        )
+        db.session.add(current_assignment)
+
+    db.session.commit()
+
+    flash("Hráč byl úspěšně přidán", "success")
+    return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
 
 
 @ensemble_bp.route("/<int:ensemble_id>/player/add-empty", methods=["POST"])
@@ -720,16 +832,14 @@ def add_preset_ensemble(ensemble_id):
 
 @ensemble_bp.route("/<int:ensemble_id>/player/remove", methods=["POST"])
 @permission_required('ens_player_remove')
-def delete_ensemble_player(ensemble_id):
+def remove_player_from_slot(ensemble_id):
     data = request.get_json(silent=True) or request.form or {}
     ep_id = data.get("ensemble_player_id")
 
-    # Validate ensemble
     ensemble = db.session.get(Ensemble, ensemble_id)
     if not ensemble:
         return jsonify({"message": "Ansámbl neexistuje"}), 404
 
-    # Validate target player entry
     if not ep_id:
         return jsonify({"message": "Chybí ensemble_player_id"}), 400
 
@@ -737,19 +847,62 @@ def delete_ensemble_player(ensemble_id):
     if not ep or ep.ensemble_id != ensemble.id:
         return jsonify({"message": "Neplatný hráč"}), 400
 
-    epi_id = ep.ensemble_instrumentation_id
-    epi = db.session.get(EnsembleInstrumentation, int(epi_id))
-    # Delete the record
+    current_semester = get_or_set_current_semester()
+
+    # ✅ protect history: only allow removing in the semester you are browsing
+    if ep.semester_id != current_semester.id:
+        return jsonify({"message": "Nelze odebrat hráče mimo aktuálně zvolený semestr."}), 409
+
     try:
-        db.session.delete(ep)
-        db.session.delete(epi)
+        ep.player_id = None   # ✅ remove player, keep slot assignment row
         db.session.commit()
     except IntegrityError as e:
         db.session.rollback()
         return jsonify({"message": f"Chyba při odebírání hráče: {e.orig}"}), 409
 
-    flash("Hráč byl úspěšně odebrán", "success")
+    flash("Hráč byl úspěšně odebrán z pozice v aktuálním semestru.", "success")
     return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
+
+@ensemble_bp.route("/<int:ensemble_id>/instrumentation/<int:ensemble_instrumentation_id>/delete", methods=["POST"])
+@permission_required("ens_player_remove")  # or create ens_instrumentation_delete
+def delete_instrumentation_slot(ensemble_id, ensemble_instrumentation_id):
+    ensemble = db.session.get(Ensemble, ensemble_id)
+    if not ensemble:
+        return jsonify({"message": "Ansámbl neexistuje"}), 404
+
+    instr = db.session.get(EnsembleInstrumentation, ensemble_instrumentation_id)
+    if not instr or instr.ensemble_id != ensemble.id:
+        return jsonify({"message": "Neplatná pozice obsazení"}), 400
+
+    # ✅ block deletion if slot was ever actually used (any semester)
+    has_any_real_assignment = db.session.query(
+        db.session.query(EnsemblePlayer.id)
+        .filter(
+            EnsemblePlayer.ensemble_instrumentation_id == instr.id,
+            EnsemblePlayer.player_id.isnot(None),
+        )
+        .exists()
+    ).scalar()
+
+    if has_any_real_assignment:
+        flash("Nelze smazat pozici, která byla již někdy obsazena hráčem.", "danger")
+        return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
+
+    try:
+        # If you also created empty semester rows, remove them first (safe)
+        db.session.query(EnsemblePlayer).filter(
+            EnsemblePlayer.ensemble_instrumentation_id == instr.id
+        ).delete(synchronize_session=False)
+
+        db.session.delete(instr)
+        db.session.commit()
+    except IntegrityError as e:
+        db.session.rollback()
+        return jsonify({"message": f"Chyba při mazání pozice: {e.orig}"}), 409
+
+    flash("Pozice byla smazána.", "success")
+    return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
+
 
 
 @ensemble_bp.route("/<int:ensemble_id>/delete", methods=["POST"])

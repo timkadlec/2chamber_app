@@ -138,7 +138,7 @@
                                 </td>
 
                                 <td>
-                                    {% for ep in ensemble.player_links %}
+                                    {% for ep in ensemble.player_links_for_semester(session["semester_id"]) %}
                                         {% set pl = ep.player %}
                                         {% set instr = ep.ensemble_instrumentation.instrument if ep.ensemble_instrumentation else None %}
 

@@ -91,8 +91,8 @@
             {% for dept, teachers in grouped_teachers|dictsort %}
                 {% set dept_total = namespace(value=0) %}
                 {% for teacher in teachers %}
-                    {% set ensemb_links = teacher.ensemble_links | selectattr("semester_id","equalto",current_semester.id) | list %}
-                    {% set hours = ensemb_links | map(attribute='hour_donation') | select('number') | sum %}
+                    {% set rows = teacher.pdf_rows if teacher.pdf_rows is defined else [] %}
+                    {% set hours = rows | map(attribute='hour_donation') | select('number') | sum %}
                     {% set dept_total.value = dept_total.value + (hours or 0) %}
                     <tr>
                         <td>{{ dept if loop.first else '' }}</td>
@@ -119,17 +119,19 @@
     <!-- === DETAIL SECTION === -->
     {% for dept, teachers in grouped_teachers|dictsort %}
         <h2 class="dept-title">{{ dept }}</h2>
+
         {% for teacher in teachers %}
-            {% set ensemb_links = teacher.ensemble_links | selectattr("semester_id","equalto",current_semester.id) | list %}
-            {% set total_hours = ensemb_links | map(attribute='hour_donation') | select('number') | sum %}
+            {% set rows = teacher.pdf_rows if teacher.pdf_rows is defined else [] %}
+            {% set total_hours = rows | map(attribute='hour_donation') | select('number') | sum %}
+
             <h2 style="margin-top:.8em;">
                 {{ teacher.full_name }}
-                {% if ensemb_links %}
+                {% if rows %}
                     <span style="font-weight:normal;color:#666;">– Celkem {{ "%.1f"|format(total_hours or 0) }} h</span>
                 {% endif %}
             </h2>
 
-            {% if ensemb_links %}
+            {% if rows %}
                 <table>
                     <thead>
                     <tr>
@@ -139,19 +141,35 @@
                     </tr>
                     </thead>
                     <tbody>
-                    {% for link in ensemb_links %}
+                    {% for link in rows %}
+                        {% set ens = link.ensemble %}
+                        {% set eps = ens.player_links_for_semester(current_semester.id) %}
                         <tr>
-                            <td><b>{{ link.ensemble.name }}</b></td>
+                            <td><b>{{ ens.name }}</b></td>
                             <td>
-                                {% for pl in link.ensemble.player_links if pl.player %}
-                                    <em>{{ pl.player.instrument.abbreviation }}.</em>
-                                    {{ pl.player.last_name }} {{ pl.player.first_name[0] }}.{% if not loop.last %},
+                                {% if eps %}
+                                    {% for ep in eps %}
+                                        {% set p = ep.player %}
+                                        {% set instr = ep.ensemble_instrumentation.instrument if ep.ensemble_instrumentation else None %}
+
+                                        {% if p %}
+                                            <em>{{ (instr.abbreviation if instr else (p.instrument.abbreviation if p.instrument else '–')) }}.</em>
+                                            {{ p.last_name }} {{ p.first_name[0] }}
+                                        {% else %}
+                                            <em>{{ instr.abbreviation if instr else '–' }}.</em>
+                                            <span class="no-ensembles">Neobsazeno</span>
+                                        {% endif %}
+
+                                        {% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="no-ensembles">–</span>
                                 {% endif %}
-                                {% endfor %}
                             </td>
                             <td class="hours">{{ "%.1f"|format(link.hour_donation or 0) }}</td>
                         </tr>
                     {% endfor %}
+
                     <tr>
                         <td colspan="2" style="text-align:right;font-weight:bold;">Celkem</td>
                         <td class="hours" style="font-weight:bold;">{{ "%.1f"|format(total_hours or 0) }}</td>
@@ -162,7 +180,9 @@
                 <p class="no-ensembles">Žádné soubory v tomto semestru.</p>
             {% endif %}
         {% endfor %}
+
         {% if not loop.last %}
-            <div class="page-break"></div>{% endif %}
+            <div class="page-break"></div>
+        {% endif %}
     {% endfor %}
 {% endblock %}

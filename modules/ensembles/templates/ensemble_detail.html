@@ -61,11 +61,11 @@
                         <div class="d-flex flex-wrap gap-3 mt-1">
             <span class="badge bg-primary">
                 <i class="fas fa-user-graduate me-1"></i>
-                Studenti HAMU: {{ ensemble.student_count }}
+                Studenti HAMU: {{ semester_student_count }}
             </span>
                             <span class="badge bg-warning text-dark">
                 <i class="fas fa-user-friends me-1"></i>
-                Hosté: {{ ensemble.external_count }}
+                Hosté: {{ semester_external_count }}
             </span>
                         </div>
                     </div>
@@ -110,15 +110,18 @@
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h5 class="mb-0">Pedagog</h5>
                     {% set teacher_assignment = ensemble.semester_teacher(session["semester_id"]) %}
+                    {% set teacher_links = ensemble.semester_teacher_links(session["semester_id"]) %}
                     {% if current_user.has_permission('ens_teacher_assign') %}
                         <div class="d-flex gap-2">
-                            <a href="#"
-                               class="btn btn-sm btn-outline-warning d-flex align-items-center"
-                               data-bs-toggle="modal"
-                               data-bs-target="#takeoverTeacherModal">
-                                <i class="fas fa-solid fa-arrow-rotate-left"></i>
-                                <span class="ms-2 d-none d-md-inline">Převzít z předchozího semestru</span>
-                            </a>
+                            {% if not teacher_links %}
+                                <a href="#"
+                                   class="btn btn-sm btn-outline-warning d-flex align-items-center"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#takeoverTeacherModal">
+                                    <i class="fas fa-solid fa-arrow-rotate-left"></i>
+                                    <span class="ms-2 d-none d-md-inline">Převzít z předchozího semestru</span>
+                                </a>
+                            {% endif %}
                             <a href="#"
                                class="btn btn-sm btn-outline-primary d-flex align-items-center"
                                data-bs-toggle="modal"
@@ -244,7 +247,6 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% set teacher_links = ensemble.semester_teacher_links(session["semester_id"]) %}
                         {% if teacher_links %}
                             {% for ta in teacher_links %}
                                 <tr>
@@ -418,87 +420,161 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% for ensemble_player in player_links %}
-                            <tr class="{% if ensemble_player.player.is_guest %}table-warning{% endif %}">
+                        {% for instr in instrumentations %}
+                            {% set ep = assignment_by_instr.get(instr.id) %}
+                            {% set p = ep.player if ep and ep.player else None %}
+
+                            <tr class="{% if p and p.is_guest %}table-warning{% endif %}">
                                 <td>
-                                    {% if ensemble_player.player.is_guest %}
-                                        <i class="fas fa-triangle-exclamation me-2 text-warning"
-                                           title="Jedná se o hosta"></i>
-                                    {% endif %}
-                                    {% if ensemble_player.player.student %}
-                                        <a href="{{ url_for('students.student_detail', student_id=ensemble_player.player.student_id) }}"
-                                           target="_blank">
-                                            {{ ensemble_player.player.last_name }} {{ ensemble_player.player.first_name }}
-                                        </a>
+                                    {% if p %}
+                                        {% if p.is_guest %}
+                                            <i class="fas fa-triangle-exclamation me-2 text-warning"
+                                               title="Jedná se o hosta"></i>
+                                        {% endif %}
+
+                                        {% if p.student %}
+                                            <a href="{{ url_for('students.student_detail', student_id=p.student_id) }}"
+                                               target="_blank">
+                                                {{ p.last_name }} {{ p.first_name }}
+                                            </a>
+                                        {% else %}
+                                            {{ p.last_name }} {{ p.first_name }} j.h.
+                                        {% endif %}
                                     {% else %}
-                                        {{ ensemble_player.player.last_name }} {{ ensemble_player.player.first_name }}
-                                        j.h.
+                                        <span class="text-muted">— neobsazeno —</span>
                                     {% endif %}
                                 </td>
+
                                 <td>
-                                    {% if ensemble_player.ensemble_instrumentation %}
-                                        <span class="badge bg-light text-dark border">
-                            <i class="fas fa-music me-1"></i>
-                            {{ ensemble_player.ensemble_instrumentation.instrument.name }}
-                        </span>
-                                    {% else %}
-                                        <span class="text-muted">–</span>
-                                    {% endif %}
+            <span class="badge bg-light text-dark border">
+                <i class="fas fa-music me-1"></i>{{ instr.instrument.name }}
+            </span>
                                 </td>
-                            <td>
-                                {# TODO Here needs to go the students subject, the student will be grayed out if no subject present #}
-                            </td>
-                                {% if current_user.has_permission('ens_player_assign')
-                                    or current_user.has_permission('ens_player_remove') %}
+
+                                <td>
+                                    {% if p.student %}{% for s in p.student.enrolled_subjects_current %}{{ s.code }}
+                                        {% if not loop.last %}, {% endif %}{% endfor %}{% else %}-{% endif %}
+                                </td>
+
+                                {% if current_user.has_permission('ens_player_assign') or current_user.has_permission('ens_player_remove') %}
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
+
                                             {% if current_user.has_permission('ens_player_assign') %}
-                                                <a href="{{ url_for('ensemble.add_player_to_ensemble', ensemble_id=ensemble.id, ensemble_instrumentation_id=ensemble_player.ensemble_instrumentation.id, mode="student") }}"
+                                                <a href="{{ url_for('ensemble.add_player_to_ensemble',
+                          ensemble_id=ensemble.id,
+                          ensemble_instrumentation_id=instr.id,
+                          mode='student') }}"
                                                    class="btn btn-light" title="Přiřadit studenta">
                                                     <i class="fas fa-user-plus text-primary"></i>
                                                 </a>
-                                                <a href="{{ url_for('ensemble.add_player_to_ensemble', ensemble_id=ensemble.id, ensemble_instrumentation_id=ensemble_player.ensemble_instrumentation.id, mode="guest") }}"
+
+                                                <a href="{{ url_for('ensemble.add_player_to_ensemble',
+                          ensemble_id=ensemble.id,
+                          ensemble_instrumentation_id=instr.id,
+                          mode='guest') }}"
                                                    class="btn btn-light" title="Přiřadit hosta">
                                                     <i class="fas fa-user-tag text-warning"></i>
                                                 </a>
                                             {% endif %}
-                                            {% if current_user.has_permission('ens_player_remove') %}
-                                                <a href="#" class="btn btn-light" data-bs-toggle="modal"
-                                                   data-bs-target="#deletePlayerModal{{ ensemble_player.id }}"
-                                                   title="Smazat hráče">
-                                                    <i class="fas fa-trash text-danger"></i>
+
+                                            {# ✅ NEW: Unassign (only when a player exists) #}
+                                            {% if current_user.has_permission('ens_player_remove') and p %}
+                                                <a href="#" class="btn btn-light"
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#unassignPlayerModal{{ instr.id }}"
+                                                   title="Odebrat hráče z této pozice (aktuální semestr)">
+                                                    <i class="fas fa-user-minus text-danger"></i>
+                                                </a>
+                                            {% endif %}
+
+                                            {# ✅ NEW: Delete instrumentation slot (recommended only when empty) #}
+                                            {% if current_user.has_permission('ens_player_remove') and not p %}
+                                                <a href="#" class="btn btn-light"
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#deleteSlotModal{{ instr.id }}"
+                                                   title="Smazat pozici obsazení">
+                                                    <i class="fas fa-trash-can text-danger"></i>
                                                 </a>
                                             {% endif %}
                                         </div>
 
-                                        <!-- Delete Modal -->
-                                        {% if current_user.has_permission('ens_player_remove') %}
-                                            <div class="modal fade" id="deletePlayerModal{{ ensemble_player.id }}"
-                                                 tabindex="-1"
+                                        {# ───────────────────────────────────────────── #}
+                                        {# Unassign Player Modal #}
+                                        {% if current_user.has_permission('ens_player_remove') and p %}
+                                            <div class="modal fade" id="unassignPlayerModal{{ instr.id }}" tabindex="-1"
                                                  aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered">
-                                                    <form action="{{ url_for('ensemble.delete_ensemble_player', ensemble_id=ensemble.id) }}"
+                                                    <form action="{{ url_for('ensemble.remove_player_from_slot', ensemble_id=ensemble.id) }}"
                                                           method="post" class="modal-content">
+                                                        {# if you have CSRF token macro, include it here #}
+
+                                                        {# IMPORTANT: submit the assignment id for THIS semester #}
                                                         <input type="hidden" name="ensemble_player_id"
-                                                               value="{{ ensemble_player.id }}" required>
+                                                               value="{{ ep.id }}" required>
 
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title">Smazat hráče</h5>
+                                                            <h5 class="modal-title">Odebrat hráče</h5>
                                                             <button type="button" class="btn-close"
                                                                     data-bs-dismiss="modal"></button>
                                                         </div>
 
                                                         <div class="modal-body">
-                                                            <p>Opravdu si přejete smazat tohoto hráče?</p>
+                                                            <p>
+                                                                Opravdu chcete odebrat hráče
+                                                                <strong>{{ p.full_name if p.full_name else (p.last_name ~ ' ' ~ p.first_name) }}</strong>
+                                                                z této pozice pro aktuální semestr?
+                                                            </p>
                                                         </div>
 
                                                         <div class="modal-footer">
                                                             <button type="button" class="btn btn-light"
-                                                                    data-bs-dismiss="modal">
-                                                                Zrušit
+                                                                    data-bs-dismiss="modal">Zrušit
                                                             </button>
                                                             <button type="submit" class="btn btn-danger">
-                                                                <i class="fas fa-trash me-1"></i> Smazat
+                                                                <i class="fas fa-user-minus me-1"></i> Odebrat
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+
+                                        {# ───────────────────────────────────────────── #}
+                                        {# Delete Slot Modal #}
+                                        {% if current_user.has_permission('ens_player_remove') and not p %}
+                                            <div class="modal fade" id="deleteSlotModal{{ instr.id }}" tabindex="-1"
+                                                 aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <form action="{{ url_for('ensemble.delete_instrumentation_slot',
+                                 ensemble_id=ensemble.id,
+                                 ensemble_instrumentation_id=instr.id) }}"
+                                                          method="post" class="modal-content">
+                                                        {# CSRF #}
+
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">Smazat pozici</h5>
+                                                            <button type="button" class="btn-close"
+                                                                    data-bs-dismiss="modal"></button>
+                                                        </div>
+
+                                                        <div class="modal-body">
+                                                            <p>
+                                                                Opravdu chcete smazat pozici
+                                                                <strong>{{ instr.instrument.name }}</strong>?
+                                                            </p>
+                                                            <div class="alert alert-warning py-2 px-3 mb-0">
+                                                                Pozici lze smazat pouze pokud nebyla nikdy obsazena v
+                                                                historii ani v jiném semestru.
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-light"
+                                                                    data-bs-dismiss="modal">Zrušit
+                                                            </button>
+                                                            <button type="submit" class="btn btn-danger">
+                                                                <i class="fas fa-trash-can me-1"></i> Smazat pozici
                                                             </button>
                                                         </div>
                                                     </form>
@@ -506,10 +582,12 @@
                                             </div>
                                         {% endif %}
                                     </td>
+
                                 {% endif %}
                             </tr>
                         {% endfor %}
                         </tbody>
+
                     </table>
                 </div>
             </div>
@@ -615,14 +693,136 @@
                         <i class="fas fa-calendar-alt me-2 text-secondary d-none d-md-inline"></i> Semestry
                     </h5>
                     <a href="#"
-                       class="btn btn-sm btn-primary d-flex align-items-center" disabled>
-                        <!-- Icon always visible -->
+                       class="btn btn-sm btn-primary d-flex align-items-center"
+                       data-bs-toggle="modal"
+                       data-bs-target="#moveSemesterModal">
                         <i class="fas fa-file-export"></i>
-                        <!-- Text only visible from md and up -->
                         <span class="ms-2 d-none d-md-inline">Převést do dalšího semestru</span>
                     </a>
 
+
                 </div>
+
+                {# ───────────────────────────────────────────── #}
+                {# Move Semester Modal #}
+                <div class="modal fade" id="moveSemesterModal" tabindex="-1"
+                     aria-labelledby="moveSemesterModalLabel" aria-hidden="true"
+                     data-ensemble-id="{{ ensemble.id }}">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="moveSemesterModalLabel">
+                                    Převést do dalšího semestru
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Zavřít"></button>
+                            </div>
+
+                            <div class="modal-body">
+
+                                <div class="mb-2">
+                                    <div class="small text-muted">
+                                        Tato akce připraví soubor pro následující semestr:
+                                        vytvoří vazbu na semestr a připraví obsazení (pozice) pro nový semestr.
+                                    </div>
+                                </div>
+
+                                {# Loading / Error #}
+                                <div class="js-loading small text-muted">
+                                    <i class="fas fa-spinner fa-spin me-1"></i> Načítám…
+                                </div>
+                                <div class="js-error alert alert-danger d-none mb-2"></div>
+
+                                {# Main content (hidden until loaded) #}
+                                <div class="js-content d-none">
+
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6">
+                                            <div class="p-3 border rounded bg-light">
+                                                <div class="text-muted small">Aktuální semestr</div>
+                                                <div class="fw-semibold js-current-semester">—</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 border rounded bg-light">
+                                                <div class="text-muted small">Následující semestr</div>
+                                                <div class="fw-semibold js-upcoming-semester">—</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="alert alert-warning py-2 px-3 mb-3 d-none js-not-in-current">
+                                        Soubor není navázán na aktuální semestr — převod nelze provést.
+                                    </div>
+
+                                    <div class="alert alert-info py-2 px-3 mb-3 d-none js-no-upcoming">
+                                        Nebyl nalezen žádný následující semestr.
+                                    </div>
+
+                                    <div class="border rounded p-3 mb-3">
+                                        <div class="fw-semibold mb-2">Nastavení převodu</div>
+
+                                        <div class="form-check">
+                                            <input class="form-check-input js-opt-copy-teachers" type="checkbox"
+                                                   id="optCopyTeachers" checked>
+                                            <label class="form-check-label" for="optCopyTeachers">
+                                                Převzít pedagogy (pokud v novém semestru ještě nejsou)
+                                            </label>
+                                        </div>
+
+                                        <div class="form-check mt-1">
+                                            <input class="form-check-input js-opt-carry-students" type="checkbox"
+                                                   id="optCarryStudents" checked>
+                                            <label class="form-check-label" for="optCarryStudents">
+                                                Přenést studenty, kteří mají zapsaný předmět v následujícím semestru
+                                            </label>
+                                        </div>
+
+                                        <div class="form-check mt-1">
+                                            <input class="form-check-input js-opt-carry-guests" type="checkbox"
+                                                   id="optCarryGuests">
+                                            <label class="form-check-label" for="optCarryGuests">
+                                                Přenést hosty (nedoporučeno)
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="fw-semibold">
+                                            Kontrola hráčů (aktuální semestr)
+                                            <span class="badge bg-secondary ms-2 js-player-count">0</span>
+                                        </div>
+                                        <div class="small text-muted js-summary">—</div>
+                                    </div>
+
+                                    <div class="list-group js-players-list"></div>
+
+                                    <div class="js-empty text-muted small d-none mt-2">
+                                        V aktuálním semestru nejsou přiřazeni žádní hráči.
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <div class="me-auto small text-muted js-action-status d-none">
+                                    <i class="fas fa-spinner fa-spin me-1"></i> Provádím převod…
+                                </div>
+
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+                                    Zavřít
+                                </button>
+
+                                <button type="button" class="btn btn-sm btn-primary js-submit" disabled>
+                                    <i class="fas fa-file-export me-1"></i> Převést
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
 
                 <div class="table-responsive">
                     <table class="table align-middle mb-0">
@@ -887,4 +1087,229 @@
 
         })();
     </script>
+    <script>
+        (function () {
+            const modalEl = document.getElementById('moveSemesterModal');
+            if (!modalEl) return;
+
+            const ensembleId = modalEl.dataset.ensembleId;
+
+            const loadingEl = modalEl.querySelector('.js-loading');
+            const errorEl = modalEl.querySelector('.js-error');
+            const contentEl = modalEl.querySelector('.js-content');
+
+            const curSemEl = modalEl.querySelector('.js-current-semester');
+            const upSemEl = modalEl.querySelector('.js-upcoming-semester');
+
+            const notInCurrentEl = modalEl.querySelector('.js-not-in-current');
+            const noUpcomingEl = modalEl.querySelector('.js-no-upcoming');
+
+            const playersListEl = modalEl.querySelector('.js-players-list');
+            const emptyEl = modalEl.querySelector('.js-empty');
+            const playerCountEl = modalEl.querySelector('.js-player-count');
+            const summaryEl = modalEl.querySelector('.js-summary');
+
+            const submitBtn = modalEl.querySelector('.js-submit');
+            const actionStatusEl = modalEl.querySelector('.js-action-status');
+
+            const optCopyTeachersEl = modalEl.querySelector('.js-opt-copy-teachers');
+            const optCarryStudentsEl = modalEl.querySelector('.js-opt-carry-students');
+            const optCarryGuestsEl = modalEl.querySelector('.js-opt-carry-guests');
+
+            let latestInfo = null;
+            let isBusy = false;
+
+            function setBusy(state) {
+                isBusy = state;
+                if (actionStatusEl) actionStatusEl.classList.toggle('d-none', !state);
+                if (submitBtn) submitBtn.disabled = state || !canSubmit();
+            }
+
+            function showError(msg) {
+                if (!errorEl) return;
+                errorEl.classList.remove('d-none');
+                errorEl.textContent = msg;
+            }
+
+            function clearError() {
+                if (!errorEl) return;
+                errorEl.classList.add('d-none');
+                errorEl.textContent = '';
+            }
+
+            function resetUI() {
+                latestInfo = null;
+                clearError();
+
+                if (loadingEl) loadingEl.classList.remove('d-none');
+                if (contentEl) contentEl.classList.add('d-none');
+
+                if (playersListEl) playersListEl.innerHTML = '';
+                if (emptyEl) emptyEl.classList.add('d-none');
+
+                if (playerCountEl) playerCountEl.textContent = '0';
+                if (summaryEl) summaryEl.textContent = '—';
+
+                if (notInCurrentEl) notInCurrentEl.classList.add('d-none');
+                if (noUpcomingEl) noUpcomingEl.classList.add('d-none');
+
+                if (curSemEl) curSemEl.textContent = '—';
+                if (upSemEl) upSemEl.textContent = '—';
+
+                if (submitBtn) submitBtn.disabled = true;
+                setBusy(false);
+            }
+
+            function canSubmit() {
+                if (!latestInfo) return false;
+                if (!latestInfo.upcoming_semester) return false;
+                if (!latestInfo.ensemble_is_in_current_semester) return false;
+                return true;
+            }
+
+            function escapeHtml(s) {
+                if (s === null || s === undefined) return '';
+                return String(s)
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
+            }
+
+            function renderPlayerRow(p) {
+                const isGuest = !!p.is_guest;
+                const isStudent = !!p.student_id;
+                const fullName = escapeHtml(p.full_name || '—');
+
+                const instrName = p.instrument ? escapeHtml(p.instrument.name) : '—';
+                const section = p.instrument && p.instrument.section ? escapeHtml(p.instrument.section.name) : null;
+                const group = p.instrument && p.instrument.group ? escapeHtml(p.instrument.group.name) : null;
+
+                const badges = [
+                    isGuest ? `<span class="badge bg-light text-muted border ms-2">host</span>` : '',
+                    isStudent ? `<span class="badge bg-info text-dark ms-2">student</span>` : '',
+                    p.has_active_subject_in_upcoming_semester
+                        ? `<span class="badge bg-success ms-2">má předmět</span>`
+                        : (isStudent ? `<span class="badge bg-warning text-dark ms-2">bez předmětu</span>` : '')
+                ].join('');
+
+                const meta = [group, section, instrName].filter(Boolean).join(' · ');
+
+                return `
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="fw-semibold">${fullName}${badges}</div>
+                  <div class="text-muted small">${escapeHtml(meta || '')}</div>
+                </div>
+              </div>
+            `;
+            }
+
+            function computeSummary(players) {
+                const total = players.length;
+                const students = players.filter(x => !!x.student_id).length;
+                const guests = players.filter(x => !!x.is_guest).length;
+                const okUpcoming = players.filter(x => !!x.has_active_subject_in_upcoming_semester).length;
+
+                return `studentů: ${students}, hostů: ${guests}, studentů s předmětem v příštím semestru: ${okUpcoming}/${students}`;
+            }
+
+            async function loadMoveInfo() {
+                const url = `/api/ensemble/${ensembleId}/get-semester-move-info`;
+                const resp = await fetch(url, {headers: {'Accept': 'application/json'}});
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                return await resp.json();
+            }
+
+            async function doMove() {
+                const url = `/api/ensemble/${ensembleId}/move-to-upcoming-semester`;
+
+                const payload = {
+                    copy_teachers: !!optCopyTeachersEl?.checked,
+                    carry_students: !!optCarryStudentsEl?.checked,
+                    carry_guests: !!optCarryGuestsEl?.checked,
+                };
+
+                const resp = await fetch(url, {
+                    method: "POST",
+                    headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+                    body: JSON.stringify(payload),
+                });
+
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok) {
+                    const msg = data && data.message ? data.message : `HTTP ${resp.status}`;
+                    throw new Error(msg);
+                }
+                return data;
+            }
+
+            modalEl.addEventListener('shown.bs.modal', async () => {
+                resetUI();
+
+                try {
+                    const info = await loadMoveInfo();
+                    latestInfo = info;
+
+                    if (loadingEl) loadingEl.classList.add('d-none');
+                    if (contentEl) contentEl.classList.remove('d-none');
+
+                    const cur = info.current_semester ? `${info.current_semester.name} (ID ${info.current_semester.id})` : '—';
+                    const up = info.upcoming_semester ? `${info.upcoming_semester.name} (ID ${info.upcoming_semester.id})` : '—';
+
+                    if (curSemEl) curSemEl.textContent = cur;
+                    if (upSemEl) upSemEl.textContent = up;
+
+                    if (!info.ensemble_is_in_current_semester && notInCurrentEl) {
+                        notInCurrentEl.classList.remove('d-none');
+                    }
+                    if (!info.upcoming_semester && noUpcomingEl) {
+                        noUpcomingEl.classList.remove('d-none');
+                    }
+
+                    const players = info.players || [];
+                    if (playerCountEl) playerCountEl.textContent = String(players.length);
+                    if (summaryEl) summaryEl.textContent = computeSummary(players);
+
+                    if (!players.length) {
+                        if (emptyEl) emptyEl.classList.remove('d-none');
+                    } else {
+                        if (playersListEl) playersListEl.innerHTML = players.map(renderPlayerRow).join('');
+                    }
+
+                    if (submitBtn) submitBtn.disabled = !canSubmit();
+
+                } catch (e) {
+                    if (loadingEl) loadingEl.classList.add('d-none');
+                    if (contentEl) contentEl.classList.add('d-none');
+                    showError(`Nepodařilo se načíst informace o převodu. (${e.message})`);
+                    if (submitBtn) submitBtn.disabled = true;
+                }
+            });
+
+            submitBtn?.addEventListener('click', async () => {
+                if (!canSubmit() || isBusy) return;
+
+                clearError();
+                setBusy(true);
+
+                try {
+                    const res = await doMove();
+
+                    // Option A: hard refresh (simple + reliable)
+                    window.location.reload();
+
+                    // Option B: close modal + show toast/flash (requires infra)
+                    // bootstrap.Modal.getInstance(modalEl)?.hide();
+
+                } catch (e) {
+                    showError(`Nepodařilo se provést převod. (${e.message})`);
+                    setBusy(false);
+                }
+            });
+
+        })();
+    </script>
+
 {% endblock %}

@@ -138,12 +138,12 @@ class Ensemble(db.Model):
         return [ep.player for ep in self.player_links]
 
     @property
-    def instrumentation(self):
-        return format_ensemble_instrumentation(self.instrumentation_entries)
-
-    @property
     def student_count(self):
         return sum(1 for ep in self.player_links if ep.player and ep.player.student is not None)
+
+    @property
+    def instrumentation(self):
+        return format_ensemble_instrumentation(self.instrumentation_entries)
 
     @property
     def external_count(self):
@@ -222,6 +222,44 @@ class Ensemble(db.Model):
             .correlate(cls)
         )
         return ~exists(empty_exists)
+
+    def player_links_for_semester(self, semester_id: int):
+        """Return EnsemblePlayer links for one semester only."""
+        return [ep for ep in self.player_links if ep.semester_id == semester_id]
+
+    def players_for_semester(self, semester_id: int):
+        """Return Player objects for one semester only."""
+        return [ep.player for ep in self.player_links_for_semester(semester_id) if ep.player]
+
+    def student_count_for_semester(self, semester_id: int) -> int:
+        return sum(
+            1 for ep in self.player_links_for_semester(semester_id)
+            if ep.player and ep.player.student_id is not None
+        )
+
+    def external_count_for_semester(self, semester_id: int) -> int:
+        # “external” = guest or empty slot; in your UI you usually count real guests
+        return sum(
+            1 for ep in self.player_links_for_semester(semester_id)
+            if ep.player and ep.player.student_id is None
+        )
+
+    def health_check_for_semester(self, semester_id: int) -> str:
+        links = self.player_links_for_semester(semester_id)
+
+        # count only actually assigned players (optional, but usually what you want)
+        assigned = [ep for ep in links if ep.player_id is not None]
+        total = len(assigned)
+
+        if total <= 2:
+            return "Soubor nesplňuje kritérium minima hráčů."
+
+        student_count = sum(1 for ep in assigned if ep.player and ep.player.student_id is not None)
+        percentage_students = round((student_count / total) * 100, 2)
+
+        if percentage_students > 50:
+            return "OK"
+        return "Soubor obsahuej vysoké procento hostů."
 
 
 class EnsembleInstrumentation(Instrumentation):
@@ -311,6 +349,7 @@ class EnsemblePlayer(db.Model):
 
     player_id = db.Column(db.Integer, db.ForeignKey('players.id', ondelete='CASCADE'), nullable=True, index=True)
     ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete='CASCADE'), nullable=False, index=True)
+    semester_id = db.Column(db.Integer, db.ForeignKey('semesters.id', ondelete='CASCADE'), nullable=True, index=True)
 
     ensemble_instrumentation_id = db.Column(
         db.Integer,
@@ -319,9 +358,18 @@ class EnsemblePlayer(db.Model):
         index=True
     )
 
+    __table_args__ = (
+        db.UniqueConstraint(
+            "ensemble_instrumentation_id",
+            "semester_id",
+            name="uq_ens_instr_semester"
+        ),
+    )
+
     player = db.relationship("Player", back_populates="ensemble_links")
     ensemble = db.relationship("Ensemble", back_populates="player_links")
     ensemble_instrumentation = db.relationship("EnsembleInstrumentation", back_populates="player_links")
+    semester = db.relationship("Semester")
 
     @hybrid_property
     def player_sort_key(self):

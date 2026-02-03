@@ -7,6 +7,8 @@ import click
 
 
 def get_or_create_department(department_name: str):
+    if department_name == "String Instruments":
+        department_name = "Strunné nástroje"
     lookup = Department.query.filter_by(name=department_name).first()
     if lookup:
         return lookup

@@ -20,6 +20,28 @@
     {{ icon_button(url, icon=icon, text=label, color=color, title=label) }}
 {% endmacro %}
 
+{% macro move_button(
+    modal_target,
+    title='Převést do dalšího semestru',
+    icon='file-export',
+    color='outline-primary',
+    size='sm',
+    extra_class='',
+    data={}
+) %}
+    <button type="button"
+            class="btn btn-{{ color }} btn-{{ size }} {{ extra_class }}"
+            data-bs-toggle="modal"
+            data-bs-target="#{{ modal_target }}"
+            {% if title %}title="{{ title }}"{% endif %}
+            {% for k, v in data.items() %}
+            data-{{ k }}="{{ v }}"
+            {% endfor %}>
+        <i class="fas fa-{{ icon }}"></i>
+    </button>
+{% endmacro %}
+
+
 {% macro delete_button(modal_target, title='Smazat', icon='trash', color='outline-danger') %}
     <button type="button"
             class="btn btn-{{ color }} btn-sm"

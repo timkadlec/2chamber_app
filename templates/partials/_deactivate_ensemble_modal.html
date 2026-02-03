@@ -1,0 +1,45 @@
+{# templates/partials/_deactivate_ensemble_modal.html #}
+{% set modal_id = modal_id|default('deactivateEnsembleModal') %}
+
+<div class="modal fade js-deactivate-ensemble-modal"
+     id="{{ modal_id }}" tabindex="-1"
+     aria-labelledby="{{ modal_id }}Label" aria-hidden="true"
+     data-ensemble-id=""
+     data-ensemble-name="">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="{{ modal_id }}Label">Deaktivovat soubor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zavřít"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="js-error alert alert-danger d-none mb-2"></div>
+                <div class="js-success alert alert-success d-none mb-2"></div>
+
+                <p class="mb-2">
+                    Opravdu chcete deaktivovat soubor:
+                    <strong class="js-ensemble-name">—</strong>?
+                </p>
+
+                <div class="small text-muted">
+                    Deaktivace skryje soubor z běžných přehledů pro aktuální semestr.
+                    (Není to smazání.)
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="me-auto small text-muted js-action-status d-none">
+                    <i class="fas fa-spinner fa-spin me-1"></i> Provádím deaktivaci…
+                </div>
+
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Zrušit</button>
+                <button type="button" class="btn btn-sm btn-danger js-submit">
+                    <i class="fas fa-ban me-1"></i> Deaktivovat
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>

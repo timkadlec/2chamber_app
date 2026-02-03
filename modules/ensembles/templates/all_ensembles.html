@@ -114,7 +114,18 @@
 
                         <tbody>
                         {% for ensemble in ensembles %}
-                            <tr>
+                            {% set in_current = session["semester_id"] in ensemble.semester_ids %}
+                            {% set in_upcoming = upcoming_semester and (upcoming_semester.id in ensemble.semester_ids) %}
+
+                            {% set row_class = "" %}
+                            {% if not ensemble.active %}
+                                {% set row_class = "table-secondary text-muted" %}
+                            {% elif in_upcoming and not in_current %}
+                                {% set row_class = "table-success" %}
+                            {% endif %}
+
+                            <tr class="{{ row_class }}">
+
                                 <td>
                                     <div class="fw-semibold text-dark">{{ ensemble.name }}</div>
                                 </td>
@@ -172,6 +183,19 @@
                                             {% call if_perm('ens_edit', current_user) %}
                                                 {{ action_button(url_for('ensemble.ensemble_edit', ensemble_id=ensemble.id), 'edit', title='Upravit') }}
                                             {% endcall %}
+                                            {% if has_upcoming_semester %}
+                                                {% call if_perm('ens_edit', current_user) %}
+                                                    <button type="button"
+                                                            class="btn btn-outline-warning"
+                                                            title="Převést do dalšího semestru"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#moveSemesterModal"
+                                                            data-ensemble-id="{{ ensemble.id }}">
+                                                        <i class="fas fa-file-export text-warning"></i>
+                                                    </button>
+                                                {% endcall %}
+                                            {% endif %}
+
                                             {% call if_perm('ens_delete', current_user) %}
                                                 {{ delete_button('deleteEnsembleModal' ~ ensemble.id) }}
                                             {% endcall %}
@@ -298,7 +322,12 @@
         ) }}
         {% endcall %}
     {% endfor %}
+    {% include "partials/_move_semester_modal.html" %}
 {% endblock %}
 
+{% block extra_scripts %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/move_semester_modal.js') }}"></script>
+{% endblock %}
 
 

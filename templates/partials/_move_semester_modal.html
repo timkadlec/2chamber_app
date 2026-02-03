@@ -1,0 +1,114 @@
+{# templates/partials/_move_semester_modal.html #}
+{% set modal_id = modal_id|default('moveSemesterModal') %}
+
+<div class="modal fade js-move-semester-modal"
+     id="{{ modal_id }}" tabindex="-1"
+     aria-labelledby="{{ modal_id }}Label" aria-hidden="true"
+     data-ensemble-id="">
+
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="{{ modal_id }}Label">Převést do dalšího semestru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zavřít"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="mb-2">
+                    <div class="small text-muted">
+                        Tato akce připraví soubor pro následující semestr:
+                        vytvoří vazbu na semestr a připraví obsazení (pozice) pro nový semestr.
+                    </div>
+                </div>
+
+                <div class="js-loading small text-muted">
+                    <i class="fas fa-spinner fa-spin me-1"></i> Načítám…
+                </div>
+                <div class="js-error alert alert-danger d-none mb-2"></div>
+
+                <div class="js-content d-none">
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded bg-light">
+                                <div class="text-muted small">Aktuální semestr</div>
+                                <div class="fw-semibold js-current-semester">—</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 border rounded bg-light">
+                                <div class="text-muted small">Následující semestr</div>
+                                <div class="fw-semibold js-upcoming-semester">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning py-2 px-3 mb-3 d-none js-not-in-current">
+                        Soubor není navázán na aktuální semestr — převod nelze provést.
+                    </div>
+
+                    <div class="alert alert-info py-2 px-3 mb-3 d-none js-no-upcoming">
+                        Nebyl nalezen žádný následující semestr.
+                    </div>
+
+                    <div class="border rounded p-3 mb-3">
+                        <div class="fw-semibold mb-2">Nastavení převodu</div>
+
+                        <div class="form-check">
+                            <input class="form-check-input js-opt-copy-teachers" type="checkbox"
+                                   id="{{ modal_id }}OptCopyTeachers" checked>
+                            <label class="form-check-label" for="{{ modal_id }}OptCopyTeachers">
+                                Převzít pedagogy (pokud v novém semestru ještě nejsou)
+                            </label>
+                        </div>
+
+                        <div class="form-check mt-1">
+                            <input class="form-check-input js-opt-carry-students" type="checkbox"
+                                   id="{{ modal_id }}OptCarryStudents" checked>
+                            <label class="form-check-label" for="{{ modal_id }}OptCarryStudents">
+                                Přenést studenty, kteří mají zapsaný předmět v následujícím semestru
+                            </label>
+                        </div>
+
+                        <div class="form-check mt-1">
+                            <input class="form-check-input js-opt-carry-guests" type="checkbox"
+                                   id="{{ modal_id }}OptCarryGuests">
+                            <label class="form-check-label" for="{{ modal_id }}OptCarryGuests">
+                                Přenést hosty (nedoporučeno)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="fw-semibold">
+                            Kontrola hráčů (aktuální semestr)
+                            <span class="badge bg-secondary ms-2 js-player-count">0</span>
+                        </div>
+                        <div class="small text-muted js-summary">—</div>
+                    </div>
+
+                    <div class="list-group js-players-list"></div>
+
+                    <div class="js-empty text-muted small d-none mt-2">
+                        V aktuálním semestru nejsou přiřazeni žádní hráči.
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="me-auto small text-muted js-action-status d-none">
+                    <i class="fas fa-spinner fa-spin me-1"></i> Provádím převod…
+                </div>
+
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Zavřít</button>
+
+                <button type="button" class="btn btn-sm btn-primary js-submit" disabled>
+                    <i class="fas fa-file-export me-1"></i> Převést
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>

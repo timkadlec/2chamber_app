@@ -96,7 +96,9 @@ def index():
         incomplete_filter=filters["incomplete_filter"],
         sort_by=sort_by,
         sort_order=sort_order,
-        has_upcoming_semester=has_upcoming_semester
+        has_upcoming_semester=has_upcoming_semester,
+        upcoming_semester=upcoming_semester,
+        current_semester=current_semester
     )
 
 
@@ -254,7 +256,6 @@ def export_pdf():
         "external_count_by_ensemble": maps["external_count_by_ensemble"],
         "teachers_by_ensemble": maps["teachers_by_ensemble"],
     }
-
 
     return render_pdf("pdf_export/all_ensembles.html", context, "SKH_KomorniSoubory_vse")
 
@@ -521,6 +522,7 @@ def ensemble_detail(ensemble_id):
         semester_external_count=semester_external_count,
     )
 
+
 from sqlalchemy.exc import IntegrityError
 
 
@@ -531,6 +533,7 @@ def _get_previous_semester(semester: Semester):
         .order_by(Semester.end_date.desc())
         .first()
     )
+
 
 @ensemble_bp.route("/<int:ensemble_id>/takeover_teachers/target/<int:semester_id>", methods=["POST"])
 @permission_required("ens_teacher_assign")
@@ -713,7 +716,7 @@ def add_player_to_ensemble(ensemble_id, ensemble_instrumentation_id, mode="stude
         current_assignment = EnsemblePlayer(
             ensemble_id=ensemble.id,
             ensemble_instrumentation_id=ensemble_instrumentation_id,
-            semester_id=current_semester.id,   # ✅ THE missing piece
+            semester_id=current_semester.id,  # ✅ THE missing piece
             player_id=player.id
         )
         db.session.add(current_assignment)
@@ -854,7 +857,7 @@ def remove_player_from_slot(ensemble_id):
         return jsonify({"message": "Nelze odebrat hráče mimo aktuálně zvolený semestr."}), 409
 
     try:
-        ep.player_id = None   # ✅ remove player, keep slot assignment row
+        ep.player_id = None  # ✅ remove player, keep slot assignment row
         db.session.commit()
     except IntegrityError as e:
         db.session.rollback()
@@ -862,6 +865,7 @@ def remove_player_from_slot(ensemble_id):
 
     flash("Hráč byl úspěšně odebrán z pozice v aktuálním semestru.", "success")
     return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
+
 
 @ensemble_bp.route("/<int:ensemble_id>/instrumentation/<int:ensemble_instrumentation_id>/delete", methods=["POST"])
 @permission_required("ens_player_remove")  # or create ens_instrumentation_delete
@@ -902,7 +906,6 @@ def delete_instrumentation_slot(ensemble_id, ensemble_instrumentation_id):
 
     flash("Pozice byla smazána.", "success")
     return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id))
-
 
 
 @ensemble_bp.route("/<int:ensemble_id>/delete", methods=["POST"])

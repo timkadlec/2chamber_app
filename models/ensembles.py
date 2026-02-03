@@ -115,6 +115,18 @@ class Ensemble(db.Model):
     def semester_ids(self):
         return [link.semester_id for link in self.semester_links]
 
+    def is_in_semester(self, semester_id: int) -> bool:
+        return any(link.semester_id == semester_id for link in self.semester_links)
+
+    def is_in_upcoming_semester(self, current_semester: "Semester") -> bool:
+        upcoming = (
+            Semester.query
+            .filter(Semester.start_date > current_semester.end_date)
+            .order_by(Semester.start_date.asc())
+            .first()
+        )
+        return bool(upcoming) and self.is_in_semester(upcoming.id)
+
     def semester_teacher(self, semester_id):
         teacher = EnsembleTeacher.query.filter_by(ensemble_id=self.id, semester_id=semester_id).first()
         return teacher if teacher else None

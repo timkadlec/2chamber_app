@@ -68,7 +68,9 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Detail souboru</h5>
                     {% if current_user.has_permission('ens_edit') %}
-                        {{ plain_outline_button("Upravit název", color="info", icon="fas fa-edit") }}
+                        <a href="{{ url_for("ensemble.ensemble_edit", ensemble_id=ensemble.id) }}">
+                            {{ plain_outline_button("Upravit název", color="info", icon="fas fa-edit") }}
+                        </a>
                     {% endif %}
                 </div>
 

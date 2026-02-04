@@ -6,6 +6,7 @@ from modules.students import students_bp
 from sqlalchemy import and_, func
 from .forms import EnrollmentForm
 from utils.decorators import role_required, permission_required
+from utils.session_helpers import get_or_set_current_semester
 from sqlalchemy import or_
 
 
@@ -111,9 +112,10 @@ def index():
 @students_bp.route("/detail/<int:student_id>", methods=["GET"])
 @permission_required("st_can_view")
 def student_detail(student_id):
+    current_semester = get_or_set_current_semester()
     student = Student.query.get_or_404(student_id)
     form = EnrollmentForm()  # basic form object
-    return render_template("student_detail.html", student=student, form=form)
+    return render_template("student_detail.html", student=student, form=form, current_semester=current_semester)
 
 
 @students_bp.route("/edit-enrollment/<int:enrollment_id>", methods=["POST"])

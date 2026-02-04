@@ -3,7 +3,7 @@ from models import db
 from models.core import Instrumentation, Semester
 from datetime import date
 from collections import defaultdict
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 from sqlalchemy import case, func, select, exists
 
 
@@ -161,52 +161,65 @@ class Ensemble(db.Model):
     def external_count(self):
         return sum(1 for ep in self.player_links if not ep.player or ep.player.student is None)
 
-    @property
-    def health_check(self):
-        total = len(self.player_links)
+    def player_links_for_semester(self, semester_id: int):
+        return [ep for ep in self.player_links if ep.semester_id == semester_id]
+
+    def health_check_for_semester(self, semester_id: int) -> str:
+        links = self.player_links_for_semester(semester_id)
+
+        # count only actually assigned players
+        assigned = [ep for ep in links if ep.player_id is not None]
+        total = len(assigned)
+
         if total <= 2:
             return "Soubor nesplňuje kritérium minima hráčů."
-        percentage_students = round((self.student_count / total) * 100, 2)
+
+        student_count = sum(
+            1 for ep in assigned
+            if ep.player and ep.player.student_id is not None
+        )
+
+        percentage_students = (student_count / total) * 100.0
+
         if percentage_students > 50:
             return "OK"
-        else:
-            return "Soubor obsahuej vysoké procento hostů."
+        return "Soubor obsahuje vysoké procento hostů."
 
-    @hybrid_property
-    def health_check_label(self):
-        return self.health_check
+    @hybrid_method
+    def health_check_in(self, semester_id: int) -> str:
+        # Python-level fallback (templates, already-loaded relations)
+        return self.health_check_for_semester(semester_id)
 
-    @health_check_label.expression
-    def health_check_label(cls):
-        from models import Player
-        # count all players
+    @health_check_in.expression
+    def health_check_in(cls, semester_id):
+        from models import Player  # make sure Player is importable from models
+
+        # total assigned players in given semester (player_id not null)
         total = (
-            db.select(func.count(EnsemblePlayer.id))
+            select(func.count(EnsemblePlayer.id))
             .where(EnsemblePlayer.ensemble_id == cls.id)
+            .where(EnsemblePlayer.semester_id == semester_id)
+            .where(EnsemblePlayer.player_id.isnot(None))
             .correlate(cls)
             .scalar_subquery()
         )
 
-        # count student players (player.student_id not null)
+        # assigned students in given semester
         student_count = (
-            db.select(func.count(EnsemblePlayer.id))
-            .join(Player, EnsemblePlayer.player_id == Player.id)
+            select(func.count(EnsemblePlayer.id))
+            .join(Player, Player.id == EnsemblePlayer.player_id)
             .where(EnsemblePlayer.ensemble_id == cls.id)
+            .where(EnsemblePlayer.semester_id == semester_id)
+            .where(EnsemblePlayer.player_id.isnot(None))
             .where(Player.student_id.isnot(None))
             .correlate(cls)
             .scalar_subquery()
         )
 
         return case(
-            (
-                total <= 2,
-                "Soubor nesplňuje kritérium minima hráčů."
-            ),
-            (
-                (student_count * 100.0 / func.nullif(total, 0)) > 50,
-                "OK"
-            ),
-            else_="Soubor obsahuej vysoké procento hostů."
+            (total <= 2, "Soubor nesplňuje kritérium minima hráčů."),
+            ((student_count * 100.0 / func.nullif(total, 0)) > 50, "OK"),
+            else_="Soubor obsahuje vysoké procento hostů."
         )
 
     @hybrid_property
@@ -234,6 +247,40 @@ class Ensemble(db.Model):
             .correlate(cls)
         )
         return ~exists(empty_exists)
+
+    @hybrid_method
+    def is_complete_in(self, semester_id: int) -> bool:
+        # python-level (když máš načtené vztahy)
+        if not self.instrumentation_entries:
+            return False
+        for instr in self.instrumentation_entries:
+            ok = any(
+                ep.semester_id == semester_id and ep.player_id is not None
+                for ep in instr.player_links
+            )
+            if not ok:
+                return False
+        return True
+
+    @is_complete_in.expression
+    def is_complete_in(cls, semester_id):
+        # SQL-level: existuje slot, pro který NEEXISTUJE obsazení v daném semestru?
+        missing_slot_exists = (
+            select(EnsembleInstrumentation.id)
+            .where(EnsembleInstrumentation.ensemble_id == cls.id)
+            .where(
+                ~exists(
+                    select(1).where(
+                        EnsemblePlayer.ensemble_instrumentation_id == EnsembleInstrumentation.id,
+                        EnsemblePlayer.semester_id == semester_id,
+                        EnsemblePlayer.player_id.isnot(None),
+                    )
+                )
+            )
+            .limit(1)
+            .correlate(cls)
+        )
+        return ~exists(missing_slot_exists)
 
     def player_links_for_semester(self, semester_id: int):
         """Return EnsemblePlayer links for one semester only."""

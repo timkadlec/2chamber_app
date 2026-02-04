@@ -1,5 +1,6 @@
 from . import db, EnsembleTeacher
 from sqlalchemy import Index, func
+from datetime import datetime
 
 
 class Teacher(db.Model):
@@ -14,6 +15,14 @@ class Teacher(db.Model):
     department = db.relationship("Department")
 
     full_name = db.Column(db.String(200))
+
+    photo = db.relationship(
+        "TeacherPhoto",
+        back_populates="teacher",
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
     teacher_subjects = db.relationship(
         "TeacherSubject",
@@ -90,3 +99,32 @@ class TeacherSubject(db.Model):
 
     def __repr__(self):
         return f"<TeacherSubject t={self.teacher_id} s={self.subject_id} sem={self.semester_id}>"
+
+
+class TeacherPhoto(db.Model):
+    __tablename__ = "teacher_photos"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    teacher_id = db.Column(
+        db.Integer,
+        db.ForeignKey("teachers.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,  # one current photo per teacher; drop this if you want history
+        index=True,
+    )
+
+    bucket = db.Column(db.String(255), nullable=False)
+    object_key = db.Column(db.String(1024), nullable=False)
+
+    content_type = db.Column(db.String(255))
+    size_bytes = db.Column(db.Integer)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    teacher = db.relationship("Teacher", back_populates="photo")
+
+    __table_args__ = (
+        db.Index("ix_teacher_photo_bucket_key", "bucket", "object_key"),
+    )

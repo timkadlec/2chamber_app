@@ -1,16 +1,21 @@
 from . import api_bp
-from flask import jsonify, session, abort, request, url_for
+from flask import jsonify, session, abort, request, url_for, redirect, current_app
+from uuid import uuid4
+
 from models import db
-from models.core import Semester
-from models.ensembles import Ensemble, EnsembleSemester, EnsemblePlayer, EnsembleTeacher, EnsembleInstrumentation
+from models.core import Semester, Instrument
+from models.ensembles import (
+    Ensemble, EnsembleSemester, EnsemblePlayer, EnsembleTeacher, EnsembleInstrumentation
+)
 from models.students import StudentSubjectEnrollment
 from models.players import Player
-from models.teachers import Teacher
-from models.core import Instrument
+from models.teachers import Teacher, TeacherPhoto
+
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
-from utils.decorators import permission_required
 
+from utils.decorators import permission_required, api_key_required
+from extensions import get_s3
 
 def _get_current_semester_or_400():
     current_semester_id = session.get("semester_id")
@@ -415,3 +420,110 @@ def api_ensemble_update(ensemble_id):
             "detail_url": detail_url,
         }
     }), 200
+
+
+@api_bp.route("/teachers/<int:teacher_id>/photo", methods=["GET"])
+def api_get_teacher_photo(teacher_id):
+    teacher = Teacher.query.get_or_404(teacher_id)
+    s3 = get_s3()
+
+    if not getattr(teacher, "photo", None):
+        abort(404, description="Teacher has no photo")
+
+    try:
+        url = s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": teacher.photo.bucket, "Key": teacher.photo.object_key},
+            ExpiresIn=300,
+        )
+    except Exception:
+        abort(500, description="Failed to generate photo URL")
+
+    if request.args.get("format") == "json":
+        return jsonify({"teacher_id": teacher_id, "url": url}), 200
+
+    return redirect(url, code=302)
+
+
+@api_bp.route("/teachers/<int:teacher_id>/photo", methods=["POST"])
+@api_key_required
+def api_upload_teacher_photo(teacher_id):
+    s3 = get_s3()
+    teacher = Teacher.query.get_or_404(teacher_id)
+
+    f = request.files.get("photo")
+    if not f or not f.filename:
+        abort(400, description="Missing file field 'photo'.")
+
+    allowed_ext = {"jpg", "jpeg", "png", "webp"}
+    ext = (f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else "")
+    if ext not in allowed_ext:
+        abort(400, description=f"Unsupported file type. Allowed: {sorted(allowed_ext)}")
+
+    bucket = current_app.config.get("S3_BUCKET")
+    if not bucket:
+        abort(500, description="S3_BUCKET not configured")
+
+    object_key = f"teachers/{teacher_id}/photo-{uuid4().hex}.{ext}"
+    content_type = f.mimetype or "application/octet-stream"
+
+    # --- Upload to S3 ---
+    try:
+        s3.upload_fileobj(
+            f,
+            bucket,
+            object_key,
+            ExtraArgs={"ContentType": content_type},
+        )
+        head = s3.head_object(Bucket=bucket, Key=object_key)
+        size_bytes = head.get("ContentLength")
+        content_type = head.get("ContentType") or content_type
+    except Exception as e:
+        current_app.logger.exception("Upload to S3 failed")
+        abort(500, description=str(e))
+
+    # --- Upsert DB row ---
+    try:
+        photo = TeacherPhoto.query.filter_by(teacher_id=teacher_id).one_or_none()
+        if not photo:
+            photo = TeacherPhoto(
+                teacher_id=teacher_id,
+                bucket=bucket,
+                object_key=object_key,
+            )
+            db.session.add(photo)
+        else:
+            # optional: delete old object to avoid orphaned files
+            old_bucket, old_key = photo.bucket, photo.object_key
+            photo.bucket = bucket
+            photo.object_key = object_key
+            try:
+                if old_bucket and old_key:
+                    s3.delete_object(Bucket=old_bucket, Key=old_key)
+            except Exception as e:
+                current_app.logger.exception("Upload to S3 failed")
+                abort(500, description=str(e))
+
+        photo.content_type = content_type
+        photo.size_bytes = size_bytes
+
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        # cleanup newly uploaded object if DB fails
+        try:
+            s3.delete_object(Bucket=bucket, Key=object_key)
+        except Exception:
+            pass
+        abort(500, description="DB write failed")
+
+    return jsonify({
+        "ok": True,
+        "teacher_id": teacher_id,
+        "photo": {
+            "bucket": photo.bucket,
+            "object_key": photo.object_key,
+            "content_type": photo.content_type,
+            "size_bytes": photo.size_bytes,
+        }
+    }), 201

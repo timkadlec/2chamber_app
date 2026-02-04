@@ -55,6 +55,12 @@ class BaseConfig:
     if not SQLALCHEMY_DATABASE_URI:
         raise RuntimeError("Missing POSTGRES_DB_* env vars; cannot start app.")
 
+    S3_ENDPOINT_URL=os.environ.get("S3_ENDPOINT_URL")
+    S3_ACCESS_KEY=os.environ.get("S3_ACCESS_KEY")
+    S3_SECRET_KEY=os.environ.get("S3_SECRET_KEY")
+    S3_BUCKET=os.environ.get("S3_BUCKET")
+    S3_REGION=os.environ.get("S3_REGION", "us-east-1")
+
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True

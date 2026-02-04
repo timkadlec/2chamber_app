@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+
 {% block title %}
     Detail pedagoga | {{ teacher.first_name }} {{ teacher.last_name }}
 {% endblock %}
+
 {% block content %}
     <main class="py-4">
         <div class="container-xl">
@@ -9,10 +11,37 @@
             {% from "macros/_back_button.html" import back_link %}
             {{ back_link("teachers.index", "Zpět na přehled pedagogů", request.args) }}
 
+            {# Helpers #}
+            {% set full_name = (teacher.full_name or ((teacher.first_name or '') ~ ' ' ~ (teacher.last_name or ''))).strip() %}
+            {% set initials = ((teacher.first_name or '')[:1] ~ (teacher.last_name or '')[:1]).upper() %}
+            {# Use whatever route actually works for the browser; API key-protected endpoints won't load in <img> #}
+            {% set photo_url = url_for('api.api_get_teacher_photo', teacher_id=teacher.id) %}
+
             <!-- Teacher Detail Card -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Detail pedagoga</h5>
+                    <div class="d-flex align-items-center gap-3">
+                        <!-- Avatar -->
+                        <div class="rounded-circle overflow-hidden d-flex align-items-center justify-content-center flex-shrink-0"
+                             style="width: 54px; height: 54px; border: 1px solid rgba(0,0,0,.1); background: #f3f4f6;">
+                            <img src="{{ photo_url }}"
+                                 alt="{{ full_name }}"
+                                 style="width: 100%; height: 100%; object-fit: cover; display: block;"
+                                 onerror="this.style.display='none'; this.parentElement.querySelector('.avatar-fallback').style.display='flex';">
+                            <div class="avatar-fallback text-secondary fw-semibold"
+                                 style="display:none; width:100%; height:100%; align-items:center; justify-content:center; font-size: 16px;">
+                                {{ initials if initials|length else "?" }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h5 class="mb-0">Detail pedagoga</h5>
+                            <div class="text-muted small">
+                                {{ teacher.first_name }} {{ teacher.last_name }}
+                            </div>
+                        </div>
+                    </div>
+
                     {% if current_user.has_permission('tc_can_edit') %}
                         <a href="{{ url_for('teachers.edit_teacher', teacher_id=teacher.id) }}"
                            class="btn btn-sm btn-info">
@@ -53,6 +82,22 @@
                             </div>
                         </div>
                     </div>
+
+                    {# Optional: quick photo actions block (only show to editors) #}
+                    {% if current_user.has_permission('tc_can_edit') %}
+                        <hr class="my-4">
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            <span class="text-muted small">Fotografie pedagoga:</span>
+
+                            <a class="btn btn-sm btn-outline-secondary"
+                               href="{{ photo_url }}?format=json"
+                               target="_blank" rel="noopener">
+                                <i class="fas fa-link me-1"></i> Odkaz (API)
+                            </a>
+
+                            {# If you later add a UI upload modal/button, it would go here #}
+                        </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -85,9 +130,9 @@
                                 </td>
                                 <td>{{ ensemble.instrumentation or "—" }}</td>
                                 <td>
-                        <span class="badge bg-light text-dark border">
-                            {{ ensemble.student_count_for_semester(current_semester_id) }}
-                        </span>
+                                <span class="badge bg-light text-dark border">
+                                    {{ ensemble.student_count_for_semester(current_semester_id) }}
+                                </span>
                                 </td>
                                 <td>
                                     {% if link.hour_donation %}
@@ -99,12 +144,12 @@
                                 <td>
                                     {% if ensemble.is_complete %}
                                         <span class="badge bg-success text-light">
-                                <i class="fas fa-check me-1"></i> Kompletní
-                            </span>
+                                        <i class="fas fa-check me-1"></i> Kompletní
+                                    </span>
                                     {% else %}
                                         <span class="badge bg-warning text-dark">
-                                <i class="fas fa-exclamation-triangle me-1"></i> Neúplné
-                            </span>
+                                        <i class="fas fa-exclamation-triangle me-1"></i> Neúplné
+                                    </span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -126,7 +171,6 @@
                     </table>
                 </div>
             </div>
-
 
         </div>
     </main>

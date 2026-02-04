@@ -76,3 +76,19 @@ def permission_required(permission_code, flash_message=True, redirect_home=True)
         return decorated_function
 
     return decorator
+
+import os
+from functools import wraps
+from flask import request, abort, current_app
+
+def api_key_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        expected = current_app.config.get("API_KEY") or os.getenv("API_KEY")
+        if not expected:
+            abort(500, description="API_KEY not configured")
+        provided = request.headers.get("X-API-Key")
+        if provided != expected:
+            abort(401, description="Invalid API key")
+        return fn(*args, **kwargs)
+    return wrapper

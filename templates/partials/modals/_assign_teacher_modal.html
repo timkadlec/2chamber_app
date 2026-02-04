@@ -1,0 +1,36 @@
+<div class="modal fade" id="assignTeacherModal" tabindex="-1"
+                                 aria-labelledby="assignTeacherModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="assignTeacherModalLabel">Přiřadit pedagoga</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Zavřít"></button>
+                                        </div>
+
+                                        <form method="post"
+                                              action="{{ url_for('ensemble.ensemble_assign_teacher', ensemble_id=ensemble.id) }}">
+                                            {{ teacher_form.hidden_tag() }}
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    {{ teacher_form.teacher.label(class="form-label") }}
+                                                    {{ teacher_form.teacher(id="teacher_id", class="form-select") }}
+                                                    {% if teacher_form.teacher.errors %}
+                                                        <div class="text-danger small">{{ teacher_form.teacher.errors[0] }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                        data-bs-dismiss="modal">
+                                                    Zavřít
+                                                </button>
+                                                {{ teacher_form.submit(class="btn btn-sm btn-primary") }}
+                                            </div>
+                                        </form>
+
+                                    </div>
+                                </div>
+                            </div>

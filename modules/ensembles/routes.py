@@ -98,7 +98,8 @@ def index():
         sort_order=sort_order,
         has_upcoming_semester=has_upcoming_semester,
         upcoming_semester=upcoming_semester,
-        current_semester=current_semester
+        current_semester=current_semester,
+        current_semester_id=current_semester_id
     )
 
 
@@ -164,9 +165,9 @@ def end_semester():
             .scalar_subquery()
         )
     elif sort_by == "health":
-        order_column = Ensemble.health_check_label
+        order_column = Ensemble.health_check_in(current_semester_id)
     elif sort_by == "complete":
-        order_column = Ensemble.is_complete
+        order_column = Ensemble.is_complete_in(current_semester_id)
     else:
         order_column = Ensemble.name
 

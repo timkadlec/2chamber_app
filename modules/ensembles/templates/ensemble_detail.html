@@ -114,15 +114,15 @@
                                 <span>Výsledek kontroly: <strong>Soubor schválený na základě <a
                                         href="{{ url_for('exceptions.detail', exception_id=ensemble.exception.id) }}">Výjimky č. {{ ensemble.exception.id }}</a></strong></span>
                             </div>
-                        {% elif ensemble.health_check == "OK" %}
+                        {% elif ensemble.health_check_in(current_semester_id) == "OK" %}
                             <div class="alert alert-success py-2 px-3 mb-0 d-flex align-items-center">
                                 <i class="fas fa-check-circle me-2"></i>
-                                <span>Výsledek kontroly: <strong>{{ ensemble.health_check }}</strong></span>
+                                <span>Výsledek kontroly: <strong>{{ ensemble.health_check_in(current_semester_id) }}</strong></span>
                             </div>
                         {% else %}
                             <div class="alert alert-danger py-2 px-3 mb-0 d-flex align-items-center">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
-                                <span>Výsledek kontroly: <strong>{{ ensemble.health_check }}</strong></span>
+                                <span>Výsledek kontroly: <strong>{{ ensemble.health_check_in(current_semester_id) }}</strong></span>
                             </div>
                         {% endif %}
                     </div>

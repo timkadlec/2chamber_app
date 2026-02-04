@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% from "macros/_buttons.jinja" import modal_outline_button %}
+{% from "macros/_buttons.jinja" import plain_outline_button %}
 {% block title %}
     Detail souboru {{ ensemble.name }}
 {% endblock %}
@@ -158,14 +160,7 @@
                                     <span class="ms-2 d-none d-md-inline">Převzít z předchozího semestru</span>
                                 </a>
                             {% endif %}
-                            <button type="button"
-                                    class="btn btn-sm btn-outline-primary d-flex align-items-center"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#assignTeacherModal">
-                                <i class="fas fa-chalkboard-teacher"></i>
-                                <span class="ms-2 d-none d-md-inline">Přiřadit pedagoga</span>
-                            </button>
-
+                            {{ modal_outline_button("Přiřadit pedagoga", "assignTeacherModal", icon="fas fa-chalkboard-teacher") }}
 
                             <!-- Takeover Teacher Modal -->
                             <div class="modal fade" id="takeoverTeacherModal" tabindex="-1"
@@ -212,43 +207,6 @@
                                                     Zavřít
                                                 </button>
                                                 {{ takeover_form.submit(class="btn btn-sm btn-primary") }}
-                                            </div>
-                                        </form>
-
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Assign Teacher Modal -->
-                            <div class="modal fade" id="assignTeacherModal" tabindex="-1"
-                                 aria-labelledby="assignTeacherModalLabel" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="assignTeacherModalLabel">Přiřadit pedagoga</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                    aria-label="Zavřít"></button>
-                                        </div>
-
-                                        <form method="post"
-                                              action="{{ url_for('ensemble.ensemble_assign_teacher', ensemble_id=ensemble.id) }}">
-                                            {{ teacher_form.hidden_tag() }}
-                                            <div class="modal-body">
-                                                <div class="mb-3">
-                                                    {{ teacher_form.teacher.label(class="form-label") }}
-                                                    {{ teacher_form.teacher(id="teacher_id", class="form-select") }}
-                                                    {% if teacher_form.teacher.errors %}
-                                                        <div class="text-danger small">{{ teacher_form.teacher.errors[0] }}</div>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                        data-bs-dismiss="modal">
-                                                    Zavřít
-                                                </button>
-                                                {{ teacher_form.submit(class="btn btn-sm btn-primary") }}
                                             </div>
                                         </form>
 
@@ -349,83 +307,14 @@
                     <h5 class="mb-0">Hráči</h5>
                     {% if current_user.has_permission('ens_player_add') %}
                         <div class="d-flex gap-2">
-                            <a href="#"
-                               class="btn btn-sm btn-primary d-flex align-items-center"
-                               data-bs-toggle="modal" data-bs-target="#addPlayerModal">
+                            <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-primary d-flex align-items-center"
+                                    data-bs-toggle="modal" data-bs-target="#addPlayerModal"
+                                    title="Přidat hráče (prázdný)">
                                 <i class="fas fa-plus"></i>
                                 <span class="ms-2 d-none d-md-inline">Přidat hráče (prázdný)</span>
-                            </a>
-
-                            <!-- Add Empty Player Modal -->
-                            <div class="modal fade" id="addPlayerModal" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Přidat hráče nebo předdefinovaný soubor</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-
-                                        <div class="modal-body">
-
-                                            <!-- Manual single-player form -->
-                                            <form action="{{ url_for('ensemble.add_empty_player', ensemble_id=ensemble.id) }}"
-                                                  method="post" class="mb-3">
-                                                <div class="mb-3">
-                                                    <label for="instrument_id" class="form-label">Nástroj</label>
-                                                    <select id="instrument_id" name="instrument_id" class="form-select"
-                                                            required>
-                                                        <option value="" disabled selected>— Vyberte nástroj —</option>
-                                                        {% for i in available_instruments %}
-                                                            <option value="{{ i.id }}">{{ i.name }}</option>
-                                                        {% endfor %}
-                                                    </select>
-                                                </div>
-
-                                                <div class="text-end">
-                                                    <button type="submit" class="btn btn-primary">
-                                                        <i class="fas fa-plus me-1"></i> Přidat prázdného hráče
-                                                    </button>
-                                                </div>
-                                            </form>
-                                            {% if current_user.has_permission('ens_preset_add') %}
-                                                <hr class="my-3">
-
-                                                <p class="fw-bold mb-2">Předdefinované soubory:</p>
-
-                                                <!-- Preset ensemble buttons -->
-                                                <div class="d-flex flex-wrap gap-2">
-                                                    {% for key, label in {
-                        '2flutes_piano': '2 flétny + klavír',
-                        'wind_trio': 'Trio dřevěné',
-                        'wind_quintet': 'Dechové kvinteto',
-                        'string_quartet': 'Smyčcové kvarteto',
-                        'piano_trio': 'Klavírní trio',
-                        'piano_quartet': 'Klavírní kvarteto',
-                        'brass_quintet': 'Žesťové kvinteto',
-                        'guitar_duo': 'Kytarové duo'
-                    }.items() %}
-                                                        <form method="post"
-                                                              action="{{ url_for('ensemble.add_preset_ensemble', ensemble_id=ensemble.id) }}">
-                                                            <input type="hidden" name="preset" value="{{ key }}">
-                                                            <button type="submit"
-                                                                    class="btn btn-outline-primary btn-sm">
-                                                                {{ label }}
-                                                            </button>
-                                                        </form>
-                                                    {% endfor %}
-                                                </div>
-                                            {% endif %}
-
-                                        </div>
-
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Zavřít
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
+                            </button>
                         </div>
                     {% endif %}
                 </div>
@@ -446,8 +335,8 @@
                         {% for instr in instrumentations %}
                             {% set ep = assignment_by_instr.get(instr.id) %}
                             {% set p = ep.player if ep and ep.player else None %}
-
                             <tr class="{% if p and p.is_guest %}table-warning{% endif %}">
+                                <!-- Jméno -->
                                 <td>
                                     {% if p %}
                                         {% if p.is_guest %}
@@ -467,18 +356,19 @@
                                         <span class="text-muted">— neobsazeno —</span>
                                     {% endif %}
                                 </td>
+                                <!-- Nástroj -->
 
                                 <td>
             <span class="badge bg-light text-dark border">
                 <i class="fas fa-music me-1"></i>{{ instr.instrument.name }}
             </span>
                                 </td>
-
+                                <!-- Zapsaný předmět -->
                                 <td>
                                     {% if p.student %}{% for s in p.student.enrolled_subjects_current %}{{ s.code }}
                                         {% if not loop.last %}, {% endif %}{% endfor %}{% else %}-{% endif %}
                                 </td>
-
+                                <!-- Akce -->
                                 {% if current_user.has_permission('ens_player_assign') or current_user.has_permission('ens_player_remove') %}
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
@@ -605,7 +495,6 @@
                                             </div>
                                         {% endif %}
                                     </td>
-
                                 {% endif %}
                             </tr>
                         {% endfor %}
@@ -622,9 +511,15 @@
                         Repertoár ({{ current_semester.name }} {{ current_semester.academic_year.name }})
                     </h5>
                     {% if current_user.has_permission('ens_repertoire_add') %}
-                        <a href="{{ url_for('ensemble.add_composition_to_ensemble', ensemble_id=ensemble.id) }}"
-                           class="btn btn-sm btn-outline-primary d-flex align-items-center">
-                            <i class="fas fa-plus me-1"></i>Přidat skladbu
+                        <a href="{{ url_for('ensemble.add_composition_to_ensemble', ensemble_id=ensemble.id) }}">
+                            <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-primary d-flex align-items-center"
+                                    data-bs-toggle="modal" data-bs-target="#addPlayerModal"
+                                    title="Přidat hráče (prázdný)">
+                                <i class="fas fa-plus"></i>
+                                <span class="ms-2 d-none d-md-inline">Přidat skladbu</span>
+                            </button>
                         </a>
                     {% endif %}
                 </div>
@@ -717,7 +612,7 @@
                     <div class="d-flex justify-content-end gap-2">
                         <button
                                 type="button"
-                                class="btn btn-sm btn-primary d-flex align-items-center"
+                                class="btn btn-sm btn-outline-primary d-flex align-items-center"
                                 data-bs-toggle="modal"
                                 data-bs-target="#moveSemesterModal"
                                 data-ensemble-id="{{ ensemble.id }}"
@@ -861,6 +756,8 @@
     {% include "partials/_deactivate_ensemble_modal.html" %}
     {% include "partials/modals/_add_note_modal.html" %}
     {% include "partials/modals/_delete_note_modal.html" %}
+    {% include "partials/modals/_add_empty_player.html" %}
+    {% include "partials/modals/_assign_teacher_modal.html" %}
 {% endblock %}
 
 {% block extra_scripts %}

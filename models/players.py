@@ -1,7 +1,7 @@
 from . import db
 from sqlalchemy.orm import relationship
 from models.ensembles import Ensemble, EnsembleSemester, EnsemblePlayer
-
+from sqlalchemy import func
 
 # --- Player ---
 class Player(db.Model):
@@ -37,28 +37,38 @@ class Player(db.Model):
     def is_guest(self):
         return self.student_id is None
 
-    def ensembles_in_semester(self, semester_id):
-        """Return all ensembles where this player is a member in the given semester."""
+    def ensembles_in_semester(self, semester_id: int):
+        """
+        Return all ensembles where this player is assigned in the given semester.
+        Uses DISTINCT because the player can occupy multiple slots (doublings) in one ensemble.
+        """
         return (
             db.session.query(Ensemble)
-            .join(EnsemblePlayer, Ensemble.id == EnsemblePlayer.ensemble_id)
-            .join(EnsembleSemester, Ensemble.id == EnsembleSemester.ensemble_id)
+            .join(EnsemblePlayer, EnsemblePlayer.ensemble_id == Ensemble.id)
+            .join(EnsembleSemester,
+                  EnsembleSemester.ensemble_id == Ensemble.id)  # safety: ensure ensemble is linked to semester
             .filter(
                 EnsemblePlayer.player_id == self.id,
+                EnsemblePlayer.semester_id == semester_id,
                 EnsembleSemester.semester_id == semester_id,
             )
+            .distinct()
             .all()
         )
 
-    def ensemble_count_in_semester(self, semester_id):
-        """Return number of ensembles this player is in for the given semester."""
+    def ensemble_count_in_semester(self, semester_id: int) -> int:
+        """
+        Return number of DISTINCT ensembles this player is assigned to in the given semester.
+        (Not number of EnsemblePlayer rows.)
+        """
         return (
-            db.session.query(db.func.count(Ensemble.id))
-            .join(EnsemblePlayer, Ensemble.id == EnsemblePlayer.ensemble_id)
-            .join(EnsembleSemester, Ensemble.id == EnsembleSemester.ensemble_id)
-            .filter(
-                EnsemblePlayer.player_id == self.id,
-                EnsembleSemester.semester_id == semester_id,
-            )
-            .scalar()
+                db.session.query(func.count(func.distinct(EnsemblePlayer.ensemble_id)))
+                .join(EnsembleSemester, EnsembleSemester.ensemble_id == EnsemblePlayer.ensemble_id)  # safety
+                .filter(
+                    EnsemblePlayer.player_id == self.id,
+                    EnsemblePlayer.semester_id == semester_id,
+                    EnsembleSemester.semester_id == semester_id,
+                )
+                .scalar()
+                or 0
         )

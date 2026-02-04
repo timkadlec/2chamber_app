@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block title %}Úvazky{% endblock %}
+
+{% block content %}
+    <main>
+        <div class="container-xl pb-4">
+            <h1 class="text-secondary mb-1">Úvazky</h1>
+            <p class="mb-0">
+                Přehled úvazků komorních souborů pro semestr:
+                <strong>{{ current_semester.name if current_semester else '—' }} {{ current_semester.academic_year.name }}</strong>
+            </p>
+        </div>
+
+        <!-- NAV PANEL -->
+        <div class="container-xl pb-2">
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('teachers.index') }}">Pedagogové</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="{{ url_for('teachers.workloads') }}">Úvazky</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="container-xl">
+
+            <!-- SUMMARY -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="fw-semibold">Souhrn úvazků pedagogů podle kateder</div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle mb-0">
+                        <thead class="table-light text-uppercase small text-muted">
+                        <tr>
+                            <th style="min-width: 220px;">Katedra</th>
+                            <th>Pedagog</th>
+                            <th class="text-end" style="width: 120px;">Celkem hodin</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% set grand_total = namespace(value=0) %}
+
+                        {% for dept, teachers in grouped_teachers|dictsort %}
+                            {% set dept_total = namespace(value=0) %}
+
+                            {% for teacher in teachers %}
+                                {% set rows = teacher.pdf_rows if teacher.pdf_rows is defined else [] %}
+                                {% set hours = rows | map(attribute='hour_donation') | select('number') | sum %}
+                                {% set dept_total.value = dept_total.value + (hours or 0) %}
+
+                                <tr>
+                                    <td>{{ dept if loop.first else '' }}</td>
+                                    <td>{{ teacher.full_name }}</td>
+                                    <td class="text-end">{{ "%.1f"|format(hours or 0) }}</td>
+                                </tr>
+                            {% endfor %}
+
+                            <tr class="table-light fw-semibold">
+                                <td colspan="2" class="text-end">Mezisoučet {{ dept }}</td>
+                                <td class="text-end">{{ "%.1f"|format(dept_total.value) }}</td>
+                            </tr>
+
+                            {% set grand_total.value = grand_total.value + dept_total.value %}
+                        {% endfor %}
+
+                        <tr class="fw-bold">
+                            <td colspan="2" class="text-end">Součet všech kateder</td>
+                            <td class="text-end">{{ "%.1f"|format(grand_total.value) }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+            <!-- DETAILS -->
+            {% for dept, teachers in grouped_teachers|dictsort %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <div class="fw-semibold">{{ dept }}</div>
+                    </div>
+
+                    <div class="card-body">
+
+                        {% for teacher in teachers %}
+                            {% set rows = teacher.pdf_rows if teacher.pdf_rows is defined else [] %}
+                            {% set total_hours = rows | map(attribute='hour_donation') | select('number') | sum %}
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-baseline">
+                                    <h5 class="mb-1">{{ teacher.full_name }}</h5>
+                                    <div class="text-muted">
+                                        Celkem: <strong>{{ "%.1f"|format(total_hours or 0) }}</strong> h
+                                    </div>
+                                </div>
+
+                                {% if rows %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm align-middle mb-0">
+                                            <thead class="table-light text-uppercase small text-muted">
+                                            <tr>
+                                                <th style="min-width: 220px;">Soubor</th>
+                                                <th>Členové</th>
+                                                <th class="text-end" style="width: 120px;">Hodiny</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for link in rows %}
+                                                {% set ens = link.ensemble %}
+                                                {% set eps = ens.player_links_for_semester(current_semester.id) %}
+                                                <tr>
+                                                    <td class="fw-semibold">{{ ens.name }}</td>
+                                                    <td>
+                                                        {% if eps %}
+                                                            {% for ep in eps %}
+                                                                {% set p = ep.player %}
+                                                                {% set instr = ep.ensemble_instrumentation.instrument if ep.ensemble_instrumentation else None %}
+
+                                                                {% if p %}
+                                                                    <em>{{ (instr.abbreviation if instr else (p.instrument.abbreviation if p.instrument else '–')) }}.</em>
+                                                                    {{ p.last_name }} {{ p.first_name[0] }}
+                                                                {% else %}
+                                                                    <em>{{ instr.abbreviation if instr else '–' }}.</em>
+                                                                    <span class="text-muted fst-italic">Neobsazeno</span>
+                                                                {% endif %}
+
+                                                                {% if not loop.last %}, {% endif %}
+                                                            {% endfor %}
+                                                        {% else %}
+                                                            <span class="text-muted fst-italic">–</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-end">{{ "%.1f"|format(link.hour_donation or 0) }}</td>
+                                                </tr>
+                                            {% endfor %}
+
+                                            <tr class="table-light fw-semibold">
+                                                <td colspan="2" class="text-end">Celkem</td>
+                                                <td class="text-end">{{ "%.1f"|format(total_hours or 0) }}</td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <div class="text-muted fst-italic">Žádné soubory v tomto semestru.</div>
+                                {% endif %}
+                            </div>
+
+                            {% if not loop.last %}
+                                <hr class="my-3">
+                            {% endif %}
+                        {% endfor %}
+
+                    </div>
+                </div>
+            {% endfor %}
+
+        </div>
+    </main>
+{% endblock %}

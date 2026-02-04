@@ -127,6 +127,31 @@ class Student(db.Model):
             .all()
         )
 
+
+    def ensembles_for_semester(self, semester_id: int):
+        """
+        Return ensembles where this student's Player is assigned in the given semester.
+        Safe: does not depend on Flask session.
+        """
+        if not semester_id or not self.player:
+            return []
+
+        sa_sess = object_session(self) or db.session
+
+        from models import Ensemble, EnsemblePlayer, EnsembleSemester
+
+        return (
+            sa_sess.query(Ensemble)
+            .join(EnsemblePlayer, EnsemblePlayer.ensemble_id == Ensemble.id)
+            .join(EnsembleSemester, EnsembleSemester.ensemble_id == Ensemble.id)
+            .filter(EnsemblePlayer.player_id == self.player.id)
+            .filter(EnsemblePlayer.semester_id == semester_id)  # ✅ IMPORTANT
+            .filter(EnsembleSemester.semester_id == semester_id)  # ✅ keep if you want "must be linked"
+            .distinct()
+            .order_by(Ensemble.name.asc())
+            .all()
+        )
+
     @property
     def subject_enrollments_current(self):
         """Return all subject enrollments for the current semester (from session)."""

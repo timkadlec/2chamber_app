@@ -3,11 +3,27 @@
     function init(modalEl) {
         const nameEl = modalEl.querySelector('.js-ensemble-name');
         const errorEl = modalEl.querySelector('.js-error');
-        const successEl = modalEl.querySelector('.js-success');
         const submitBtn = modalEl.querySelector('.js-submit');
         const statusEl = modalEl.querySelector('.js-action-status');
 
         let busy = false;
+
+        function toast(message, type = 'info') {
+            if (typeof window.showToast === 'function') {
+                window.showToast(message, type);
+            }
+        }
+
+        function toastAfterReload(message, type = 'success') {
+            // your toasts.js reads these on DOMContentLoaded
+            sessionStorage.setItem("toast:message", message);
+            sessionStorage.setItem("toast:type", type);
+        }
+
+        function hideModal() {
+            const instance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            instance.hide();
+        }
 
         function csrfHeaders() {
             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -21,7 +37,6 @@
         }
 
         function setError(msg) {
-            if (successEl) successEl.classList.add('d-none');
             if (errorEl) {
                 errorEl.classList.remove('d-none');
                 errorEl.textContent = msg;
@@ -33,20 +48,6 @@
                 errorEl.classList.add('d-none');
                 errorEl.textContent = '';
             }
-        }
-
-        function setSuccess(msg) {
-            if (errorEl) errorEl.classList.add('d-none');
-            if (successEl) {
-                successEl.classList.remove('d-none');
-                successEl.textContent = msg;
-            }
-        }
-
-        function removeRow(ensembleId) {
-            const btn = document.querySelector(`.js-deactivate-ensemble[data-ensemble-id="${ensembleId}"]`);
-            const row = btn ? btn.closest('tr') : null;
-            if (row) row.remove();
         }
 
         // Pull ensemble info from the clicked button
@@ -61,7 +62,10 @@
             if (nameEl) nameEl.textContent = ensembleName;
 
             clearError();
-            if (successEl) successEl.classList.add('d-none');
+
+            // allow repeated use: re-enable button each open
+            if (submitBtn) submitBtn.disabled = false;
+
             setBusy(false);
         });
 
@@ -70,7 +74,9 @@
 
             const ensembleId = modalEl.dataset.ensembleId;
             if (!ensembleId) {
-                setError('Chybí ensemble_id.');
+                const msg = 'Chybí ensemble_id.';
+                setError(msg);
+                toast(msg, 'danger');
                 return;
             }
 
@@ -91,18 +97,21 @@
                     throw new Error(data.message || `HTTP ${resp.status}`);
                 }
 
-                setSuccess(data.message || 'Soubor byl deaktivován.');
-                removeRow(ensembleId);
+                const msg = data.message || 'Soubor byl deaktivován.';
 
-                // close modal after a short moment (optional)
-                // const instance = bootstrap.Modal.getInstance(modalEl);
-                // instance?.hide();
+                // persist toast across reload
+                toastAfterReload(msg, 'success');
 
-                setBusy(false);
-                if (submitBtn) submitBtn.disabled = true; // prevent double click after success
+                // optional: close modal so it doesn't flash during reload
+                hideModal();
+
+                // reload to reflect changes everywhere
+                window.location.reload();
 
             } catch (e) {
-                setError(`Nepodařilo se deaktivovat soubor. (${e.message})`);
+                const msg = `Nepodařilo se deaktivovat soubor. (${e.message})`;
+                setError(msg);
+                toast(msg, 'danger');
                 setBusy(false);
             }
         });

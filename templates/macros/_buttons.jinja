@@ -65,7 +65,7 @@
 
 {% endmacro %}
 {% macro plain_outline_button(title, color="primary", icon="") %}
-<button
+    <button
             type="button"
             class="btn btn-sm btn-outline-{{ color }} d-flex align-items-center"
             title="{{ title }}">
@@ -75,7 +75,7 @@
 {% endmacro %}
 
 {% macro plain_button(title, color="primary", icon="") %}
-<button
+    <button
             type="button"
             class="btn btn-sm btn-{{ color }} d-flex align-items-center"
             title="{{ title }}">
@@ -103,6 +103,18 @@
         <i class="fas fa-{{ icon }}"></i>
     </a>
 {% endmacro %}
+
+{% macro action_modal_button(title='', modal_target='', icon='edit', ensemble=None, color='outline-primary') %}
+<button type="button"
+        class="btn btn-{{ color }} btn-sm"
+        title="{{ title }}"
+        data-bs-toggle="modal"
+        data-bs-target="#{{ modal_target }}"
+        {% if ensemble %}data-ensemble-id="{{ ensemble.id }}" data-ensemble-name="{{ ensemble.name|e }}"{% endif %}>
+    <i class="fas fa-{{ icon }}"></i>
+</button>
+{% endmacro %}
+
 
 {# --- Highlighted variant --- #}
 

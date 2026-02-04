@@ -339,7 +339,7 @@ def move_ensemble_to_upcoming_semester(ensemble_id):
         "copied_teachers": copied_teachers,
         "created_slot_rows": created_slot_rows,
         "carried_players": carried_players,
-        "message": "Ensemble prepared for upcoming semester.",
+        "message": "Soubor přesunut do následujícího semestru.",
     }), 200
 
 

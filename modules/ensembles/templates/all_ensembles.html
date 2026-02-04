@@ -3,7 +3,7 @@
 {% block title %}Komorní soubory{% endblock %}
 
 {% from "macros/_auth.jinja" import if_perm, if_any_perm %}
-{% from "macros/_buttons.jinja" import icon_button, export_button, add_button, action_button, delete_button, highlight_button %}
+{% from "macros/_buttons.jinja" import icon_button, export_button, add_button, action_button, delete_button, highlight_button, action_modal_button %}
 {% from "macros/_buttons.jinja" import plain_outline_button %}
 {% from "macros/_buttons.jinja" import modal_outline_button %}
 {% from "macros/_ui.jinja" import ensemble_status %}
@@ -127,12 +127,15 @@
                             {% endif %}
 
                             <tr class="{{ row_class }}">
-
+                                <!-- Název souboru -->
                                 <td>
-                                    <div class="fw-semibold text-dark">{{ ensemble.name }}</div>
+                                    <div class="fw-semibold text-dark">
+                                        <a href="{{ url_for('ensemble.ensemble_detail', ensemble_id=ensemble.id) }}">{{ ensemble.name }}</a>
+                                    </div>
                                 </td>
+                                <!-- Instrumentace -->
                                 <td>{{ ensemble.instrumentation }}</td>
-
+                                <!-- Pedagog -->
                                 <td>
                                     {% set teachers = ensemble.semester_teachers(session["semester_id"]) %}
                                     {% if teachers %}
@@ -149,7 +152,7 @@
                                         <span class="text-muted">–</span>
                                     {% endif %}
                                 </td>
-
+                                <!-- Členové -->
                                 <td>
                                     {% for ep in ensemble.player_links_for_semester(session["semester_id"]) %}
                                         {% set pl = ep.player %}
@@ -173,9 +176,9 @@
                                     {% endfor %}
 
                                 </td>
-
+                                <!-- Kontrola -->
                                 <td>{{ ensemble_status(ensemble, semester_id) }}</td>
-
+                                <!-- Akce -->
                                 {% call if_any_perm(['ens_detail','ens_edit','ens_delete'], current_user) %}
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" role="group">
@@ -187,17 +190,14 @@
                                             {% endcall %}
                                             {% if has_upcoming_semester %}
                                                 {% call if_perm('ens_edit', current_user) %}
-                                                    <button type="button"
-                                                            class="btn btn-outline-warning"
-                                                            title="Převést do dalšího semestru"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#moveSemesterModal"
-                                                            data-ensemble-id="{{ ensemble.id }}">
-                                                        <i class="fas fa-file-export text-warning"></i>
-                                                    </button>
+                                                    {{ action_modal_button(title='Převést do dalšího semestru', modal_target='moveSemesterModal', ensemble=ensemble, color='outline-warning', icon="file-export") }}
                                                 {% endcall %}
                                             {% endif %}
-
+                                            {% if has_upcoming_semester %}
+                                                {% call if_perm('ens_edit', current_user) %}
+                                                    {{ action_modal_button(title='Převést do dalšího semestru', modal_target='deactivateEnsembleModal', ensemble=ensemble, color='outline-danger', icon="ban") }}
+                                                {% endcall %}
+                                            {% endif %}
                                             {% call if_perm('ens_delete', current_user) %}
                                                 {{ delete_button('deleteEnsembleModal' ~ ensemble.id) }}
                                             {% endcall %}
@@ -326,12 +326,14 @@
     {% endfor %}
     {% include "partials/_move_semester_modal.html" %}
     {% include "partials/modals/_ensemble_add_modal.html" %}
+    {% include "partials/_deactivate_ensemble_modal.html" %}
 {% endblock %}
 
 {% block extra_scripts %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/move_semester_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modals/ensemble-add-modal.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/deactivate_ensemble_modal.js') }}"></script>
 {% endblock %}
 
 

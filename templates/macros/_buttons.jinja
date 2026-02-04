@@ -41,6 +41,48 @@
     </button>
 {% endmacro %}
 
+{% macro modal_button(title, modal_target, color="primary", icon="") %}
+    <button
+            type="button"
+            class="btn btn-sm btn-{{ color }} d-flex align-items-center"
+            data-bs-toggle="modal" data-bs-target="#{{ modal_target }}"
+            title="{{ title }}">
+        <i class="{{ icon }}"></i>
+        <span class="ms-2 d-none d-md-inline">{{ title }}</span>
+    </button>
+{% endmacro %}
+
+
+{% macro modal_outline_button(title, modal_target, color="primary", icon="") %}
+    <button
+            type="button"
+            class="btn btn-sm btn-outline-{{ color }} d-flex align-items-center"
+            data-bs-toggle="modal" data-bs-target="#{{ modal_target }}"
+            title="{{ title }}">
+        <i class="{{ icon }}"></i>
+        <span class="ms-2 d-none d-md-inline">{{ title }}</span>
+    </button>
+
+{% endmacro %}
+{% macro plain_outline_button(title, modal_target, color="primary", icon="") %}
+<button
+            type="button"
+            class="btn btn-sm btn-outline-{{ color }} d-flex align-items-center"
+            title="{{ title }}">
+        <i class="{{ icon }}"></i>
+        <span class="ms-2 d-none d-md-inline">{{ title }}</span>
+    </button>
+{% endmacro %}
+
+{% macro plain_button(title, modal_target, color="primary", icon="") %}
+<button
+            type="button"
+            class="btn btn-sm btn-{{ color }} d-flex align-items-center"
+            title="{{ title }}">
+        <i class="{{ icon }}"></i>
+        <span class="ms-2 d-none d-md-inline">{{ title }}</span>
+    </button>
+{% endmacro %}
 
 {% macro delete_button(modal_target, title='Smazat', icon='trash', color='outline-danger') %}
     <button type="button"

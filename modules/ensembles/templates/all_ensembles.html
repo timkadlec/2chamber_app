@@ -4,6 +4,8 @@
 
 {% from "macros/_auth.jinja" import if_perm, if_any_perm %}
 {% from "macros/_buttons.jinja" import icon_button, export_button, add_button, action_button, delete_button, highlight_button %}
+{% from "macros/_buttons.jinja" import plain_outline_button %}
+{% from "macros/_buttons.jinja" import modal_outline_button %}
 {% from "macros/_ui.jinja" import ensemble_status %}
 
 {% block content %}
@@ -26,7 +28,7 @@
 
                         {# Přidat soubor #}
                         {% call if_perm('ens_add', current_user) %}
-                            {{ add_button(url_for('ensemble.ensemble_add') ~ '?' ~ request.query_string.decode(), 'Přidat soubor') }}
+                            {{ modal_outline_button("Přidat soubor", "addEnsembleModal", icon="fas fa-plus") }}
                         {% endcall %}
 
                         {# Konec semestru #}
@@ -323,11 +325,13 @@
         {% endcall %}
     {% endfor %}
     {% include "partials/_move_semester_modal.html" %}
+    {% include "partials/modals/_ensemble_add_modal.html" %}
 {% endblock %}
 
 {% block extra_scripts %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/move_semester_modal.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modals/ensemble-add-modal.js') }}"></script>
 {% endblock %}
 
 

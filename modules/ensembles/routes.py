@@ -16,11 +16,13 @@ from utils.filter_helpers import get_common_filters, apply_common_filters
 from utils.session_helpers import get_or_set_current_semester, get_or_set_current_semester_id, \
     get_or_set_previous_semester_id
 from sqlalchemy.orm import joinedload
+from utils.return_to import remember_return_to, get_return_to
 
 
 @ensemble_bp.route("/all")
 @navlink("Soubory", weight=10)
 def index():
+    remember_return_to("ens_return_to", "ensemble.index")
     current_semester_id = get_or_set_current_semester_id()
     current_semester = Semester.query.get_or_404(current_semester_id)
     upcoming_semester = (
@@ -393,22 +395,28 @@ def export_pdf_teacher_hours():
 @ensemble_bp.route("/add", methods=["GET", "POST"])
 @permission_required('ens_add')
 def ensemble_add():
+    back_url = get_return_to("ens_return_to", "ensemble.index")
+
     form = EnsembleForm(mode="add")
+
     if form.validate_on_submit():
-        new_ensemble = Ensemble(
-            name=form.name.data,
-        )
+        new_ensemble = Ensemble(name=form.name.data)
         db.session.add(new_ensemble)
         db.session.commit()
+
         ensemble_semester = EnsembleSemester(
             ensemble_id=new_ensemble.id,
             semester_id=session["semester_id"]
         )
         db.session.add(ensemble_semester)
         db.session.commit()
+
         flash("Byl úspěšně přidán soubor.", "success")
-        return redirect(url_for("ensemble.ensemble_detail", ensemble_id=new_ensemble.id, ))
-    return render_template("ensemble_form.html", form=form)
+
+        return redirect(url_for("ensemble.ensemble_detail", ensemble_id=new_ensemble.id))
+
+    return render_template("ensemble_form.html", form=form, back_url=back_url, ensemble=None)
+
 
 
 @ensemble_bp.route("/<int:ensemble_id>/edit", methods=["GET", "POST"])
@@ -416,19 +424,25 @@ def ensemble_add():
 def ensemble_edit(ensemble_id):
     form = EnsembleForm(mode="edit")
     ensemble = Ensemble.query.filter_by(id=ensemble_id).first_or_404()
+
+    back_url = get_return_to("ens_return_to", "ensemble.index")
+
     if request.method == "GET":
         form.name.data = ensemble.name
+
     if form.validate_on_submit():
         ensemble.name = form.name.data
         db.session.commit()
-        flash("Soubor byl úspěšně přidán aktualizován.", "success")
-        return redirect(url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id, ))
-    return render_template("ensemble_form.html", form=form, ensemble=ensemble, )
+        flash("Soubor byl úspěšně aktualizován.", "success")
+        return redirect(back_url)
+
+    return render_template("ensemble_form.html", form=form, ensemble=ensemble, back_url=back_url)
 
 
 @ensemble_bp.route("/<int:ensemble_id>/detail", methods=["GET", "POST"])
 @permission_required('ens_detail')
 def ensemble_detail(ensemble_id):
+    remember_return_to("ens_return_to", "ensemble.detail", ensemble_id=ensemble_id)
     ensemble = Ensemble.query.filter_by(id=ensemble_id).first_or_404()
 
     current_semester_id = get_or_set_current_semester_id()

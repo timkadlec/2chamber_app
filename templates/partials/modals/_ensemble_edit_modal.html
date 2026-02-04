@@ -1,0 +1,44 @@
+{# templates/partials/modals/_ensemble_edit_modal.html #}
+<div class="modal fade" id="editEnsembleModal" tabindex="-1"
+     aria-labelledby="editEnsembleModalLabel" aria-hidden="true"
+     data-after="{{ after|default('redirect') }}">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="editEnsembleModalLabel">Upravit soubor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zavřít"></button>
+            </div>
+
+            {# NOTE: no action — handled by JS -> /api/ensembles/<id> #}
+            <form class="js-ensemble-edit-form" novalidate>
+                <div class="modal-body">
+                    <div class="js-error alert alert-danger d-none mb-2" role="alert"></div>
+
+                    <input type="hidden" name="ensemble_id" value="{{ ensemble.id }}">
+
+                    <div class="mb-3">
+                        <label for="edit_ensemble_name" class="form-label">Název souboru</label>
+                        <input type="text"
+                               class="form-control"
+                               id="edit_ensemble_name"
+                               name="name"
+                               value="{{ ensemble.name }}"
+                               autocomplete="off"
+                               required>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+                        Zavřít
+                    </button>
+                    <button type="submit" class="btn btn-sm btn-primary js-submit">
+                        <i class="fas fa-save me-1"></i>Uložit
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>

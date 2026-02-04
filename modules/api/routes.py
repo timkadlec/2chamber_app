@@ -1,13 +1,16 @@
 from . import api_bp
-from flask import jsonify, session, abort, redirect, request
+from flask import jsonify, session, abort, request, url_for
 from models import db
 from models.core import Semester
 from models.ensembles import Ensemble, EnsembleSemester, EnsemblePlayer, EnsembleTeacher, EnsembleInstrumentation
 from models.students import StudentSubjectEnrollment
 from models.players import Player
+from models.teachers import Teacher
 from models.core import Instrument
 from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import IntegrityError
 from utils.decorators import permission_required
+
 
 def _get_current_semester_or_400():
     current_semester_id = session.get("semester_id")
@@ -23,6 +26,7 @@ def _get_upcoming_semester(current_semester: Semester):
         .order_by(Semester.start_date.asc())
         .first()
     )
+
 
 def _get_previous_semester(current_semester: Semester):
     return (
@@ -50,13 +54,13 @@ def get_ensemble_semester_move_info(ensemble_id):
         }), 200
 
     is_in_current_semester = (
-        db.session.query(EnsembleSemester.id)
-        .filter(
-            EnsembleSemester.ensemble_id == ensemble.id,
-            EnsembleSemester.semester_id == current_semester.id
-        )
-        .first()
-        is not None
+            db.session.query(EnsembleSemester.id)
+            .filter(
+                EnsembleSemester.ensemble_id == ensemble.id,
+                EnsembleSemester.semester_id == current_semester.id
+            )
+            .first()
+            is not None
     )
 
     players = []
@@ -149,8 +153,6 @@ def deactivate_ensemble(ensemble_id):
     return jsonify({"success": True}), 200
 
 
-from models.teachers import Teacher  # adjust import to your project
-
 @api_bp.route('/ensemble/<int:ensemble_id>/teachers/semester/<int:semester_id>', methods=['GET'])
 def get_ensemble_teachers_for_semester(ensemble_id, semester_id):
     ensemble = Ensemble.query.get_or_404(ensemble_id)
@@ -165,7 +167,6 @@ def get_ensemble_teachers_for_semester(ensemble_id, semester_id):
         .order_by(Teacher.last_name.asc(), Teacher.first_name.asc())
         .all()
     )
-
 
     payload = []
     for link in rows:
@@ -339,4 +340,78 @@ def move_ensemble_to_upcoming_semester(ensemble_id):
         "created_slot_rows": created_slot_rows,
         "carried_players": carried_players,
         "message": "Ensemble prepared for upcoming semester.",
+    }), 200
+
+
+@api_bp.route("/ensembles", methods=["POST"])
+@permission_required("ens_add")
+def api_ensemble_create():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+
+    if not name:
+        return jsonify({"ok": False, "error": "Název souboru je povinný."}), 400
+
+    semester_id = session.get("semester_id")
+    if not semester_id:
+        return jsonify({"ok": False, "error": "Není zvolený semestr (chybí session['semester_id'])."}), 400
+
+    try:
+        new_ensemble = Ensemble(name=name)
+        db.session.add(new_ensemble)
+        db.session.flush()
+
+        db.session.add(
+            EnsembleSemester(
+                ensemble_id=new_ensemble.id,
+                semester_id=semester_id,
+            )
+        )
+
+        db.session.commit()
+
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"ok": False, "error": "Soubor s tímto názvem už pravděpodobně existuje."}), 409
+
+    return jsonify({
+        "ok": True,
+        "ensemble": {
+            "id": new_ensemble.id,
+            "name": new_ensemble.name,
+            "detail_url": url_for(
+                "ensemble.ensemble_detail",
+                ensemble_id=new_ensemble.id
+            )
+        }
+    }), 201
+
+
+@api_bp.route("/ensembles/<int:ensemble_id>", methods=["PATCH"])
+@permission_required("ens_edit")
+def api_ensemble_update(ensemble_id):
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+
+    if not name:
+        return jsonify({"ok": False, "error": "Název souboru je povinný."}), 400
+
+    ensemble = Ensemble.query.get_or_404(ensemble_id)
+    ensemble.name = name
+
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"ok": False, "error": "Soubor s tímto názvem už pravděpodobně existuje."}), 409
+
+    detail_url = url_for("ensemble.ensemble_detail", ensemble_id=ensemble.id)
+
+    return jsonify({
+        "ok": True,
+        "ensemble": {
+            "id": ensemble.id,
+            "name": ensemble.name,
+            "detail_url": detail_url,
+        }
     }), 200

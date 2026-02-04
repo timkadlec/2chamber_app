@@ -9,7 +9,9 @@
             <!-- Back link -->
             {% from "macros/_back_button.html" import back_link %}
 
-            {{ back_link("ensemble.index", "Zpět na přehled souborů", request.args) }}
+            <a href="{{ back_url }}" class="btn btn-sm btn-outline-secondary mb-3">
+                <i class="fas fa-arrow-left me-1"></i> Zpět
+            </a>
 
 
             <!-- Composition Form Card -->

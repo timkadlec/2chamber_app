@@ -68,9 +68,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Detail souboru</h5>
                     {% if current_user.has_permission('ens_edit') %}
-                        <a href="{{ url_for("ensemble.ensemble_edit", ensemble_id=ensemble.id) }}">
-                            {{ plain_outline_button("Upravit název", color="info", icon="fas fa-edit") }}
-                        </a>
+                        {{ modal_outline_button("Upravit název", "editEnsembleModal", color="info", icon="fas fa-edit") }}
                     {% endif %}
                 </div>
 
@@ -160,58 +158,6 @@
                                 </a>
                             {% endif %}
                             {{ modal_outline_button("Přiřadit pedagoga", "assignTeacherModal", icon="fas fa-chalkboard-teacher") }}
-
-                            <!-- Takeover Teacher Modal -->
-                            <div class="modal fade" id="takeoverTeacherModal" tabindex="-1"
-                                 aria-labelledby="assignTeacherModalLabel" aria-hidden="true"
-                                 data-ensemble-id="{{ ensemble.id }}"
-                                 data-prev-semester-id="{{ session["previous_semester_id"] if session["previous_semester_id"] else '' }}">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="assignTeacherModalLabel">Pževzít pedagoga z
-                                                předchozího semestru</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                    aria-label="Zavřít"></button>
-                                        </div>
-
-                                        <form method="post"
-                                              action="{{ url_for('ensemble.takeover_teachers_previous_semester', ensemble_id=ensemble.id, semester_id=session["semester_id"]) }}">
-                                            {{ takeover_form.hidden_tag() }}
-                                            <div class="modal-body">
-                                                <div class="mb-3">
-                                                    Chcete převzít tyto pedagogy z předchozího semestru?
-                                                </div>
-
-                                                <div class="js-loading small text-muted">
-                                                    <i class="fas fa-spinner fa-spin me-1"></i> Načítám…
-                                                </div>
-
-                                                <div class="js-error alert alert-danger d-none mb-2"></div>
-
-                                                <div class="js-teachers d-none">
-                                                    <div class="list-group js-teachers-list"></div>
-                                                </div>
-
-                                                <div class="js-empty text-muted small d-none">
-                                                    V předchozím semestru nejsou u souboru přiřazeni žádní pedagogové.
-                                                </div>
-                                            </div>
-
-
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                        data-bs-dismiss="modal">
-                                                    Zavřít
-                                                </button>
-                                                {{ takeover_form.submit(class="btn btn-sm btn-primary") }}
-                                            </div>
-                                        </form>
-
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     {% endif %}
                 </div>
@@ -757,102 +703,15 @@
     {% include "partials/modals/_delete_note_modal.html" %}
     {% include "partials/modals/_add_empty_player.html" %}
     {% include "partials/modals/_assign_teacher_modal.html" %}
+    {% include "partials/modals/_teacher_takeover_modal.html" %}
+    {% include "partials/modals/_ensemble_edit_modal.html" %}
 {% endblock %}
 
 {% block extra_scripts %}
-    <script>
-        (function () {
-            const modalEl = document.getElementById('takeoverTeacherModal');
-            if (!modalEl) return;
-
-            const loadingEl = modalEl.querySelector('.js-loading');
-            const errorEl = modalEl.querySelector('.js-error');
-            const teachersWrapEl = modalEl.querySelector('.js-teachers');
-            const teachersListEl = modalEl.querySelector('.js-teachers-list');
-            const emptyEl = modalEl.querySelector('.js-empty');
-
-            // Submit button inside the form (Flask-WTF renders it as <input> or <button>)
-            const formEl = modalEl.querySelector('form');
-            const submitBtn = formEl?.querySelector('[type="submit"]');
-
-            function resetUI() {
-                if (errorEl) {
-                    errorEl.classList.add('d-none');
-                    errorEl.textContent = '';
-                }
-                if (teachersWrapEl) teachersWrapEl.classList.add('d-none');
-                if (emptyEl) emptyEl.classList.add('d-none');
-                if (teachersListEl) teachersListEl.innerHTML = '';
-                if (loadingEl) loadingEl.classList.remove('d-none');
-                if (submitBtn) submitBtn.disabled = true; // enable only if we have something to takeover
-            }
-
-            function renderTeacherItem(t) {
-                const guestBadge = t.is_guest
-                    ? '<span class="badge bg-light text-muted border ms-2">host</span>'
-                    : '';
-
-                const studentBadge = t.student_id
-                    ? '<span class="badge bg-info text-dark ms-2">student</span>'
-                    : '';
-
-                return `
-      <div class="list-group-item d-flex justify-content-between align-items-center">
-        <div class="fw-semibold">${t.full_name || '—'}${guestBadge}${studentBadge}</div>
-        <span class="text-muted small">${t.hour_donation}h</span>
-      </div>
-    `;
-            }
-
-            async function loadTeachers() {
-                const ensembleId = modalEl.dataset.ensembleId;
-                const prevSemesterId = modalEl.dataset.prevSemesterId;
-
-                if (!ensembleId || !prevSemesterId) {
-                    throw new Error('Chybí ensemble_id nebo prev_semester_id na modalu (data-* atributy).');
-                }
-
-                const url = `/api/ensemble/${ensembleId}/teachers/semester/${prevSemesterId}`;
-                const resp = await fetch(url, {headers: {'Accept': 'application/json'}});
-                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-
-                return await resp.json();
-            }
-
-            modalEl.addEventListener('shown.bs.modal', async () => {
-                resetUI();
-
-                try {
-                    const data = await loadTeachers();
-                    const teachers = data.teachers || [];
-
-                    if (loadingEl) loadingEl.classList.add('d-none');
-
-                    if (!teachers.length) {
-                        if (emptyEl) emptyEl.classList.remove('d-none');
-                        if (submitBtn) submitBtn.disabled = true;
-                        return;
-                    }
-
-                    if (teachersListEl) teachersListEl.innerHTML = teachers.map(renderTeacherItem).join('');
-                    if (teachersWrapEl) teachersWrapEl.classList.remove('d-none');
-                    if (submitBtn) submitBtn.disabled = false;
-
-                } catch (e) {
-                    if (loadingEl) loadingEl.classList.add('d-none');
-                    if (errorEl) {
-                        errorEl.classList.remove('d-none');
-                        errorEl.textContent = `Nepodařilo se načíst pedagogy. (${e.message})`;
-                    }
-                    if (submitBtn) submitBtn.disabled = true;
-                }
-            });
-
-        })();
-    </script>
+    <script src="{{ url_for('static', filename='js/modals/takeover-teacher.js') }}"></script>
     <script src="{{ url_for('static', filename='js/move_semester_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/deactivate_ensemble_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modals/select-teacher.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modals/delete-note.js') }}"></script>
-
+    <script src="{{ url_for('static', filename='js/modals/ensemble-edit-modal.js') }}"></script>
 {% endblock %}

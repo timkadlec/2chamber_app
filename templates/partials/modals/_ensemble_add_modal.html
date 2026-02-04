@@ -1,0 +1,49 @@
+{# templates/partials/modals/_ensemble_add_modal.html #}
+<div class="modal fade" id="addEnsembleModal" tabindex="-1"
+     aria-labelledby="addEnsembleModalLabel" aria-hidden="true"
+     data-select-target="{{ select_target_id|default('ensemble_id') }}">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="addEnsembleModalLabel">
+                    Přidat soubor
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zavřít"></button>
+            </div>
+
+            {# NOTE: no action — handled by JS -> /api/ensembles #}
+            <form class="js-ensemble-add-form" novalidate>
+                <div class="modal-body">
+                    <div class="mb-2 text-muted small">
+                        Soubor se vytvoří v aktuálním semestru.
+                    </div>
+
+                    <div class="js-error alert alert-danger d-none mb-2" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label for="ensemble_name" class="form-label">Název souboru</label>
+                        <input type="text"
+                               class="form-control"
+                               id="ensemble_name"
+                               name="name"
+                               autocomplete="off"
+                               placeholder="např. Trio HAMU"
+                               required>
+                        <div class="form-text">Zadejte jednoznačný název.</div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+                        Zavřít
+                    </button>
+                    <button type="submit" class="btn btn-sm btn-primary js-submit">
+                        <i class="fas fa-plus me-1"></i>Vytvořit
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>

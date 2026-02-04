@@ -1,0 +1,52 @@
+{# templates/partials/modals/_teacher_takeover_modal.html #}
+<div class="modal fade" id="takeoverTeacherModal" tabindex="-1"
+     aria-labelledby="takeoverTeacherModalLabel" aria-hidden="true"
+     data-ensemble-id="{{ ensemble.id }}"
+     data-prev-semester-id="{{ previous_semester_id or '' }}">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="takeoverTeacherModalLabel">
+          Převzít pedagoga z předchozího semestru
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zavřít"></button>
+      </div>
+
+      <form method="post"
+            action="{{ url_for('ensemble.takeover_teachers_previous_semester',
+                               ensemble_id=ensemble.id,
+                               semester_id=session['semester_id']) }}">
+        {{ takeover_form.hidden_tag() }}
+
+        <div class="modal-body">
+          <div class="mb-3">
+            Chcete převzít tyto pedagogy z předchozího semestru?
+          </div>
+
+          <div class="js-loading small text-muted">
+            <i class="fas fa-spinner fa-spin me-1"></i> Načítám…
+          </div>
+
+          <div class="js-error alert alert-danger d-none mb-2"></div>
+
+          <div class="js-teachers d-none">
+            <div class="list-group js-teachers-list"></div>
+          </div>
+
+          <div class="js-empty text-muted small d-none">
+            V předchozím semestru nejsou u souboru přiřazeni žádní pedagogové.
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+            Zavřít
+          </button>
+          {{ takeover_form.submit(class="btn btn-sm btn-primary") }}
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>

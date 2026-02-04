@@ -1,0 +1,29 @@
+<div class="modal fade" id="addNoteModal" tabindex="-1" aria-labelledby="addNoteModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="post"
+              action="{{ url_for('ensemble.add_note', ensemble_id=ensemble.id) }}"
+              class="modal-content">
+            {{ note_form.hidden_tag() }}
+            <div class="modal-header">
+                <h5 class="modal-title" id="addNoteModalLabel">Přidat poznámku</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    {{ note_form.text.label(class="form-label") }}
+                    {{ note_form.text(class="form-control", rows="3") }}
+                    {% if note_form.text.errors %}
+                        <div class="text-danger small">{{ note_form.text.errors[0] }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+                    Zavřít
+                </button>
+                {{ note_form.submit(class="btn btn-sm btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>

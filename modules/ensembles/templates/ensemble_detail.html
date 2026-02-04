@@ -158,13 +158,14 @@
                                     <span class="ms-2 d-none d-md-inline">Převzít z předchozího semestru</span>
                                 </a>
                             {% endif %}
-                            <a href="#"
-                               class="btn btn-sm btn-outline-primary d-flex align-items-center"
-                               data-bs-toggle="modal"
-                               data-bs-target="#assignTeacherModal">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary d-flex align-items-center"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#assignTeacherModal">
                                 <i class="fas fa-chalkboard-teacher"></i>
                                 <span class="ms-2 d-none d-md-inline">Přiřadit pedagoga</span>
-                            </a>
+                            </button>
+
 
                             <!-- Takeover Teacher Modal -->
                             <div class="modal fade" id="takeoverTeacherModal" tabindex="-1"
@@ -254,20 +255,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <script>
-                                document.addEventListener("DOMContentLoaded", function () {
-                                    new TomSelect("#teacher_id", {
-                                        placeholder: "— Vyberte pedagoga —",   // placeholder instead of prefilled option
-                                        plugins: {remove_button: {title: "Odebrat"}},
-                                        maxItems: 1,
-                                        allowEmptyOption: true,
-                                        sortField: {field: "text", direction: "asc"}
-                                    }).clear();
-                                });
-                            </script>
-
-
                         </div>
                     {% endif %}
                 </div>
@@ -727,34 +714,31 @@
                     <h5 class="mb-0">
                         <i class="fas fa-calendar-alt me-2 text-secondary d-none d-md-inline"></i> Semestry
                     </h5>
-                    <button
-                            type="button"
-                            class="btn btn-outline-danger btn-sm js-deactivate-ensemble"
-                            data-ensemble-id="{{ ensemble.id }}"
-                            data-ensemble-name="{{ ensemble.name|e }}"
-                            data-bs-toggle="modal"
-                            data-bs-target="#deactivateEnsembleModal"
-                            title="Deaktivovat soubor"
-                    >
-                        <i class="fas fa-ban"></i>
-                    </button>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button
+                                type="button"
+                                class="btn btn-sm btn-primary d-flex align-items-center"
+                                data-bs-toggle="modal"
+                                data-bs-target="#moveSemesterModal"
+                                data-ensemble-id="{{ ensemble.id }}"
+                                title="Deaktivovat soubor">
+                            <i class="fas fa-file-export"></i><span class="ms-2 d-none d-md-inline">Převést do dalšího semestru</span>
+                        </button>
+                        <button
+                                type="button"
+                                class="btn btn-outline-danger btn-sm js-deactivate-ensemble"
+                                data-ensemble-id="{{ ensemble.id }}"
+                                data-ensemble-name="{{ ensemble.name|e }}"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deactivateEnsembleModal"
+                                title="Deaktivovat soubor">
+                            <i class="fas fa-ban"></i><span class="ms-2 d-none d-md-inline">Deaktivovat soubor</span>
+                        </button>
 
-
-                    <a href="#"
-                       class="btn btn-sm btn-primary d-flex align-items-center"
-                       data-bs-toggle="modal"
-                       data-bs-target="#moveSemesterModal"
-                       data-ensemble-id="{{ ensemble.id }}">
-                        <i class="fas fa-file-export"></i>
-                        <span class="ms-2 d-none d-md-inline">Převést do dalšího semestru</span>
-                    </a>
+                    </div>
 
 
                 </div>
-
-                {# ───────────────────────────────────────────── #}
-                {# Move Semester Modal #}
-                {% include "partials/_move_semester_modal.html" %}
 
 
                 <div class="table-responsive">
@@ -800,8 +784,8 @@
                                     {% set semester_repertoire = ensemble.repertoire_for_semester(semester.id) %}
                                     {% if semester_repertoire %}
                                         {% for composition in semester_repertoire %}
-                                            <i>{{ composition.composer.full_name }}: </i>{{ composition.name }} (
-                                            {{ "%.1f"|format(composition.durata) }} min){% if not loop.last %},
+                                            <i>{{ composition.composer.full_name }}: </i>{{ composition.name }}
+                                            ({{ "%.1f"|format(composition.durata) }} min){% if not loop.last %},
                                         {% endif %}
                                         {% endfor %}
                                     {% else %}
@@ -820,12 +804,16 @@
                 <div class="card shadow-sm mt-4">
                     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <h5 class="mb-0">Poznámky</h5>
-                        <a href="#"
-                           class="btn btn-sm btn-outline-primary d-flex align-items-center"
-                           data-bs-toggle="modal" data-bs-target="#addNoteModal">
-                            <i class="fas fa-plus me-1"></i>Přidat poznámku
-                        </a>
+                        <button
+                                type="button"
+                                class="btn btn-sm btn-outline-primary d-flex align-items-center"
+                                data-bs-toggle="modal"
+                                data-bs-target="#addNoteModal"
+                                title="Přidat Poznámku">
+                            <i class="fas fa-plus"></i><span class="ms-2 d-none d-md-inline">Přidat poznámku</span>
+                        </button>
                     </div>
+
                     <!-- Ensemble Notes List -->
                     <div class="card-body">
                         {% if ensemble.ensemble_notes %}
@@ -844,90 +832,35 @@
                                             </div>
 
                                             <!-- Delete Note Button -->
-                                            <a href="#"
-                                               class="btn btn-sm btn-light"
-                                               title="Smazat poznámku"
-                                               data-bs-toggle="modal"
-                                               data-bs-target="#deleteNoteModal{{ note.id }}">
+                                            <button
+                                                    type="button"
+                                                    title="Smazat Poznámku"
+                                                    class="btn btn-sm btn-light d-flex align-items-center"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#deleteNoteModal"
+                                                    data-note-text="{{ note.text|e }}"
+                                                    data-delete-url="{{ url_for('ensemble.delete_note', ensemble_id=ensemble.id, note_id=note.id) }}">
                                                 <i class="fas fa-trash text-danger"></i>
-                                            </a>
+                                            </button>
                                         </div>
                                     </li>
-
-                                    <!-- Delete Note Modal -->
-                                    <div class="modal fade" id="deleteNoteModal{{ note.id }}" tabindex="-1"
-                                         aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <form method="post"
-                                                  action="{{ url_for('ensemble.delete_note', ensemble_id=ensemble.id, note_id=note.id) }}"
-                                                  class="modal-content">
-                                                {{ note_form.hidden_tag() }}
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Smazat poznámku</h5>
-                                                    <button type="button" class="btn-close"
-                                                            data-bs-dismiss="modal"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <p>Opravdu chcete smazat tuto poznámku?</p>
-                                                    <blockquote
-                                                            class="blockquote small text-muted">{{ note.text }}</blockquote>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                            data-bs-dismiss="modal">
-                                                        Zrušit
-                                                    </button>
-                                                    <button type="submit" class="btn btn-sm btn-danger">
-                                                        <i class="fas fa-trash me-1"></i> Smazat
-                                                    </button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
                                 {% endfor %}
                             </ul>
                         {% else %}
                             <p class="text-muted mb-0">Zatím nejsou přidány žádné poznámky.</p>
                         {% endif %}
                     </div>
-                </div>
 
-                <!-- Add Note Modal -->
-                <div class="modal fade" id="addNoteModal" tabindex="-1" aria-labelledby="addNoteModalLabel"
-                     aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <form method="post"
-                              action="{{ url_for('ensemble.add_note', ensemble_id=ensemble.id) }}"
-                              class="modal-content">
-                            {{ note_form.hidden_tag() }}
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="addNoteModalLabel">Přidat poznámku</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    {{ note_form.text.label(class="form-label") }}
-                                    {{ note_form.text(class="form-control", rows="3") }}
-                                    {% if note_form.text.errors %}
-                                        <div class="text-danger small">{{ note_form.text.errors[0] }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
-                                    Zavřít
-                                </button>
-                                {{ note_form.submit(class="btn btn-sm btn-primary") }}
-                            </div>
-                        </form>
-                    </div>
                 </div>
             {% endif %}
 
         </div>
 
     </main>
+    {% include "partials/_move_semester_modal.html" %}
     {% include "partials/_deactivate_ensemble_modal.html" %}
+    {% include "partials/modals/_add_note_modal.html" %}
+    {% include "partials/modals/_delete_note_modal.html" %}
 {% endblock %}
 
 {% block extra_scripts %}
@@ -1023,5 +956,7 @@
     </script>
     <script src="{{ url_for('static', filename='js/move_semester_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/deactivate_ensemble_modal.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modals/select-teacher.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modals/delete-note.js') }}"></script>
 
 {% endblock %}

@@ -1,0 +1,24 @@
+<!-- One shared Delete Note Modal -->
+<div class="modal fade" id="deleteNoteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="post" id="deleteNoteForm" action="" class="modal-content">
+            {{ note_form.hidden_tag() }}
+            <div class="modal-header">
+                <h5 class="modal-title">Smazat poznámku</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Opravdu chcete smazat tuto poznámku?</p>
+                <blockquote class="blockquote small text-muted" id="deleteNoteText"></blockquote>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+                    Zrušit
+                </button>
+                <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="fas fa-trash me-1"></i> Smazat
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

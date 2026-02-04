@@ -187,14 +187,12 @@
                                             {% call if_perm('ens_edit', current_user) %}
                                                 {{ action_button(url_for('ensemble.ensemble_edit', ensemble_id=ensemble.id), 'edit', title='Upravit') }}
                                             {% endcall %}
-                                            {% if has_upcoming_semester %}
+                                            {% if not in_upcoming and ensemble.active and has_upcoming_semester %}
                                                 {% call if_perm('ens_edit', current_user) %}
                                                     {{ action_modal_button(title='Převést do dalšího semestru', modal_target='moveSemesterModal', ensemble=ensemble, color='outline-warning', icon="file-export") }}
                                                 {% endcall %}
-                                            {% endif %}
-                                            {% if has_upcoming_semester %}
                                                 {% call if_perm('ens_edit', current_user) %}
-                                                    {{ action_modal_button(title='Převést do dalšího semestru', modal_target='deactivateEnsembleModal', ensemble=ensemble, color='outline-danger', icon="ban") }}
+                                                    {{ action_modal_button(title='Deaktivovat souboru', modal_target='deactivateEnsembleModal', ensemble=ensemble, color='outline-danger', icon="ban") }}
                                                 {% endcall %}
                                             {% endif %}
                                             {% call if_perm('ens_delete', current_user) %}

@@ -15,9 +15,8 @@
             <div class="container-xl pb-4">
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                     <h1 class="text-secondary mb-0">Komorní soubory</h1>
-
+                    {# Exporty PDF #}
                     <div class="d-flex align-items-center gap-3 ms-auto">
-                        {# Exporty PDF #}
                         {% call if_perm('ens_export_pdf', current_user) %}
                             <div class="btn-group" role="group" aria-label="Exporty PDF">
                                 {{ export_button(url_for('ensemble.export_pdf') ~ '?' ~ request.query_string.decode(), 'Export PDF') }}

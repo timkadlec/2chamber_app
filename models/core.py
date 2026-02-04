@@ -80,6 +80,12 @@ class Semester(db.Model):
     def ensembles(self):
         return [link.ensemble for link in self.ensemble_links]
 
+    @property
+    def full_name(self):
+        if self.name and self.academic_year:
+            return f"{self.name} {self.academic_year.name}"  # "ZS 2025/2026"
+        return f"{self.start_date:%m/%Y}–{self.end_date:%m/%Y}"  # fallback
+
 
 class Subject(db.Model):
     __tablename__ = "subjects"

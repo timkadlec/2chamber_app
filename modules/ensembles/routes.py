@@ -62,9 +62,9 @@ def index():
             .scalar_subquery()
         )
     elif sort_by == "health":
-        order_column = Ensemble.health_check_label
+        order_column = Ensemble.health_check_in(current_semester_id)
     elif sort_by == "complete":
-        order_column = Ensemble.is_complete
+        order_column = Ensemble.is_complete_in(current_semester_id)
     else:
         order_column = Ensemble.name
 

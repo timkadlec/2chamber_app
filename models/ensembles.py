@@ -161,9 +161,6 @@ class Ensemble(db.Model):
     def external_count(self):
         return sum(1 for ep in self.player_links if not ep.player or ep.player.student is None)
 
-    def player_links_for_semester(self, semester_id: int):
-        return [ep for ep in self.player_links if ep.semester_id == semester_id]
-
     def health_check_for_semester(self, semester_id: int) -> str:
         links = self.player_links_for_semester(semester_id)
 

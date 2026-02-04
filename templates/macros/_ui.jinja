@@ -23,10 +23,10 @@
 {% endmacro %}
 
 
-{% macro ensemble_status(ensemble) %}
+{% macro ensemble_status(ensemble, semester_id) %}
     {% if ensemble.exception and ensemble.exception.status == "approved" %}
         {{ badge('circle-user', 'Výjimka', color='info', outline=True) }}
-    {% elif ensemble.health_check == "OK" %}
+    {% elif ensemble.health_check_in(semester_id) == "OK" %}
         {{ badge('check-circle', 'OK', color='success', outline=True) }}
     {% else %}
         {{ badge('exclamation-triangle', 'Nesplňuje', color='danger', outline=True, extra_class='cursor-help') }}

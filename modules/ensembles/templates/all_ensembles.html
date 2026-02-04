@@ -172,7 +172,7 @@
 
                                 </td>
 
-                                <td>{{ ensemble_status(ensemble) }}</td>
+                                <td>{{ ensemble_status(ensemble, semester_id) }}</td>
 
                                 {% call if_any_perm(['ens_detail','ens_edit','ens_delete'], current_user) %}
                                     <td class="text-end">

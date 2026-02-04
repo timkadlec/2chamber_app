@@ -23,12 +23,14 @@ def get_dashboard_data(current_sem):
 
     # === KPIs ===
     total_ensembles = ens_q.count()
-    incomplete_count = ens_q.filter(Ensemble.is_complete.is_(False)).count()
+    incomplete_count = ens_q.filter(Ensemble.is_complete_in(current_sem).is_(False)).count()
+
     min_fail_count = ens_q.filter(
-        Ensemble.health_check_label == "Soubor nesplňuje kritérium minima hráčů."
+        Ensemble.health_check_in(current_sem) == "Soubor nesplňuje kritérium minima hráčů."
     ).count()
+
     high_guests_count = ens_q.filter(
-        Ensemble.health_check_label == "Soubor obsahuej vysoké procento hostů."
+        Ensemble.health_check_in(current_sem) == "Soubor obsahuej vysoké procento hostů."
     ).count()
 
     teachers_involved = (

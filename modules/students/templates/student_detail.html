@@ -82,7 +82,7 @@
                             <th>Předmět</th>
                             <th>Semestr</th>
                             <th>Erasmus</th>
-                            <th class="text-end">Akce</th>
+                            <th class="text-end">Soubor</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -96,14 +96,23 @@
                                     {% else %}
                                         <span class="text-muted">—</span>
                                     {% endif %}
-                                </td>
-                                <td class="text-end">
                                     {% if current_user.has_permission('st_can_edit') %}
-                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                        <button type="button" class="btn btn-sm btn-outline-primary ms-2"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#editEnrollmentModal{{ enrollment.id }}">
                                             <i class="fas fa-edit"></i>
                                         </button>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% set ensembles = student.ensembles_for_semester(enrollment.semester.id) %}
+                                    {% if ensembles %}
+                                        {% for ensemble in ensembles %}
+                                            <a href="{{ url_for('ensemble.ensemble_detail', ensemble_id=ensemble.id) }}">
+                                            {{ ensemble.name }}</a>{% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -177,7 +186,8 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% for ensemble in student.ensembles_in_semester %}
+                        {% set ensembles = student.ensembles_for_semester(current_semester.id) %}
+                        {% for ensemble in ensembles %}
                             <tr>
                                 <td>
                                     <a href="{{ url_for('ensemble.ensemble_detail', ensemble_id=ensemble.id) }}">
@@ -203,7 +213,6 @@
             </div>
 
             <!-- Requests -->
-
 
 
         </div>

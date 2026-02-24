@@ -64,6 +64,7 @@ def auth_callback():
             email=email,
             upn=upn,
             last_login_at=datetime.utcnow(),
+            role_id=4, # by default assign viewer role
         )
         db.session.add(user)
 

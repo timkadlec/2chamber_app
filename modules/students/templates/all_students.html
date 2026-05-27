@@ -98,7 +98,8 @@
                                         </a>#}
                                         {% if current_user.has_permission('st_can_classify') %}
                                             <button type="button"
-                                                    class="btn btn-outline-success"
+                                                    class="btn btn-outline-success d-flex align-items-center justify-content-center"
+                                                    style="width: 42px;"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#classificationModal{{ student.id }}"
                                                     title="Klasifikace">

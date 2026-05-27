@@ -99,7 +99,17 @@
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#classificationModal{{ student.id }}"
                                                     title="Klasifikace">
-                                                <i class="fas fa-graduation-cap"></i>
+
+                                                {% if classified_enrollments|length == 0 %}
+                                                    <i class="fas fa-graduation-cap"></i>
+
+                                                {% elif classified_enrollments|length == 1 %}
+                                                    {{ classified_enrollments[0].classification }}
+
+                                                {% else %}
+                                                    {{ classified_enrollments|length }}×
+                                                {% endif %}
+
                                             </button>
                                         {% endif %}
                                         {% if current_user.has_permission('st_can_delete') %}
@@ -243,12 +253,14 @@
 
                                                     {% if current_enrollments %}
                                                         <div class="modal-footer d-flex justify-content-between">
-                                                            <button type="submit"
-                                                                    form="clearClassificationForm{{ student.id }}"
-                                                                    class="btn btn-outline-danger">
-                                                                Odstranit klasifikaci
-                                                            </button>
-
+                                                            <div id="clearClassificationWrapper{{ student.id }}"
+                                                                 style="display:none;">
+                                                                <button type="submit"
+                                                                        form="clearClassificationForm{{ student.id }}"
+                                                                        class="btn btn-outline-danger">
+                                                                    Odstranit klasifikaci
+                                                                </button>
+                                                            </div>
                                                             <button type="submit"
                                                                     form="classificationForm{{ student.id }}"
                                                                     class="btn btn-success">
@@ -324,6 +336,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             document.querySelectorAll(".classification-enrollment-select").forEach(function (select) {
+
                 function updateClassificationFields() {
                     const studentId = select.dataset.studentId;
                     const selectedOption = select.options[select.selectedIndex];
@@ -335,6 +348,12 @@
                     document.getElementById("classificationSelect" + studentId).value = classification;
                     document.getElementById("classificationBasisSelect" + studentId).value = basis;
                     document.getElementById("clearEnrollmentId" + studentId).value = enrollmentId;
+
+                    const clearWrapper = document.getElementById("clearClassificationWrapper" + studentId);
+
+                    if (clearWrapper) {
+                        clearWrapper.style.display = classification ? "block" : "none";
+                    }
                 }
 
                 select.addEventListener("change", updateClassificationFields);

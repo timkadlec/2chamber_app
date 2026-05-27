@@ -107,7 +107,9 @@
                                                     <i class="fas fa-graduation-cap"></i>
 
                                                 {% elif classified_enrollments|length == 1 %}
-                                                    {{ classified_enrollments[0].classification }}
+                                                    <span class="fw-bold">
+        {{ classified_enrollments[0].classification }}
+    </span>
 
                                                 {% else %}
                                                     {{ classified_enrollments|length }}×

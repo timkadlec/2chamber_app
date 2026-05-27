@@ -60,7 +60,7 @@
                                     {{ student.phone_number or "—" }}
                                 </td>
                                 <td class="d-none d-sm-table-cell">
-                                    {% set count = student.player.ensemble_count_in_semester(current_semester.id) %}
+                                    {% set count = student.player.ensemble_count_in_semester(current_semester.id) if student.player else 0 %}
 
                                     {% if count == 0 %}
                                         {% set percent, color, label = (0, "bg-danger", "0") %}
@@ -84,6 +84,9 @@
                                 </td>
 
                                 <td class="text-end">
+                                    {% set current_enrollments = student.subject_enrollments_current %}
+                                    {% set classified_enrollments = current_enrollments | selectattr('classification') | list %}
+
                                     <div class="btn-group btn-group-sm" role="group">
                                         <a href="{{ url_for('students.student_detail', student_id=student.id, **request.args) }}"
                                            class="btn btn-outline-primary" title="Detail">
@@ -157,8 +160,6 @@
                                     {% endif %}
                                     <!-- Classification modal -->
                                     {% if current_user.has_permission('st_can_classify') %}
-                                        {% set current_enrollments = student.subject_enrollments_current %}
-
                                         <div class="modal fade"
                                              id="classificationModal{{ student.id }}"
                                              tabindex="-1"

@@ -81,6 +81,7 @@
                         <tr>
                             <th>Předmět</th>
                             <th>Semestr</th>
+                            <th>Klasifikace</th>
                             <th>Erasmus</th>
                             <th class="text-end">Soubor</th>
                         </tr>
@@ -90,6 +91,27 @@
                             <tr>
                                 <td>{{ enrollment.subject.name }}</td>
                                 <td>{{ enrollment.semester.name }} {{ enrollment.semester.academic_year.name }}</td>
+                                <td>
+                                    {% if enrollment.classification %}
+                                        <span class="badge bg-success">
+            {{ enrollment.classification }}
+        </span>
+
+                                        {% if enrollment.classification_basis %}
+                                            <span class="text-muted ms-1">
+                {% if enrollment.classification_basis == "exam" %}
+                    zkouška
+                {% elif enrollment.classification_basis == "request" %}
+                    žádost
+                {% elif enrollment.classification_basis == "performed_live" %}
+                    veřejné vystoupení
+                {% endif %}
+            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if enrollment.erasmus %}
                                         <span class="badge bg-info text-dark">Erasmus</span>
@@ -109,7 +131,7 @@
                                     {% if ensembles %}
                                         {% for ensemble in ensembles %}
                                             <a href="{{ url_for('ensemble.ensemble_detail', ensemble_id=ensemble.id) }}">
-                                            {{ ensemble.name }}</a>{% if not loop.last %}, {% endif %}
+                                                {{ ensemble.name }}</a>{% if not loop.last %}, {% endif %}
                                         {% endfor %}
                                     {% else %}
                                         <span class="text-muted">—</span>

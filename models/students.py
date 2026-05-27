@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship, object_session
 from models import db
 from models.core import Subject, Semester, Department, Instrument
 from sqlalchemy.ext.hybrid import hybrid_method
+from sqlalchemy import Enum
 from flask import session
 from sqlalchemy import CheckConstraint
 
@@ -186,6 +187,21 @@ class StudentSubjectEnrollment(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
     semester_id = db.Column(db.Integer, db.ForeignKey('semesters.id', ondelete='CASCADE'), nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey('subjects.id', ondelete='CASCADE'), nullable=False)
+
+    classification = db.Column(
+        Enum('A', 'B', 'C', 'D', 'E', 'Z', 'N', name='classification_enum'),
+        nullable=True
+    )
+    classification_basis = db.Column(
+        Enum(
+            'exam',
+            'request',
+            'performed_live',
+            name='classification_basis_enum'
+        ),
+        nullable=True
+    )
+    classification_date = db.Column(db.Date, nullable=True)
 
     student = relationship('Student', back_populates='subject_enrollments')
     semester = relationship('Semester', back_populates='subject_enrollments')

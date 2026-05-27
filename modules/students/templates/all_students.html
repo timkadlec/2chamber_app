@@ -145,81 +145,136 @@
                                             </div>
                                         </div>
                                     {% endif %}
-                                    <div class="modal fade"
-                                         id="classificationModal{{ student.id }}"
-                                         tabindex="-1"
-                                         aria-hidden="true">
+                                    <!-- Classification modal -->
+                                    {% if current_user.has_permission('st_can_classify') %}
+                                        <div class="modal fade"
+                                             id="classificationModal{{ student.id }}"
+                                             tabindex="-1"
+                                             aria-hidden="true">
 
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
 
-                                                <form method="post"
-                                                      action="{{ url_for('students.classify_student', student_id=student.id) }}">
+                                                    <form method="post"
+                                                          action="{{ url_for('students.classify_student', student_id=student.id) }}">
 
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">
-                                                            Klasifikace studenta
-                                                        </h5>
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">
+                                                                Klasifikace studenta
+                                                            </h5>
 
-                                                        <button type="button"
-                                                                class="btn-close"
-                                                                data-bs-dismiss="modal"></button>
-                                                    </div>
+                                                            <button type="button"
+                                                                    class="btn-close"
+                                                                    data-bs-dismiss="modal"></button>
+                                                        </div>
 
-                                                    <div class="modal-body">
+                                                        <div class="modal-body">
 
-                                                        <div class="mb-3">
-                                                            <label class="form-label">Předmět</label>
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Předmět</label>
 
-                                                            <select name="enrollment_id" class="form-select">
-                                                                {% for enrollment in student.subject_enrollments %}
-                                                                    <option value="{{ enrollment.id }}">
-                                                                        {{ enrollment.subject.name }}
+                                                                <select name="enrollment_id" class="form-select">
+                                                                    {% for enrollment in student.subject_enrollments %}
+                                                                        <option value="{{ enrollment.id }}">
+                                                                            {{ enrollment.subject.name }}
+                                                                        </option>
+                                                                    {% endfor %}
+                                                                </select>
+                                                            </div>
+
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Klasifikace</label>
+
+                                                                <select name="classification" class="form-select">
+
+                                                                    <option value="A"
+                                                                            {% if enrollment.classification == "A" %}selected{% endif %}>
+                                                                        A
                                                                     </option>
-                                                                {% endfor %}
-                                                            </select>
+
+                                                                    <option value="B"
+                                                                            {% if enrollment.classification == "B" %}selected{% endif %}>
+                                                                        B
+                                                                    </option>
+
+                                                                    <option value="C"
+                                                                            {% if enrollment.classification == "C" %}selected{% endif %}>
+                                                                        C
+                                                                    </option>
+
+                                                                    <option value="D"
+                                                                            {% if enrollment.classification == "D" %}selected{% endif %}>
+                                                                        D
+                                                                    </option>
+
+                                                                    <option value="E"
+                                                                            {% if enrollment.classification == "E" %}selected{% endif %}>
+                                                                        E
+                                                                    </option>
+
+                                                                    <option value="Z"
+                                                                            {% if enrollment.classification == "Z" %}selected{% endif %}>
+                                                                        Z
+                                                                    </option>
+
+                                                                    <option value="N"
+                                                                            {% if enrollment.classification == "N" %}selected{% endif %}>
+                                                                        N
+                                                                    </option>
+
+                                                                </select>
+                                                            </div>
+
+                                                            <div class="mb-3">
+                                                                <label class="form-label">Typ klasifikace</label>
+
+                                                                <select name="classification_basis" class="form-select">
+
+                                                                    <option value="exam"
+                                                                            {% if enrollment.classification_basis == "exam" %}selected{% endif %}>
+                                                                        Zkouška
+                                                                    </option>
+
+                                                                    <option value="request"
+                                                                            {% if enrollment.classification_basis == "request" %}selected{% endif %}>
+                                                                        Žádost
+                                                                    </option>
+
+                                                                    <option value="performed_live"
+                                                                            {% if enrollment.classification_basis == "performed_live" %}selected{% endif %}>
+                                                                        Veřejné vystoupení
+                                                                    </option>
+
+                                                                </select>
+                                                            </div>
+
                                                         </div>
 
-                                                        <div class="mb-3">
-                                                            <label class="form-label">Klasifikace</label>
+                                                        <div class="modal-footer d-flex justify-content-between">
 
-                                                            <select name="classification" class="form-select">
-                                                                <option value="A">A</option>
-                                                                <option value="B">B</option>
-                                                                <option value="C">C</option>
-                                                                <option value="D">D</option>
-                                                                <option value="E">E</option>
-                                                                <option value="Z">Z</option>
-                                                                <option value="N">N</option>
-                                                            </select>
+                                                            {% if enrollment.classification %}
+                                                                <form method="post"
+                                                                      action="{{ url_for('students.clear_classification', enrollment_id=enrollment.id) }}">
+                                                                    <button type="submit"
+                                                                            class="btn btn-outline-danger">
+                                                                        Odstranit klasifikaci
+                                                                    </button>
+                                                                </form>
+                                                            {% endif %}
+
+                                                            <button type="submit"
+                                                                    class="btn btn-success">
+                                                                Uložit
+                                                            </button>
+
                                                         </div>
 
-                                                        <div class="mb-3">
-                                                            <label class="form-label">Typ klasifikace</label>
+                                                    </form>
 
-                                                            <select name="classification_basis" class="form-select">
-                                                                <option value="exam">Zkouška</option>
-                                                                <option value="request">Žádost</option>
-                                                                <option value="performed_live">
-                                                                    Veřejné vystoupení
-                                                                </option>
-                                                            </select>
-                                                        </div>
-
-                                                    </div>
-
-                                                    <div class="modal-footer">
-                                                        <button type="submit"
-                                                                class="btn btn-success">
-                                                            Uložit
-                                                        </button>
-                                                    </div>
-
-                                                </form>
-
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}

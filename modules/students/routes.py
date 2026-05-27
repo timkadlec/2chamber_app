@@ -159,3 +159,17 @@ def classify_student(student_id):
 
     flash("Klasifikace byla uložena.", "success")
     return redirect(request.referrer or url_for("students.index"))
+
+@students_bp.route("/enrollments/<int:enrollment_id>/clear-classification", methods=["POST"])
+@permission_required("st_can_classify")
+def clear_classification(enrollment_id):
+    enrollment = StudentSubjectEnrollment.query.get_or_404(enrollment_id)
+
+    enrollment.classification = None
+    enrollment.classification_basis = None
+    enrollment.classification_date = None
+
+    db.session.commit()
+
+    flash("Klasifikace byla odstraněna.", "success")
+    return redirect(request.referrer or url_for("students.index"))

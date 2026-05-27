@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, redirect, url_for, session, request
+from flask import render_template, flash, redirect, url_for, session, request
 from utils.nav import navlink
 from models import Student, StudentSubjectEnrollment, Instrument, Subject, Player, EnsemblePlayer, Ensemble, \
     EnsembleSemester, db, Semester, Department
@@ -8,7 +8,7 @@ from .forms import EnrollmentForm
 from utils.decorators import role_required, permission_required
 from utils.session_helpers import get_or_set_current_semester
 from sqlalchemy import or_
-
+from datetime import date
 
 @students_bp.route("/", methods=["GET"])
 @navlink("Studenti", group="Lidé", weight=100)
@@ -136,3 +136,26 @@ def request_ensemble_selection(student_id):
     student = Student.query.filter_by(id=student_id).first()
     ensembles = student.ensembles_in_semester
     return render_template("request_ensemble_selection.html", student=student, ensembles=ensembles)
+
+
+@students_bp.route("/<int:student_id>/classify", methods=["POST"])
+@permission_required("st_can_classify")
+def classify_student(student_id):
+    enrollment_id = request.form.get("enrollment_id", type=int)
+    classification = request.form.get("classification")
+    classification_basis = request.form.get("classification_basis")
+
+    enrollment = StudentSubjectEnrollment.query.get_or_404(enrollment_id)
+
+    if enrollment.student_id != student_id:
+        flash("Neplatný zápis předmětu pro tohoto studenta.", "danger")
+        return redirect(request.referrer or url_for("students.index"))
+
+    enrollment.classification = classification
+    enrollment.classification_basis = classification_basis
+    enrollment.classification_date = date.today()
+
+    db.session.commit()
+
+    flash("Klasifikace byla uložena.", "success")
+    return redirect(request.referrer or url_for("students.index"))

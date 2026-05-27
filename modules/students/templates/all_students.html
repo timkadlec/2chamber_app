@@ -93,6 +93,15 @@
                                            class="btn btn-outline-primary" title="Upravit">
                                             <i class="fas fa-edit"></i>
                                         </a>#}
+                                        {% if current_user.has_permission('st_can_classify') %}
+                                            <button type="button"
+                                                    class="btn btn-outline-success"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#classificationModal{{ student.id }}"
+                                                    title="Klasifikace">
+                                                <i class="fas fa-graduation-cap"></i>
+                                            </button>
+                                        {% endif %}
                                         {% if current_user.has_permission('st_can_delete') %}
                                             <button type="button"
                                                     class="btn btn-outline-danger"
@@ -136,6 +145,81 @@
                                             </div>
                                         </div>
                                     {% endif %}
+                                    <div class="modal fade"
+                                         id="classificationModal{{ student.id }}"
+                                         tabindex="-1"
+                                         aria-hidden="true">
+
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+
+                                                <form method="post"
+                                                      action="{{ url_for('students.classify_student', student_id=student.id) }}">
+
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">
+                                                            Klasifikace studenta
+                                                        </h5>
+
+                                                        <button type="button"
+                                                                class="btn-close"
+                                                                data-bs-dismiss="modal"></button>
+                                                    </div>
+
+                                                    <div class="modal-body">
+
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Předmět</label>
+
+                                                            <select name="enrollment_id" class="form-select">
+                                                                {% for enrollment in student.subject_enrollments %}
+                                                                    <option value="{{ enrollment.id }}">
+                                                                        {{ enrollment.subject.name }}
+                                                                    </option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Klasifikace</label>
+
+                                                            <select name="classification" class="form-select">
+                                                                <option value="A">A</option>
+                                                                <option value="B">B</option>
+                                                                <option value="C">C</option>
+                                                                <option value="D">D</option>
+                                                                <option value="E">E</option>
+                                                                <option value="Z">Z</option>
+                                                                <option value="N">N</option>
+                                                            </select>
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Typ klasifikace</label>
+
+                                                            <select name="classification_basis" class="form-select">
+                                                                <option value="exam">Zkouška</option>
+                                                                <option value="request">Žádost</option>
+                                                                <option value="performed_live">
+                                                                    Veřejné vystoupení
+                                                                </option>
+                                                            </select>
+                                                        </div>
+
+                                                    </div>
+
+                                                    <div class="modal-footer">
+                                                        <button type="submit"
+                                                                class="btn btn-success">
+                                                            Uložit
+                                                        </button>
+                                                    </div>
+
+                                                </form>
+
+                                            </div>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         {% endfor %}

@@ -10,6 +10,7 @@ from utils.session_helpers import get_or_set_current_semester
 from sqlalchemy import or_
 from datetime import date
 
+
 @students_bp.route("/", methods=["GET"])
 @navlink("Studenti", group="Lidé", weight=100)
 @permission_required("st_can_view")
@@ -130,6 +131,7 @@ def edit_enrollment(enrollment_id):
         flash("Zápis předmětu byl aktualizován.", "success")
         return redirect(url_for("students.student_detail", student_id=enrollment.student_id))
 
+
 @students_bp.route("/detail/<int:student_id>/requests/ensemble-selection", methods=["GET"])
 @permission_required("st_requests")
 def request_ensemble_selection(student_id):
@@ -160,10 +162,17 @@ def classify_student(student_id):
     flash("Klasifikace byla uložena.", "success")
     return redirect(request.referrer or url_for("students.index"))
 
-@students_bp.route("/enrollments/<int:enrollment_id>/clear-classification", methods=["POST"])
+
+@students_bp.route("/<int:student_id>/clear-classification", methods=["POST"])
 @permission_required("st_can_classify")
-def clear_classification(enrollment_id):
+def clear_classification(student_id):
+    enrollment_id = request.form.get("enrollment_id", type=int)
+
     enrollment = StudentSubjectEnrollment.query.get_or_404(enrollment_id)
+
+    if enrollment.student_id != student_id:
+        flash("Neplatný zápis předmětu pro tohoto studenta.", "danger")
+        return redirect(request.referrer or url_for("students.index"))
 
     enrollment.classification = None
     enrollment.classification_basis = None

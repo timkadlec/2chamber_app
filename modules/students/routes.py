@@ -60,6 +60,23 @@ def index():
     if department_ids:
         query = query.filter(Student.department_id.in_(department_ids))
 
+    # --- Classification filters ---
+    has_classification = request.args.get("has_classification")  # "0", "1", or None
+
+    if has_classification in ("0", "1"):
+        classification_exists = (
+            db.session.query(StudentSubjectEnrollment.id)
+            .filter(StudentSubjectEnrollment.student_id == Student.id)
+            .filter(StudentSubjectEnrollment.semester_id.in_(semester_ids))
+            .filter(StudentSubjectEnrollment.classification.isnot(None))
+            .exists()
+        )
+
+        if has_classification == "1":
+            query = query.filter(classification_exists)
+        else:
+            query = query.filter(~classification_exists)
+
     # --- Ensemble filter ---
     has_ensemble = request.args.get("has_ensemble")
     if has_ensemble in ("0", "1"):
@@ -107,6 +124,7 @@ def index():
         selected_has_ensemble=has_ensemble,
         selected_department_ids=department_ids,
         search_query=search_query,
+        selected_has_classification=has_classification,
     )
 
 

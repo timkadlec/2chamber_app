@@ -1,45 +1,57 @@
 {% from "macros/_filters.jinja" import select_filter, text_filter, button_row with context %}
 
 <div class="card-header bg-white">
-  <form method="get" class="p-3 mb-4">
-    <div class="row g-3 align-items-end">
+    <form method="get" class="p-3 mb-4">
+        <div class="row g-3 align-items-end">
 
-      {{ select_filter('Semestr', 'semester_id', 'semester_id',
+            {{ select_filter('Semestr', 'semester_id', 'semester_id',
                        semesters, selected_semester_ids,
                        placeholder='Vyberte semestr(y)',
                        label_action_url=url_for('students.index', semester_all=1),
                        label_action_text='Zobrazit všechny') }}
 
-      {{ select_filter('Nástroj', 'instrument_id', 'instrument_id',
+            {{ select_filter('Nástroj', 'instrument_id', 'instrument_id',
                        instruments, selected_instrument_ids,
                        placeholder='Vyberte nástroj(e)') }}
 
-      {{ select_filter('Katedra', 'department_id', 'department_id',
+            {{ select_filter('Katedra', 'department_id', 'department_id',
                        departments, selected_department_ids,
                        placeholder='Vyberte katedru(y)') }}
 
-      {{ select_filter('Předmět', 'subject_id', 'subject_id',
+            {{ select_filter('Předmět', 'subject_id', 'subject_id',
                        subjects, selected_subject_ids,
                        placeholder='Vyberte předmět(y)') }}
 
-      {# Has Ensemble filter (single select) #}
-      <div class="col-md-3">
-        <label for="has_ensemble" class="form-label">Soubor</label>
-        <select class="form-select form-select-sm" id="has_ensemble" name="has_ensemble">
-          <option value="">-- Má / nemá soubor --</option>
-          <option value="1" {% if selected_has_ensemble == '1' %}selected{% endif %}>Má soubor</option>
-          <option value="0" {% if selected_has_ensemble == '0' %}selected{% endif %}>Nemá soubor</option>
-        </select>
-      </div>
+            {# Has Ensemble filter (single select) #}
+            <div class="col-md-3">
+                <label for="has_ensemble" class="form-label">Soubor</label>
+                <select class="form-select form-select-sm" id="has_ensemble" name="has_ensemble">
+                    <option value="">-- Má / nemá soubor --</option>
+                    <option value="1" {% if selected_has_ensemble == '1' %}selected{% endif %}>Má soubor</option>
+                    <option value="0" {% if selected_has_ensemble == '0' %}selected{% endif %}>Nemá soubor</option>
+                </select>
+            </div>
 
-      {{ text_filter('Hledat studenta', 'filter-q', 'q',
+            {# Has Classification filter (single select) #}
+            <div class="col-md-3">
+                <label for="has_classification" class="form-label">Klasifikace</label>
+                <select class="form-select form-select-sm" id="has_classification" name="has_classification">
+                    <option value="">-- Má / nemá klasifikaci --</option>
+                    <option value="1" {% if selected_has_classification == '1' %}selected{% endif %}>Má klasifikaci
+                    </option>
+                    <option value="0" {% if selected_has_classification == '0' %}selected{% endif %}>Nemá klasifikaci
+                    </option>
+                </select>
+            </div>
+
+            {{ text_filter('Hledat studenta', 'filter-q', 'q',
                      search_query, placeholder='Jméno studenta...') }}
 
-      {{ button_row(show_reset=(selected_semester_ids or selected_instrument_ids or selected_subject_ids or selected_has_ensemble or search_query),
+            {{ button_row(show_reset=(selected_semester_ids or selected_instrument_ids or selected_subject_ids or selected_has_ensemble or search_query),
                     reset_url=url_for('students.index')) }}
 
-    </div>
-  </form>
+        </div>
+    </form>
 
-  {% include "partials/_tomselect_init.html" %}
+    {% include "partials/_tomselect_init.html" %}
 </div>

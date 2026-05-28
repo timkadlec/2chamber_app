@@ -3,7 +3,7 @@ from utils.nav import navlink
 from models import Student, StudentSubjectEnrollment, Instrument, Subject, Player, EnsemblePlayer, Ensemble, \
     EnsembleSemester, db, Semester, Department
 from modules.students import students_bp
-from sqlalchemy import and_, func
+from sqlalchemy import and_, func, exists
 from .forms import EnrollmentForm
 from utils.decorators import role_required, permission_required
 from utils.session_helpers import get_or_set_current_semester
@@ -61,15 +61,15 @@ def index():
         query = query.filter(Student.department_id.in_(department_ids))
 
     # --- Classification filters ---
-    has_classification = request.args.get("has_classification")  # "0", "1", or None
+    has_classification = request.args.get("has_classification")
 
-    if has_classification in ("0", "1"):
-        classification_exists = (
-            db.session.query(StudentSubjectEnrollment.id)
-            .filter(StudentSubjectEnrollment.student_id == Student.id)
-            .filter(StudentSubjectEnrollment.semester_id.in_(semester_ids))
-            .filter(StudentSubjectEnrollment.classification.isnot(None))
-            .exists()
+    if has_classification in ("0", "1") and semester_ids:
+        classification_exists = exists().where(
+            and_(
+                StudentSubjectEnrollment.student_id == Student.id,
+                StudentSubjectEnrollment.semester_id.in_(semester_ids),
+                StudentSubjectEnrollment.classification.isnot(None),
+            )
         )
 
         if has_classification == "1":

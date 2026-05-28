@@ -64,12 +64,13 @@ def index():
     has_classification = request.args.get("has_classification")
 
     if has_classification in ("0", "1") and semester_ids:
-        classification_exists = exists().where(
-            and_(
-                StudentSubjectEnrollment.student_id == Student.id,
-                StudentSubjectEnrollment.semester_id.in_(semester_ids),
-                StudentSubjectEnrollment.classification.isnot(None),
-            )
+        classification_exists = (
+            db.session.query(StudentSubjectEnrollment.id)
+            .filter(StudentSubjectEnrollment.student_id == Student.id)
+            .filter(StudentSubjectEnrollment.semester_id.in_(semester_ids))
+            .filter(StudentSubjectEnrollment.classification.isnot(None))
+            .correlate(Student)
+            .exists()
         )
 
         if has_classification == "1":

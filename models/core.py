@@ -92,6 +92,10 @@ class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False, unique=True)
     code = db.Column(db.String(100))
+    completion_type = db.Column(
+        db.String(20),
+        nullable=True,
+    )
     weight = db.Column(db.Integer)
 
     # Enrollment relation (assumes you have this model elsewhere)

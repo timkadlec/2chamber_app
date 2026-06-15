@@ -1050,6 +1050,7 @@ def delete_note(ensemble_id, note_id):
 
 
 @ensemble_bp.route("/<int:ensemble_id>/add_composition", methods=["GET", "POST"])
+@permission_required('ens_edit')
 def add_composition_to_ensemble(ensemble_id):
     ensemble = Ensemble.query.get_or_404(ensemble_id)
     current_semester = get_or_set_current_semester()
@@ -1111,6 +1112,7 @@ def add_composition_to_ensemble(ensemble_id):
 
 
 @ensemble_bp.route("/<int:ensemble_id>/remove_composition/<int:composition_id>/<int:semester_id>", methods=["POST"])
+@permission_required('ens_edit')
 def remove_composition_from_ensemble(ensemble_id, composition_id, semester_id):
     link = EnsembleRepertoire.query.filter_by(
         ensemble_id=ensemble_id,

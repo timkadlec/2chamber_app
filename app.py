@@ -15,7 +15,7 @@ from models import db, User
 import os
 import oracledb
 from utils.session_helpers import get_or_set_current_semester, get_or_set_current_semester_id
-from extensions import login_manager, oauth, migrate
+from extensions import login_manager, oauth, migrate, csrf
 from modules.library import library_bp
 from modules.auth import auth_bp
 from modules.settings import settings_bp
@@ -79,6 +79,7 @@ def create_app():
     migrate.init_app(app, db)
     oauth.init_app(app)
 
+    csrf.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
 

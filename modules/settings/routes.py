@@ -17,12 +17,14 @@ def users():
 
 # --- Role list ---
 @settings_bp.route("/roles")
+@role_required("admin")
 def roles():
     roles = Role.query.order_by(Role.name).all()
     return render_template("settings_roles.html", roles=roles)
 
 
 @settings_bp.route("/role/<int:role_id>", methods=["GET", "POST"])
+@role_required("admin")
 def role_detail(role_id):
     role = Role.query.options(joinedload(Role.permissions)).get(role_id)
     if not role:

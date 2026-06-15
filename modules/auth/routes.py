@@ -37,6 +37,8 @@ def dev_login():
             "oid": user.oid,
             "preferred_username": user.upn,
         }
+        if user.portal_type == "student":
+            return redirect(url_for("student_portal.dashboard"))
         return redirect(url_for("index"))
 
     return render_template("dev_login.html", users=users)
@@ -99,6 +101,8 @@ def auth_callback():
     }
 
     flash("Úspěšně přihlášený.", "success")
+    if user.portal_type == "student":
+        return redirect(url_for("student_portal.dashboard"))
     return redirect(url_for("index"))
 
 

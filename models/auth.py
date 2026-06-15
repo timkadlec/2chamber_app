@@ -80,6 +80,21 @@ class User(db.Model, UserMixin):
     role_id = db.Column(db.Integer, db.ForeignKey("roles.id", ondelete="SET NULL"))
     role = relationship("Role", back_populates="users")
 
+    # portal links — at most one should be set
+    student_id = db.Column(db.Integer, db.ForeignKey("students.id", ondelete="SET NULL"), nullable=True, unique=True)
+    student = relationship("Student", foreign_keys=[student_id])
+
+    teacher_id = db.Column(db.Integer, db.ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True, unique=True)
+    teacher = relationship("Teacher", foreign_keys=[teacher_id])
+
+    @property
+    def portal_type(self):
+        if self.student_id:
+            return "student"
+        if self.teacher_id:
+            return "teacher"
+        return "admin"
+
     def has_role(self, role_name: str) -> bool:
         return self.role and self.role.name == role_name
 

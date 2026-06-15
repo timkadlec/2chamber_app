@@ -29,6 +29,7 @@ from modules.teachers import teachers_bp
 from modules.exceptions import exceptions_bp
 from modules.rules import rules_bp
 from modules.api import api_bp
+from modules.student_portal import student_portal_bp
 from collections import defaultdict
 from utils.error_handlers import register_error_handlers
 from sqlalchemy.orm import selectinload
@@ -96,6 +97,7 @@ def create_app():
     app.register_blueprint(exceptions_bp, url_prefix="/exceptions")
     app.register_blueprint(rules_bp, url_prefix="/rules")
     app.register_blueprint(api_bp, url_prefix="/api")
+    app.register_blueprint(student_portal_bp)
 
     # Always-available CLI
     app.cli.add_command(cli_format_academic_year)

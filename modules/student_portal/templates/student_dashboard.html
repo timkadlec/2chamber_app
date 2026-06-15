@@ -1,0 +1,145 @@
+{% extends "student_base.html" %}
+{% block title %}Přehled{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+    <div>
+        <h1 class="text-secondary mb-0">Vítejte, {{ student.first_name }}</h1>
+        <p class="text-muted mb-0">
+            {% if semester %}
+                {{ (semester.academic_year.name ~ " – " ~ semester.name) if semester.academic_year else semester.name }}
+            {% else %}
+                Žádný aktivní semestr
+            {% endif %}
+        </p>
+    </div>
+
+    {% if student_semesters | length > 1 %}
+    <form method="get" action="{{ url_for('student_portal.dashboard') }}" class="d-flex align-items-center gap-2">
+        <label class="form-label mb-0 text-muted small fw-semibold">Semestr:</label>
+        <select name="semester_id" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width: 220px;">
+            {% for s in student_semesters %}
+                <option value="{{ s.id }}" {% if s.id == semester.id %}selected{% endif %}>
+                    {{ (s.academic_year.name ~ " – " ~ s.name) if s.academic_year else s.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+    {% endif %}
+</div>
+
+<div class="row g-4">
+
+    <!-- Student info card -->
+    <div class="col-12 col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user me-2 text-secondary"></i>Moje informace</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0 small">
+                    <dt class="col-5">Jméno</dt>
+                    <dd class="col-7">{{ student.full_name }}</dd>
+
+                    <dt class="col-5">Nástroj</dt>
+                    <dd class="col-7">{{ student.instrument.name if student.instrument else "—" }}</dd>
+
+                    <dt class="col-5">Oddělení</dt>
+                    <dd class="col-7">{{ student.department.name if student.department else "—" }}</dd>
+
+                    <dt class="col-5">E-mail</dt>
+                    <dd class="col-7">{{ student.email or "—" }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ensembles card -->
+    <div class="col-12 col-md-8">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-music me-2 text-secondary"></i>Moje soubory</h5>
+            </div>
+            <div class="card-body">
+                {% if ensembles %}
+                    <div class="d-flex flex-column gap-3">
+                        {% for ensemble in ensembles %}
+                            {% set detail = ensemble_details[ensemble.id] %}
+                            <div class="border rounded p-3">
+                                <div class="fw-semibold mb-2">{{ ensemble.name }}</div>
+
+                                {% if detail.teachers %}
+                                    <div class="small text-muted mb-1">
+                                        <i class="fas fa-chalkboard-teacher me-1"></i>
+                                        {{ detail.teachers | map(attribute='teacher.full_name') | join(", ") }}
+                                    </div>
+                                {% endif %}
+
+                                {% if detail.players %}
+                                    <ul class="list-unstyled mb-0 mt-2 small">
+                                        {% for ep in detail.players %}
+                                            <li class="d-flex align-items-center gap-2 py-1 border-bottom border-light">
+                                                <i class="fas fa-user text-secondary" style="width:14px;"></i>
+                                                <span>{{ ep.player.full_name }}</span>
+                                                {% if ep.player.instrument %}
+                                                    <span class="text-muted">– {{ ep.player.instrument.name }}</span>
+                                                {% endif %}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted fst-italic mb-0">V tomto semestru nejste zařazen/a do žádného souboru.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Subject enrollments card -->
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-book me-2 text-secondary"></i>Zapsané předměty</h5>
+            </div>
+            <div class="card-body">
+                {% if enrollments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-uppercase small text-muted">
+                                <tr>
+                                    <th>Předmět</th>
+                                    <th>Klasifikace</th>
+                                    <th>Datum</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for e in enrollments %}
+                                    <tr>
+                                        <td>{{ e.subject.name if e.subject else "—" }}</td>
+                                        <td>
+                                            {% if e.classification %}
+                                                <span class="badge bg-primary">{{ e.classification }}</span>
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="small text-muted">
+                                            {{ e.classification_date.strftime("%d.%m.%Y") if e.classification_date else "—" }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted fst-italic mb-0">V tomto semestru nemáte žádné zapsané předměty.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

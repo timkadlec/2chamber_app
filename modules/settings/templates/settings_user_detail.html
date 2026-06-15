@@ -38,6 +38,19 @@
                         {% endif %}
                     </dd>
 
+                    <dt class="col-sm-3">Portál</dt>
+                    <dd class="col-sm-9">
+                        {% if user.student %}
+                            <span class="badge bg-info text-dark">Student</span>
+                            — {{ user.student.full_name }}
+                        {% elif user.teacher %}
+                            <span class="badge bg-warning text-dark">Pedagog</span>
+                            — {{ user.teacher.full_name }}
+                        {% else %}
+                            <span class="badge bg-secondary">Admin</span>
+                        {% endif %}
+                    </dd>
+
                     <dt class="col-sm-3">Poskytovatel</dt>
                     <dd class="col-sm-9">{{ user.provider | capitalize }}</dd>
 

@@ -1,7 +1,7 @@
 from flask import render_template, request, flash, redirect, url_for
 from utils.nav import navlink
 from modules.settings import settings_bp
-from models import db, User, Role, Permission
+from models import db, User, Role, Permission, Student
 from sqlalchemy.orm import joinedload
 from flask import abort
 from utils.decorators import role_required
@@ -80,9 +80,23 @@ def user_edit(user_id):
     form = UserEditForm(obj=user)
     form.role_id.choices = [(r.id, r.name) for r in Role.query.order_by(Role.name).all()]
 
+    # Students not already linked to another user (plus current user's student)
+    linked_ids = {
+        u.student_id for u in User.query.filter(
+            User.student_id.isnot(None), User.id != user_id
+        ).with_entities(User.student_id)
+    }
+    available_students = Student.query.filter(
+        ~Student.id.in_(linked_ids)
+    ).order_by(Student.last_name, Student.first_name).all()
+    form.student_id.choices = [("", "— Žádný —")] + [
+        (s.id, f"{s.full_name} ({s.osobni_cislo or s.id})") for s in available_students
+    ]
+
     if form.validate_on_submit():
         user.role_id = form.role_id.data
         user.is_active = form.is_active.data
+        user.student_id = form.student_id.data
         db.session.commit()
         flash("Uživatel byl úspěšně upraven.", "success")
         return redirect(url_for("settings.user_detail", user_id=user.id))

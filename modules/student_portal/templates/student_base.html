@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} | HAMU Student</title>
+
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; background: #f8f9fa; }
+        .student-navbar { background: #fff; border-bottom: 2px solid #008cd7; }
+        .student-navbar .navbar-brand img { max-height: 44px; }
+    </style>
+
+    {% block extra_styles %}{% endblock %}
+</head>
+<body>
+
+<nav class="student-navbar navbar navbar-expand-md px-4 py-2 mb-4 shadow-sm">
+    <a class="navbar-brand" href="{{ url_for('student_portal.dashboard') }}">
+        <img src="{{ url_for('static', filename='images/hamu_logo.png') }}" alt="HAMU">
+    </a>
+    <span class="navbar-text fw-semibold text-secondary d-none d-md-inline">
+        Studentský portál
+    </span>
+    <div class="ms-auto d-flex align-items-center gap-3">
+        <span class="text-muted small d-none d-sm-inline">
+            <i class="fas fa-user me-1"></i>{{ current_user.display_name or current_user.email }}
+        </span>
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-sign-out-alt me-1"></i> Odhlásit
+        </a>
+    </div>
+</nav>
+
+<div class="container py-2">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</div>
+
+<script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

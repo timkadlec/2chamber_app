@@ -125,6 +125,7 @@
                                   action="{{ url_for('ensemble.add_composition_to_ensemble',
                                     ensemble_id=ensemble.id,
                                     semester_id=current_semester.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="selected_composition_id" id="modal-composition-id">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zavřít</button>
                                 <button type="submit" class="btn btn-primary">Přidat</button>

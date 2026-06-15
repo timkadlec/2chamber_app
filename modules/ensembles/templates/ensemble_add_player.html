@@ -141,6 +141,7 @@
                   ensemble_id=ensemble.id,
                   ensemble_instrumentation_id=instrumentation.id,
                   mode=('student' if request.args.get('mode') == 'student' else 'guest')) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="selected_player_id" id="modal-player-id">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zavřít</button>
                                 <button type="submit" class="btn btn-primary">Přidat</button>

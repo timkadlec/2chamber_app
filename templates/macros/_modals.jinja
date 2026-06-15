@@ -23,6 +23,7 @@
                 </div>
 
                 <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <p class="mb-0">{{ message }}</p>
                     {% for key, val in form_hidden.items() %}
                         <input type="hidden" name="{{ key }}" value="{{ val }}">

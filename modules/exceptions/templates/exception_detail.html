@@ -104,6 +104,7 @@
                 <div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered">
                         <form method="post" action="{{ url_for('exceptions.exception_decision', exception_id=exception.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <div class="modal-content">
                                 <div class="modal-header">
                                     <h5 class="modal-title">Potvrdit schválení</h5>
@@ -130,6 +131,7 @@
                 <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered">
                         <form method="post" action="{{ url_for('exceptions.exception_decision', exception_id=exception.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <div class="modal-content">
                                 <div class="modal-header">
                                     <h5 class="modal-title">Potvrdit zamítnutí</h5>

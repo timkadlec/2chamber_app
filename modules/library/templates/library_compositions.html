@@ -78,6 +78,7 @@
                                                 <div class="modal-footer">
                                                     <form action="{{ url_for("library.composition_delete", composition_id=composition.id) }}"
                                                           method="post" class="d-inline">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                         <button type="button" class="btn btn-secondary"
                                                                 data-bs-dismiss="modal">Close
                                                         </button>

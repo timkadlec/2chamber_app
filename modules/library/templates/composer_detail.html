@@ -90,6 +90,7 @@
                                     </a>
                                     <form action="{{ url_for("library.composition_delete", composition_id=composition.id, nav_type="from_composer") }}"
                                           method="post" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button class="btn btn-link btn-sm text-danger">
                                             <i class="fas fa-trash"></i>
                                         </button>

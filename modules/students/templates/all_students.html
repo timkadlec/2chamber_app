@@ -151,6 +151,7 @@
                                                     <div class="modal-footer">
                                                         <form action="#"
                                                               method="post" class="d-inline">
+                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                             <button type="button" class="btn btn-secondary"
                                                                     data-bs-dismiss="modal">Close
                                                             </button>
@@ -188,7 +189,7 @@
                                                             <form id="classificationForm{{ student.id }}"
                                                                   method="post"
                                                                   action="{{ url_for('students.classify_student', student_id=student.id) }}">
-
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                                 <div class="mb-3">
                                                                     <label class="form-label">Předmět</label>
 
@@ -242,6 +243,7 @@
                                                             <form id="clearClassificationForm{{ student.id }}"
                                                                   method="post"
                                                                   action="{{ url_for('students.clear_classification', student_id=student.id) }}">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                                 <input type="hidden"
                                                                        name="enrollment_id"
                                                                        id="clearEnrollmentId{{ student.id }}">

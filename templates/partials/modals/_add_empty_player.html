@@ -11,6 +11,7 @@
                                             <!-- Manual single-player form -->
                                             <form action="{{ url_for('ensemble.add_empty_player', ensemble_id=ensemble.id) }}"
                                                   method="post" class="mb-3">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                 <div class="mb-3">
                                                     <label for="instrument_id" class="form-label">Nástroj</label>
                                                     <select id="instrument_id" name="instrument_id" class="form-select"
@@ -47,6 +48,7 @@
                     }.items() %}
                                                         <form method="post"
                                                               action="{{ url_for('ensemble.add_preset_ensemble', ensemble_id=ensemble.id) }}">
+                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                             <input type="hidden" name="preset" value="{{ key }}">
                                                             <button type="submit"
                                                                     class="btn btn-outline-primary btn-sm">

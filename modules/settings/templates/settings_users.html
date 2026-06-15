@@ -119,6 +119,7 @@
                                                         </div>
                                                         <div class="modal-footer">
                                                             <form action="#" method="post" class="d-inline">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                                                 <button type="button" class="btn btn-secondary"
                                                                         data-bs-dismiss="modal">Zrušit
                                                                 </button>

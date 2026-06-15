@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "macros/_back_button.html" import back_link %}
+{% block title %}Upravit – {{ user.display_name or user.email }}{% endblock %}
+{% block content %}
+<main class="py-4">
+    <div class="container-xl">
+
+        {{ back_link("settings.user_detail", "Zpět na detail uživatele", {"user_id": user.id}) }}
+
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">{{ user.display_name or user.email }}</h5>
+                <small class="text-muted">{{ user.email }}</small>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.role_id.label(class="form-label fw-semibold") }}
+                        {{ form.role_id(class="form-select" + (" is-invalid" if form.role_id.errors else "")) }}
+                        {% for error in form.role_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check">
+                            {{ form.is_active(class="form-check-input") }}
+                            {{ form.is_active.label(class="form-check-label") }}
+                        </div>
+                    </div>
+
+                    <hr>
+                    {{ form.submit(class="btn btn-sm btn-primary") }}
+                    <a href="{{ url_for('settings.user_detail', user_id=user.id) }}"
+                       class="btn btn-sm btn-outline-secondary ms-2">Zrušit</a>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</main>
+{% endblock %}

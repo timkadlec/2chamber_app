@@ -1,10 +1,11 @@
-from flask import render_template, request, flash, redirect, url_for, jsonify
+from flask import render_template, request, flash, redirect, url_for
 from utils.nav import navlink
 from modules.settings import settings_bp
 from models import db, User, Role, Permission
 from sqlalchemy.orm import joinedload
 from flask import abort
 from utils.decorators import role_required
+from modules.settings.forms import UserEditForm
 
 
 @settings_bp.route('/users', methods=["GET"])
@@ -63,3 +64,27 @@ def role_detail(role_id):
         role=role,
         permissions_grouped=grouped
     )
+
+
+@settings_bp.route("/user/<user_id>")
+@role_required("admin")
+def user_detail(user_id):
+    user = User.query.get_or_404(user_id)
+    return render_template("settings_user_detail.html", user=user)
+
+
+@settings_bp.route("/user/<user_id>/edit", methods=["GET", "POST"])
+@role_required("admin")
+def user_edit(user_id):
+    user = User.query.get_or_404(user_id)
+    form = UserEditForm(obj=user)
+    form.role_id.choices = [(r.id, r.name) for r in Role.query.order_by(Role.name).all()]
+
+    if form.validate_on_submit():
+        user.role_id = form.role_id.data
+        user.is_active = form.is_active.data
+        db.session.commit()
+        flash("Uživatel byl úspěšně upraven.", "success")
+        return redirect(url_for("settings.user_detail", user_id=user.id))
+
+    return render_template("settings_user_edit.html", user=user, form=form)

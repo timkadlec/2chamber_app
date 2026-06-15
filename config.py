@@ -58,7 +58,9 @@ class BaseConfig:
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
+    DEV_LOGIN = True
 
 
 class ProductionConfig(BaseConfig):
     DEBUG = False
+    DEV_LOGIN = False

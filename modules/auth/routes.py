@@ -1,15 +1,12 @@
-from flask import Blueprint, session, url_for, redirect, flash, request, current_app
+from flask import Blueprint, session, url_for, redirect, flash, request, current_app, render_template, abort
 from flask_login import login_user, logout_user, login_required
 from datetime import datetime
 from models import db, User
 from app import oauth
 import os
-from flask import jsonify
 from flask_login import current_user
 from . import auth_bp
 from urllib.parse import urlparse, urljoin
-from flask import request, current_app
-import json
 
 TENANT = os.environ.get("OAUTH_TENANT_ID")
 AUTH_BASE = f"https://login.microsoftonline.com/{TENANT}/oauth2/v2.0"
@@ -17,9 +14,32 @@ AUTH_BASE = f"https://login.microsoftonline.com/{TENANT}/oauth2/v2.0"
 
 @auth_bp.route("/login")
 def login():
+    if current_app.config.get("DEV_LOGIN"):
+        return redirect(url_for("auth.dev_login"))
     return oauth.entra.authorize_redirect(
         redirect_uri=url_for("auth.auth_callback", _external=True)
     )
+
+
+@auth_bp.route("/dev-login", methods=["GET", "POST"])
+def dev_login():
+    if not current_app.config.get("DEV_LOGIN"):
+        abort(404)
+
+    users = User.query.order_by(User.display_name).all()
+
+    if request.method == "POST":
+        user_id = request.form.get("user_id")
+        user = User.query.get_or_404(user_id)
+        login_user(user, remember=True)
+        session["user"] = {
+            "name": user.display_name,
+            "oid": user.oid,
+            "preferred_username": user.upn,
+        }
+        return redirect(url_for("index"))
+
+    return render_template("dev_login.html", users=users)
 
 
 def is_safe_url(target):

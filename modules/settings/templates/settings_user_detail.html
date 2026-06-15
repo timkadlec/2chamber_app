@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "macros/_back_button.html" import back_link %}
+{% block title %}{{ user.display_name or user.email }} – Detail{% endblock %}
+{% block content %}
+<main class="py-4">
+    <div class="container-xl">
+
+        {{ back_link("settings.users", "Zpět na seznam uživatelů") }}
+
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ user.display_name or user.email }}</h5>
+                <a href="{{ url_for('settings.user_edit', user_id=user.id) }}"
+                   class="btn btn-sm btn-outline-info d-flex align-items-center">
+                    <i class="fas fa-edit me-1"></i>
+                    <span class="ms-1 d-none d-md-inline">Upravit</span>
+                </a>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Jméno</dt>
+                    <dd class="col-sm-9">{{ user.display_name or "—" }}</dd>
+
+                    <dt class="col-sm-3">E-mail</dt>
+                    <dd class="col-sm-9">{{ user.email or "—" }}</dd>
+
+                    <dt class="col-sm-3">UPN</dt>
+                    <dd class="col-sm-9">{{ user.upn or "—" }}</dd>
+
+                    <dt class="col-sm-3">Role</dt>
+                    <dd class="col-sm-9">
+                        {% if user.role %}
+                            <a href="{{ url_for('settings.role_detail', role_id=user.role.id) }}">
+                                {{ user.role.name }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-3">Poskytovatel</dt>
+                    <dd class="col-sm-9">{{ user.provider | capitalize }}</dd>
+
+                    <dt class="col-sm-3">Stav</dt>
+                    <dd class="col-sm-9">
+                        {% if user.is_active %}
+                            <span class="badge bg-success">Aktivní</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Neaktivní</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-3">Vytvořen</dt>
+                    <dd class="col-sm-9">{{ user.created_at.strftime("%d.%m.%Y %H:%M") if user.created_at else "—" }}</dd>
+
+                    <dt class="col-sm-3">Poslední přihlášení</dt>
+                    <dd class="col-sm-9">{{ user.last_login_at.strftime("%d.%m.%Y %H:%M") if user.last_login_at else "—" }}</dd>
+                </dl>
+            </div>
+        </div>
+
+    </div>
+</main>
+{% endblock %}

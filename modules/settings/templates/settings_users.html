@@ -87,10 +87,10 @@
                                         </td>
                                         <td class="text-end">
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <a href="#" class="btn btn-outline-primary" title="Detail">
+                                                <a href="{{ url_for('settings.user_detail', user_id=user.id) }}" class="btn btn-outline-primary" title="Detail">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a href="#" class="btn btn-outline-primary" title="Upravit">
+                                                <a href="{{ url_for('settings.user_edit', user_id=user.id) }}" class="btn btn-outline-primary" title="Upravit">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 <button type="button" class="btn btn-outline-danger"
@@ -163,10 +163,10 @@
                                         </p>
                                         <div class="d-flex justify-content-end mt-2">
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <a href="#" class="btn btn-outline-primary" title="Detail">
+                                                <a href="{{ url_for('settings.user_detail', user_id=user.id) }}" class="btn btn-outline-primary" title="Detail">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a href="#" class="btn btn-outline-primary" title="Upravit">
+                                                <a href="{{ url_for('settings.user_edit', user_id=user.id) }}" class="btn btn-outline-primary" title="Upravit">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 <button type="button" class="btn btn-outline-danger"

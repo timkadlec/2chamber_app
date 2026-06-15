@@ -103,3 +103,18 @@ class User(db.Model, UserMixin):
 
     def has_permission(self, code: str) -> bool:
         return self.role and self.role.has_permission(code)
+
+    passkey_credentials = relationship("PasskeyCredential", back_populates="user", cascade="all, delete-orphan")
+
+
+class PasskeyCredential(db.Model):
+    __tablename__ = "passkey_credentials"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(36), db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    credential_id = db.Column(db.LargeBinary, unique=True, nullable=False)
+    public_key = db.Column(db.LargeBinary, nullable=False)
+    sign_count = db.Column(db.Integer, default=0, nullable=False)
+    name = db.Column(db.String(100), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="passkey_credentials")

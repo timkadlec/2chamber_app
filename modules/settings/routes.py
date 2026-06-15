@@ -1,9 +1,10 @@
 from flask import render_template, request, flash, redirect, url_for
 from utils.nav import navlink
 from modules.settings import settings_bp
-from models import db, User, Role, Permission, Student
+from models import db, User, Role, Permission, Student, PasskeyCredential
 from sqlalchemy.orm import joinedload
 from flask import abort
+from flask_login import current_user, login_required
 from utils.decorators import role_required
 from modules.settings.forms import UserEditForm
 
@@ -102,3 +103,11 @@ def user_edit(user_id):
         return redirect(url_for("settings.user_detail", user_id=user.id))
 
     return render_template("settings_user_edit.html", user=user, form=form)
+
+
+@settings_bp.route("/passkeys")
+@navlink("Passkeys", weight=115, group="Nastavení", roles=["admin"])
+@role_required("admin")
+def passkeys():
+    passkeys = PasskeyCredential.query.filter_by(user_id=current_user.id).order_by(PasskeyCredential.created_at).all()
+    return render_template("settings_passkeys.html", passkeys=passkeys)

@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Passkeys{% endblock %}
+{% block content %}
+<main class="py-4">
+    <div class="container-xl">
+
+        {% from "macros/_back_button.html" import back_link %}
+        {{ back_link("settings.users", "Zpět na uživatele") }}
+
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h1 class="mb-0 text-secondary">Moje passkeys</h1>
+            <button class="btn btn-dark d-flex align-items-center gap-2" id="btn-register">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M0 8a4 4 0 0 1 7.465-2H14a.5.5 0 0 1 .354.146l1.5 1.5a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0L13 9.207l-.646.647a.5.5 0 0 1-.708 0L11 9.207l-.646.647a.5.5 0 0 1-.708 0L9 9.207l-.646.647A.5.5 0 0 1 8 10H7.465A4.002 4.002 0 0 1 0 8m4-3a3 3 0 1 0 0 6 3 3 0 0 0 0-6"/>
+                </svg>
+                Přidat passkey
+            </button>
+        </div>
+
+        <div id="reg-alert" class="d-none alert mb-3" role="alert"></div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                {% if passkeys %}
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light text-uppercase small text-muted">
+                        <tr>
+                            <th>Název</th>
+                            <th>Vytvořeno</th>
+                            <th class="text-end">Akce</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for pk in passkeys %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1 text-muted" viewBox="0 0 16 16">
+                                        <path d="M0 8a4 4 0 0 1 7.465-2H14a.5.5 0 0 1 .354.146l1.5 1.5a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0L13 9.207l-.646.647a.5.5 0 0 1-.708 0L11 9.207l-.646.647a.5.5 0 0 1-.708 0L9 9.207l-.646.647A.5.5 0 0 1 8 10H7.465A4.002 4.002 0 0 1 0 8m4-3a3 3 0 1 0 0 6 3 3 0 0 0 0-6"/>
+                                    </svg>
+                                    {{ pk.name or "Passkey" }}
+                                </td>
+                                <td class="text-muted small">{{ pk.created_at.strftime("%d.%m.%Y %H:%M") if pk.created_at else "—" }}</td>
+                                <td class="text-end">
+                                    <form method="post" action="{{ url_for('auth.passkey_delete', cred_id=pk.id) }}"
+                                          onsubmit="return confirm('Opravdu odebrat tento passkey?')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash me-1"></i> Odebrat
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="p-4 text-muted fst-italic">Zatím žádné passkeys. Přidejte první kliknutím na tlačítko výše.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card shadow-sm mt-3">
+            <div class="card-body">
+                <h6 class="fw-semibold mb-1">Přihlašovací stránka passkey</h6>
+                <p class="text-muted small mb-2">Odkaz pro přihlášení administrátorů bez Microsoft Entra:</p>
+                <a href="{{ url_for('auth.passkey_login', _external=True) }}" class="text-break small">
+                    {{ url_for('auth.passkey_login', _external=True) }}
+                </a>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<!-- Name modal -->
+<div class="modal fade" id="nameModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Pojmenujte nový passkey</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="passkey-name" class="form-control" placeholder="např. MacBook Touch ID" maxlength="100">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit</button>
+                <button type="button" class="btn btn-dark" id="btn-confirm-register">Vytvořit passkey</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { startRegistration } from '{{ url_for("static", filename="vendor/simplewebauthn-browser.es.js") }}';
+
+    const regAlert = document.getElementById('reg-alert');
+    const nameModal = new window.bootstrap.Modal(document.getElementById('nameModal'));
+
+    function showAlert(msg, type) {
+        regAlert.className = `alert alert-${type}`;
+        regAlert.textContent = msg;
+        regAlert.classList.remove('d-none');
+    }
+
+    document.getElementById('btn-register').addEventListener('click', () => {
+        nameModal.show();
+    });
+
+    document.getElementById('btn-confirm-register').addEventListener('click', async () => {
+        const name = document.getElementById('passkey-name').value.trim() || 'Passkey';
+        nameModal.hide();
+        regAlert.classList.add('d-none');
+
+        try {
+            const beginResp = await fetch('{{ url_for("auth.passkey_register_begin") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const options = await beginResp.json();
+            if (options.ok === false) {
+                showAlert(options.error || 'Chyba při zahájení registrace.', 'danger');
+                return;
+            }
+
+            const credential = await startRegistration({ optionsJSON: options });
+
+            const completeResp = await fetch(
+                '{{ url_for("auth.passkey_register_complete") }}?name=' + encodeURIComponent(name),
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(credential),
+                }
+            );
+            const result = await completeResp.json();
+
+            if (result.ok) {
+                showAlert('Passkey byl úspěšně přidán!', 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert(result.error || 'Registrace selhala.', 'danger');
+            }
+        } catch (err) {
+            showAlert('Chyba: ' + err.message, 'danger');
+        }
+    });
+</script>
+{% endblock %}

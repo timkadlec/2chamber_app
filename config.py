@@ -30,6 +30,9 @@ def construct_postgres_db_uri(user, password, host, port, db_name):
 class BaseConfig:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    WEBAUTHN_RP_ID = os.environ.get("WEBAUTHN_RP_ID", "localhost")
+    WEBAUTHN_RP_NAME = os.environ.get("WEBAUTHN_RP_NAME", "2chamber App")
+    WEBAUTHN_ORIGIN = os.environ.get("WEBAUTHN_ORIGIN", "http://localhost:5000")
     ORACLE_URL = construct_oracle_db_uri(
         user=os.environ.get('ORACLE_DB_USER'),
         password=os.environ.get('ORACLE_DB_PSWD'),

@@ -1,7 +1,7 @@
 from flask import render_template, flash, redirect, url_for, session, request
 from utils.nav import navlink
 from models import Student, StudentSubjectEnrollment, Instrument, Subject, Player, EnsemblePlayer, Ensemble, \
-    EnsembleSemester, db, Semester, Department
+    EnsembleSemester, db, Semester, Department, StudentChamberApplication, StudentChamberApplicationStatus
 from modules.students import students_bp
 from sqlalchemy import and_, func, exists
 from .forms import EnrollmentForm
@@ -104,6 +104,33 @@ def index():
                 )
             )
 
+    # --- Pending chamber application filter ---
+    has_pending_application = request.args.get("has_pending_application")
+    if has_pending_application in ("0", "1"):
+        subq = (
+            db.session.query(StudentChamberApplication.id)
+            .outerjoin(
+                StudentChamberApplicationStatus,
+                StudentChamberApplication.status_id == StudentChamberApplicationStatus.id
+            )
+            .filter(StudentChamberApplication.student_id == Student.id)
+            .filter(
+                or_(
+                    StudentChamberApplicationStatus.code == "pending",
+                    StudentChamberApplication.status_id.is_(None),
+                )
+            )
+            .correlate(Student)
+        )
+        if semester_ids:
+            subq = subq.filter(StudentChamberApplication.semester_id.in_(semester_ids))
+        pending_app_exists = subq.exists()
+
+        if has_pending_application == "1":
+            query = query.filter(pending_app_exists)
+        else:
+            query = query.filter(~pending_app_exists)
+
     # --- Sort by name ---
     query = query.order_by(Student.last_name, Student.first_name)
 
@@ -126,6 +153,7 @@ def index():
         selected_department_ids=department_ids,
         search_query=search_query,
         selected_has_classification=has_classification,
+        selected_has_pending_application=has_pending_application,
     )
 
 
@@ -134,8 +162,20 @@ def index():
 def student_detail(student_id):
     current_semester = get_or_set_current_semester()
     student = Student.query.get_or_404(student_id)
-    form = EnrollmentForm()  # basic form object
-    return render_template("student_detail.html", student=student, form=form, current_semester=current_semester)
+    form = EnrollmentForm()
+    chamber_applications = (
+        StudentChamberApplication.query
+        .filter_by(student_id=student_id)
+        .order_by(StudentChamberApplication.semester_id.desc(), StudentChamberApplication.submission_date.desc())
+        .all()
+    )
+    return render_template(
+        "student_detail.html",
+        student=student,
+        form=form,
+        current_semester=current_semester,
+        chamber_applications=chamber_applications,
+    )
 
 
 @students_bp.route("/edit-enrollment/<int:enrollment_id>", methods=["POST"])

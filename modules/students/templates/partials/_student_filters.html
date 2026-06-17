@@ -44,10 +44,20 @@
                 </select>
             </div>
 
+            {# Pending chamber application filter #}
+            <div class="col-md-3">
+                <label for="has_pending_application" class="form-label">Žádost o komorní hru</label>
+                <select class="form-select form-select-sm" id="has_pending_application" name="has_pending_application">
+                    <option value="">-- Žádost --</option>
+                    <option value="1" {% if selected_has_pending_application == '1' %}selected{% endif %}>Má nevyřízenou žádost</option>
+                    <option value="0" {% if selected_has_pending_application == '0' %}selected{% endif %}>Nemá nevyřízenou žádost</option>
+                </select>
+            </div>
+
             {{ text_filter('Hledat studenta', 'filter-q', 'q',
                      search_query, placeholder='Jméno studenta...') }}
 
-            {{ button_row(show_reset=(selected_semester_ids or selected_instrument_ids or selected_subject_ids or selected_has_ensemble or search_query),
+            {{ button_row(show_reset=(selected_semester_ids or selected_instrument_ids or selected_subject_ids or selected_has_ensemble or search_query or selected_has_pending_application),
                     reset_url=url_for('students.index')) }}
 
         </div>

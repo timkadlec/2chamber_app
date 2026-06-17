@@ -44,13 +44,13 @@
                 </select>
             </div>
 
-            {# Pending chamber application filter #}
+            {# Chamber application filter #}
             <div class="col-md-3">
                 <label for="has_pending_application" class="form-label">Žádost o komorní hru</label>
                 <select class="form-select form-select-sm" id="has_pending_application" name="has_pending_application">
                     <option value="">-- Žádost --</option>
-                    <option value="1" {% if selected_has_pending_application == '1' %}selected{% endif %}>Má nevyřízenou žádost</option>
-                    <option value="0" {% if selected_has_pending_application == '0' %}selected{% endif %}>Nemá nevyřízenou žádost</option>
+                    <option value="1" {% if selected_has_pending_application == '1' %}selected{% endif %}>Má žádost</option>
+                    <option value="0" {% if selected_has_pending_application == '0' %}selected{% endif %}>Nemá žádost</option>
                 </select>
             </div>
 

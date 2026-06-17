@@ -104,32 +104,22 @@ def index():
                 )
             )
 
-    # --- Pending chamber application filter ---
+    # --- Chamber application filter ---
     has_pending_application = request.args.get("has_pending_application")
     if has_pending_application in ("0", "1"):
         subq = (
             db.session.query(StudentChamberApplication.id)
-            .outerjoin(
-                StudentChamberApplicationStatus,
-                StudentChamberApplication.status_id == StudentChamberApplicationStatus.id
-            )
             .filter(StudentChamberApplication.student_id == Student.id)
-            .filter(
-                or_(
-                    StudentChamberApplicationStatus.code == "pending",
-                    StudentChamberApplication.status_id.is_(None),
-                )
-            )
             .correlate(Student)
         )
         if semester_ids:
             subq = subq.filter(StudentChamberApplication.semester_id.in_(semester_ids))
-        pending_app_exists = subq.exists()
+        app_exists = subq.exists()
 
         if has_pending_application == "1":
-            query = query.filter(pending_app_exists)
+            query = query.filter(app_exists)
         else:
-            query = query.filter(~pending_app_exists)
+            query = query.filter(~app_exists)
 
     # --- Sort by name ---
     query = query.order_by(Student.last_name, Student.first_name)

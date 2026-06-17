@@ -104,22 +104,25 @@ def index():
                 )
             )
 
-    # --- Chamber application filter ---
-    has_pending_application = request.args.get("has_pending_application")
-    if has_pending_application in ("0", "1"):
-        subq = (
-            db.session.query(StudentChamberApplication.id)
-            .filter(StudentChamberApplication.student_id == Student.id)
-            .correlate(Student)
-        )
-        if semester_ids:
-            subq = subq.filter(StudentChamberApplication.semester_id.in_(semester_ids))
-        app_exists = subq.exists()
+        # --- Chamber application filter ---
+        has_pending_application = request.args.get("has_pending_application")
+        if has_pending_application in ("0", "1"):
+            # Získání objektu aktuálního semestru
+            current_semester = get_or_set_current_semester()
 
-        if has_pending_application == "1":
-            query = query.filter(app_exists)
-        else:
-            query = query.filter(~app_exists)
+            subq = (
+                db.session.query(StudentChamberApplication.id)
+                .filter(StudentChamberApplication.student_id == Student.id)
+                # Přidání explicitního filtru na současný semestr
+                .filter(StudentChamberApplication.semester_id == current_semester.id)
+                .correlate(Student)
+            )
+            app_exists = subq.exists()
+
+            if has_pending_application == "1":
+                query = query.filter(app_exists)
+            else:
+                query = query.filter(~app_exists)
 
     # --- Sort by name ---
     query = query.order_by(Student.last_name, Student.first_name)

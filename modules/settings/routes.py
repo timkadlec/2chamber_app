@@ -1,7 +1,7 @@
 from flask import render_template, request, flash, redirect, url_for
 from utils.nav import navlink
 from modules.settings import settings_bp
-from models import db, User, Role, Permission, Student, PasskeyCredential
+from models import db, User, Role, Permission, Student, Teacher, PasskeyCredential
 from sqlalchemy.orm import joinedload
 from flask import abort
 from flask_login import current_user, login_required
@@ -81,23 +81,45 @@ def user_edit(user_id):
     form = UserEditForm(obj=user)
     form.role_id.choices = [(r.id, r.name) for r in Role.query.order_by(Role.name).all()]
 
-    # Students not already linked to another user (plus current user's student)
-    linked_ids = {
+    # Students not already linked to another user
+    linked_student_ids = {
         u.student_id for u in User.query.filter(
             User.student_id.isnot(None), User.id != user_id
         ).with_entities(User.student_id)
     }
     available_students = Student.query.filter(
-        ~Student.id.in_(linked_ids)
+        ~Student.id.in_(linked_student_ids)
     ).order_by(Student.last_name, Student.first_name).all()
     form.student_id.choices = [("", "— Žádný —")] + [
         (s.id, f"{s.full_name} ({s.osobni_cislo or s.id})") for s in available_students
     ]
 
+    # Teachers not already linked to another user
+    linked_teacher_ids = {
+        u.teacher_id for u in User.query.filter(
+            User.teacher_id.isnot(None), User.id != user_id
+        ).with_entities(User.teacher_id)
+    }
+    available_teachers = Teacher.query.filter(
+        ~Teacher.id.in_(linked_teacher_ids)
+    ).order_by(Teacher.last_name, Teacher.first_name).all()
+    form.teacher_id.choices = [("", "— Žádný —")] + [
+        (t.id, f"{t.full_name} ({t.osobni_cislo or t.id})") for t in available_teachers
+    ]
+
     if form.validate_on_submit():
+        new_student_id = form.student_id.data
+        new_teacher_id = form.teacher_id.data
+
+        # Enforce mutual exclusivity — only one portal link at a time
+        if new_student_id and new_teacher_id:
+            flash("Uživatel nemůže být zároveň student i pedagog. Vyberte pouze jedno propojení.", "danger")
+            return render_template("settings_user_edit.html", user=user, form=form)
+
         user.role_id = form.role_id.data
         user.is_active = form.is_active.data
-        user.student_id = form.student_id.data
+        user.student_id = new_student_id
+        user.teacher_id = new_teacher_id
         db.session.commit()
         flash("Uživatel byl úspěšně upraven.", "success")
         return redirect(url_for("settings.user_detail", user_id=user.id))

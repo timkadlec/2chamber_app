@@ -1,7 +1,8 @@
 from flask import Blueprint, session, url_for, redirect, flash, request, current_app, render_template, abort, jsonify
+from sqlalchemy import func
 from flask_login import login_user, logout_user, login_required
 from datetime import datetime
-from models import db, User, Student, PasskeyCredential
+from models import db, User, Student, Teacher, PasskeyCredential
 from app import oauth
 import os
 import base64
@@ -19,6 +20,17 @@ from urllib.parse import urlparse, urljoin
 
 TENANT = os.environ.get("OAUTH_TENANT_ID")
 AUTH_BASE = f"https://login.microsoftonline.com/{TENANT}/oauth2/v2.0"
+
+
+def _find_teacher_by_email(email: str):
+    """Match a Teacher whose constructed email (first.last@hamu.cz) equals the given address."""
+    if not email:
+        return None
+    email_expr = (
+        func.lower(Teacher.first_name) + "." +
+        func.lower(Teacher.last_name) + "@hamu.cz"
+    )
+    return Teacher.query.filter(email_expr == email.lower()).first()
 
 
 @auth_bp.route("/login")
@@ -48,6 +60,8 @@ def dev_login():
         }
         if user.portal_type == "student":
             return redirect(url_for("student_portal.dashboard"))
+        if user.portal_type == "teacher":
+            return redirect(url_for("teacher_portal.dashboard"))
         return redirect(url_for("index"))
 
     return render_template("dev_login.html", users=users)
@@ -87,7 +101,32 @@ def auth_callback():
         user.email = email or user.email
         user.upn = upn or user.upn
         user.last_login_at = datetime.utcnow()
+        db.session.commit()
+
+        # Try to auto-link if not yet linked to any portal
+        if not user.student_id and not user.teacher_id and email:
+            student = Student.query.filter_by(email=email).first()
+            if student and not User.query.filter(User.student_id == student.id, User.id != user.id).first():
+                user.student_id = student.id
+                db.session.commit()
+            else:
+                teacher = _find_teacher_by_email(email)
+                if teacher and not User.query.filter(User.teacher_id == teacher.id, User.id != user.id).first():
+                    user.teacher_id = teacher.id
+                    db.session.commit()
     else:
+        # New user — must match a student or teacher, otherwise deny access
+        matched_student = None
+        matched_teacher = None
+        if email:
+            matched_student = Student.query.filter_by(email=email).first()
+            if not matched_student:
+                matched_teacher = _find_teacher_by_email(email)
+
+        if not matched_student and not matched_teacher:
+            flash("Přístup zamítnut: Váš účet nebyl nalezen v systému.", "danger")
+            return redirect(url_for("auth.login"))
+
         user = User(
             oid=oid,
             tid=tid,
@@ -95,17 +134,13 @@ def auth_callback():
             email=email,
             upn=upn,
             last_login_at=datetime.utcnow(),
-            role_id=4, # by default assign viewer role
         )
+        if matched_student:
+            user.student_id = matched_student.id
+        else:
+            user.teacher_id = matched_teacher.id
         db.session.add(user)
-
-    db.session.commit()
-
-    if not user.student_id and email:
-        student = Student.query.filter_by(email=email).first()
-        if student and not User.query.filter(User.student_id == student.id, User.id != user.id).first():
-            user.student_id = student.id
-            db.session.commit()
+        db.session.commit()
 
     login_user(user, remember=True)
 
@@ -118,6 +153,8 @@ def auth_callback():
     flash("Úspěšně přihlášený.", "success")
     if user.portal_type == "student":
         return redirect(url_for("student_portal.dashboard"))
+    if user.portal_type == "teacher":
+        return redirect(url_for("teacher_portal.dashboard"))
     return redirect(url_for("index"))
 
 

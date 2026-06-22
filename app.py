@@ -30,6 +30,7 @@ from modules.exceptions import exceptions_bp
 from modules.rules import rules_bp
 from modules.api import api_bp
 from modules.student_portal import student_portal_bp
+from modules.teacher_portal import teacher_portal_bp
 from modules.chamber_enrollment_requests import chamber_enrollment_requests_bp
 from collections import defaultdict
 from utils.error_handlers import register_error_handlers
@@ -99,6 +100,7 @@ def create_app():
     app.register_blueprint(rules_bp, url_prefix="/rules")
     app.register_blueprint(api_bp, url_prefix="/api")
     app.register_blueprint(student_portal_bp)
+    app.register_blueprint(teacher_portal_bp)
     app.register_blueprint(chamber_enrollment_requests_bp, url_prefix="/chamber-enrollment-requests")
 
     # Always-available CLI

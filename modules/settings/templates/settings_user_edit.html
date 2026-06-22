@@ -26,11 +26,20 @@
 
                     <div class="mb-3">
                         {{ form.student_id.label(class="form-label fw-semibold") }}
-                        {{ form.student_id(class="form-select" + (" is-invalid" if form.student_id.errors else "")) }}
+                        {{ form.student_id(class="form-select" + (" is-invalid" if form.student_id.errors else ""), id="student_id_select") }}
                         {% for error in form.student_id.errors %}
                             <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
                         <div class="form-text">Po propojení se student přihlásí do studentského portálu.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.teacher_id.label(class="form-label fw-semibold") }}
+                        {{ form.teacher_id(class="form-select" + (" is-invalid" if form.teacher_id.errors else ""), id="teacher_id_select") }}
+                        {% for error in form.teacher_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">Po propojení se pedagog přihlásí do pedagogického portálu. Nelze kombinovat se studentem.</div>
                     </div>
 
                     <div class="mb-4">

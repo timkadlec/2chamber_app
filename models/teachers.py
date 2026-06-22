@@ -9,6 +9,7 @@ class Teacher(db.Model):
     first_name = db.Column(db.String(100))  # fixed typo
     last_name = db.Column(db.String(100))
     osobni_cislo = db.Column(db.Integer)
+    email = db.Column(db.String(255), nullable=True, index=True)
 
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'))
     department = db.relationship("Department")
@@ -28,6 +29,12 @@ class Teacher(db.Model):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
+
+    @property
+    def constructed_email(self):
+        if self.first_name and self.last_name:
+            return f"{self.first_name.lower()}.{self.last_name.lower()}@hamu.cz"
+        return None
 
     @property
     def subjects(self):

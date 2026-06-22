@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Výběr portálu | Organizátor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.css') }}">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #008cd7;
+            min-height: 100vh;
+        }
+        .portal-card {
+            border-radius: 16px;
+            border: none;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+        }
+        .portal-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2) !important;
+        }
+        .portal-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin: 0 auto 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container d-flex flex-column justify-content-center align-items-center min-vh-100 py-5">
+
+    <div class="text-center mb-5">
+        <img src="{{ url_for('static', filename='images/HAMU_ZNACKA_rgb_bile_pozadi.png') }}" alt="HAMU Logo" style="max-height: 56px; border-radius: 8px; padding: 4px 8px; background: white;">
+        <h2 class="mt-3 fw-bold text-white">Sekce komorní hry</h2>
+        <p class="text-white-50 mb-1">Vítejte, {{ current_user.display_name or current_user.email }}</p>
+        <p class="text-white-50">Zvolte, kam chcete pokračovat.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center" style="max-width: 860px; width: 100%;">
+
+        {# Admin / management app — shown when user has a real role #}
+        {% if current_user.role and current_user.role.name != "viewer" %}
+        <div class="col-12 col-sm-6 col-md-4">
+            <a href="{{ url_for('index') }}" class="portal-card card shadow-lg p-4 text-center text-dark">
+                <div class="portal-icon bg-primary bg-opacity-10 text-primary mx-auto">
+                    <i class="fas fa-sliders"></i>
+                </div>
+                <h5 class="fw-semibold mb-1">Správa systému</h5>
+                <p class="text-muted small mb-0">Administrace, soubory, žádosti a přehledy</p>
+                <span class="badge bg-primary mt-3">{{ current_user.role.name }}</span>
+            </a>
+        </div>
+        {% endif %}
+
+        {# Teacher portal #}
+        {% if current_user.teacher_id and current_user.teacher %}
+        <div class="col-12 col-sm-6 col-md-4">
+            <a href="{{ url_for('teacher_portal.dashboard') }}" class="portal-card card shadow-lg p-4 text-center text-dark">
+                <div class="portal-icon bg-indigo bg-opacity-10 mx-auto" style="background-color: rgba(92,107,192,0.12);">
+                    <i class="fas fa-chalkboard-teacher" style="color: #5c6bc0;"></i>
+                </div>
+                <h5 class="fw-semibold mb-1">Pedagogický portál</h5>
+                <p class="text-muted small mb-0">Moje soubory a studenti v tomto semestru</p>
+                <span class="badge mt-3" style="background:#5c6bc0;">{{ current_user.teacher.full_name }}</span>
+            </a>
+        </div>
+        {% endif %}
+
+        {# Student portal — rare, but possible #}
+        {% if current_user.student_id and current_user.student and current_user.student.active %}
+        <div class="col-12 col-sm-6 col-md-4">
+            <a href="{{ url_for('student_portal.dashboard') }}" class="portal-card card shadow-lg p-4 text-center text-dark">
+                <div class="portal-icon bg-success bg-opacity-10 text-success mx-auto">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h5 class="fw-semibold mb-1">Studentský portál</h5>
+                <p class="text-muted small mb-0">Moje soubory, předměty a přihlášky</p>
+                <span class="badge bg-success mt-3">{{ current_user.student.full_name }}</span>
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <div class="mt-5">
+        <a href="{{ url_for('auth.logout') }}" class="text-white-50 small text-decoration-none">
+            <i class="fas fa-sign-out-alt me-1"></i> Odhlásit se
+        </a>
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>

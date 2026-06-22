@@ -6,7 +6,10 @@ from cli import (
     cli_get_or_create_subject,
     cli_oracle_students_update,
     cli_oracle_semesters,
-    cli_oracle_teachers
+    cli_oracle_teachers,
+    cli_sync_permissions,
+    cli_seed_portal_roles,
+    cli_seed_test_students,
 )
 from flask import Flask, url_for, request, redirect, render_template, session
 from config import ProductionConfig, DevelopmentConfig
@@ -108,6 +111,9 @@ def create_app():
     app.cli.add_command(cli_get_or_create_academic_year)
     app.cli.add_command(cli_get_or_create_semester)
     app.cli.add_command(cli_get_or_create_subject)
+    app.cli.add_command(cli_sync_permissions)
+    app.cli.add_command(cli_seed_portal_roles)
+    app.cli.add_command(cli_seed_test_students)
 
     # Oracle-only CLI
     if oracle_enabled:
@@ -140,6 +146,25 @@ def create_app():
     from flask_login import current_user
 
     SESSION_TIMEOUT_MINUTES = 60  # 1 hour inactivity timeout
+
+    # -----------------------------------------------------
+    # 0. Redirect portal-only role users away from management
+    # -----------------------------------------------------
+    @app.before_request
+    def restrict_portal_role_users():
+        endpoint = request.endpoint
+        if not endpoint:
+            return
+        # Allow auth, static, and the two portal blueprints
+        if request.blueprint in ("auth", "student_portal", "teacher_portal") or endpoint.startswith("static"):
+            return
+        if not current_user.is_authenticated:
+            return
+        role_name = current_user.role.name if current_user.role else None
+        if role_name == "student" and current_user.student_id:
+            return redirect(url_for("student_portal.dashboard"))
+        if role_name == "teacher" and current_user.teacher_id:
+            return redirect(url_for("teacher_portal.dashboard"))
 
     # -----------------------------------------------------
     # 1. Require login for all web routes (except auth/static)

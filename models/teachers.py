@@ -1,3 +1,4 @@
+import unicodedata
 from . import db, EnsembleTeacher
 from sqlalchemy import Index, func
 
@@ -33,7 +34,12 @@ class Teacher(db.Model):
     @property
     def constructed_email(self):
         if self.first_name and self.last_name:
-            return f"{self.first_name.lower()}.{self.last_name.lower()}@hamu.cz"
+            def _strip(s):
+                return "".join(
+                    c for c in unicodedata.normalize("NFKD", s)
+                    if not unicodedata.combining(c)
+                )
+            return f"{_strip(self.first_name).lower()}.{_strip(self.last_name).lower()}@hamu.cz"
         return None
 
     @property

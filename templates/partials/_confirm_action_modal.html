@@ -1,0 +1,36 @@
+{# Generic confirmation modal for fetch-based POST actions.
+   Trigger any button with:
+     data-bs-toggle="modal"
+     data-bs-target="#confirmActionModal"
+     data-action-url="/api/..."
+     data-action-title="..."          (optional, default: Potvrdit akci)
+     data-action-message="..."        (optional, supports HTML)
+     data-action-btn-label="..."      (optional, default: Potvrdit)
+     data-action-btn-class="btn-danger"  (optional)
+     data-action-toast="..."          (optional success toast text)
+#}
+<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title js-confirm-title">Potvrdit akci</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zavřít"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="js-confirm-error alert alert-danger d-none mb-2"></div>
+                <p class="js-confirm-message mb-0">Opravdu chcete provést tuto akci?</p>
+            </div>
+
+            <div class="modal-footer">
+                <div class="me-auto small text-muted js-confirm-spinner d-none">
+                    <i class="fas fa-spinner fa-spin me-1"></i> Provádím…
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Zrušit</button>
+                <button type="button" class="btn btn-sm btn-danger js-confirm-submit">Potvrdit</button>
+            </div>
+
+        </div>
+    </div>
+</div>

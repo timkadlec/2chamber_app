@@ -153,6 +153,21 @@ def deactivate_ensemble(ensemble_id):
     return jsonify({"success": True}), 200
 
 
+@api_bp.route('/ensemble/<int:ensemble_id>/reactivate', methods=['POST'])
+@permission_required("ens_deactivate")
+def reactivate_ensemble(ensemble_id):
+    ensemble = Ensemble.query.get_or_404(ensemble_id)
+
+    try:
+        ensemble.active = True
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": str(e)}), 400
+
+    return jsonify({"success": True}), 200
+
+
 @api_bp.route('/ensemble/<int:ensemble_id>/teachers/semester/<int:semester_id>', methods=['GET'])
 def get_ensemble_teachers_for_semester(ensemble_id, semester_id):
     ensemble = Ensemble.query.get_or_404(ensemble_id)

@@ -119,5 +119,32 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.js-deactivate-ensemble-modal').forEach(init);
+
+        // Reactivate buttons (no modal — just confirm + fetch)
+        document.querySelectorAll('.js-reactivate-ensemble').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const ensembleId = btn.dataset.ensembleId;
+                const ensembleName = btn.dataset.ensembleName || '';
+                if (!confirm(`Opravdu chcete obnovit soubor: ${ensembleName}?`)) return;
+
+                btn.disabled = true;
+
+                try {
+                    const resp = await fetch(`/api/ensemble/${ensembleId}/reactivate`, {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', ...csrfHeaders() }
+                    });
+                    const data = await resp.json().catch(() => ({}));
+                    if (!resp.ok || data.success === false) {
+                        throw new Error(data.message || `HTTP ${resp.status}`);
+                    }
+                    toastAfterReload(data.message || 'Soubor byl obnoven.', 'success');
+                    window.location.reload();
+                } catch (e) {
+                    toast(`Nepodařilo se obnovit soubor. (${e.message})`, 'danger');
+                    btn.disabled = false;
+                }
+            });
+        });
     });
 })();

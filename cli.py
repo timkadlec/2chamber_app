@@ -1,4 +1,8 @@
 import click
+import re
+import os
+import uuid
+import random
 from flask.cli import with_appcontext
 from models import db, KomorniHraStud, StudentSubjectEnrollment, KomorniHraUcitel, Subject, Student
 from utils.import_oracle import (get_or_create_academic_year, get_or_create_semester, get_or_create_subject, \
@@ -285,6 +289,73 @@ def cli_oracle_semesters():
         click.echo(f" - {sem_id}")
 
 
+@click.command("sync-permissions")
+@click.option("--dry-run", is_flag=True, help="Report only; do not write to the database.")
+@with_appcontext
+def cli_sync_permissions(dry_run):
+    """
+    Scan the project source for every permission code referenced via
+    @permission_required(...) or has_permission(...) and ensure each one
+    exists in the permissions table.  Orphaned DB entries (codes that no
+    longer appear in the source) are reported but never deleted automatically.
+    """
+    from models import Permission
+
+    # Regex matches both single- and double-quoted codes in either call form
+    pattern = re.compile(r"""(?:permission_required|has_permission)\(\s*['"]([^'"]+)['"]\s*""")
+
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    scan_dirs = [
+        os.path.join(project_root, "modules"),
+        os.path.join(project_root, "utils"),
+        os.path.join(project_root, "templates"),
+    ]
+
+    found_codes: set[str] = set()
+    for scan_dir in scan_dirs:
+        for dirpath, _, filenames in os.walk(scan_dir):
+            if "__pycache__" in dirpath:
+                continue
+            for filename in filenames:
+                if not filename.endswith((".py", ".html")):
+                    continue
+                filepath = os.path.join(dirpath, filename)
+                with open(filepath, encoding="utf-8", errors="ignore") as fh:
+                    for code in pattern.findall(fh.read()):
+                        found_codes.add(code)
+
+    click.echo(f"🔍 Found {len(found_codes)} permission code(s) in source.")
+
+    existing = {p.code: p for p in Permission.query.all()}
+    existing_codes = set(existing.keys())
+
+    missing = sorted(found_codes - existing_codes)
+    orphaned = sorted(existing_codes - found_codes)
+
+    if missing:
+        click.echo(f"\n➕ Missing from DB ({len(missing)}) — will {'skip (dry-run)' if dry_run else 'create'}:")
+        for code in missing:
+            click.echo(f"   {code}")
+            if not dry_run:
+                db.session.add(Permission(code=code))
+        if not dry_run:
+            db.session.commit()
+            click.echo("   ✅ Created.")
+    else:
+        click.echo("✅ All source permissions already exist in DB.")
+
+    if orphaned:
+        click.echo(f"\n⚠️  In DB but not found in source ({len(orphaned)}) — review manually:")
+        for code in orphaned:
+            p = existing[code]
+            click.echo(f"   {code}  (id={p.id}, name={p.name or '—'})")
+    else:
+        click.echo("✅ No orphaned permissions in DB.")
+
+    if dry_run:
+        click.echo("\n(dry-run — no changes written)")
+
+
 @click.command("oracle-teachers")
 @with_appcontext
 def cli_oracle_teachers():
@@ -294,3 +365,112 @@ def cli_oracle_teachers():
     for teacher in oracle_teachers:
         new_teacher = get_or_create_teacher(teacher)
     db.session.commit()
+
+
+@click.command("seed-portal-roles")
+@with_appcontext
+def cli_seed_portal_roles():
+    """Ensure 'student' and 'teacher' roles exist in the database."""
+    from models.auth import Role
+
+    created = []
+    for name, description in [
+        ("student", "Přístup pouze do studentského portálu"),
+        ("teacher", "Přístup pouze do pedagogického portálu"),
+    ]:
+        if not Role.query.filter_by(name=name).first():
+            db.session.add(Role(name=name, description=description))
+            created.append(name)
+
+    if created:
+        db.session.commit()
+        click.echo(f"✅ Created role(s): {', '.join(created)}")
+    else:
+        click.echo("✅ Roles 'student' and 'teacher' already exist.")
+
+
+@click.command("seed-test-students")
+@click.option("--count", default=5, show_default=True, help="Number of student accounts to create.")
+@click.option("--reset", is_flag=True, help="Delete previously seeded test accounts first.")
+@with_appcontext
+def cli_seed_test_students(count, reset):
+    """
+    Create dev-only User accounts for random active students (one per instrument).
+    Accounts use the 'viewer' role and are linked via student_id.
+    Only works when DEV_LOGIN is enabled.
+    """
+    from models.auth import User, Role
+    from flask import current_app
+
+    if not current_app.config.get("DEV_LOGIN"):
+        click.echo("❌  DEV_LOGIN is not enabled — refusing to seed test accounts.", err=True)
+        raise SystemExit(1)
+
+    TEST_OID_PREFIX = "dev-test-student-"
+
+    if reset:
+        deleted = User.query.filter(User.oid.like(f"{TEST_OID_PREFIX}%")).delete(synchronize_session=False)
+        db.session.commit()
+        click.echo(f"🗑️  Deleted {deleted} existing test account(s).")
+
+    student_role = Role.query.filter_by(name="student").first()
+    if not student_role:
+        click.echo("❌  Role 'student' not found — run `flask seed-portal-roles` first.", err=True)
+        raise SystemExit(1)
+
+    # Active students that don't already have a linked User
+    linked_student_ids = db.session.query(User.student_id).filter(User.student_id.isnot(None))
+    candidates = (
+        Student.query
+        .filter(Student.active.is_(True))
+        .filter(Student.id.notin_(linked_student_ids))
+        .all()
+    )
+
+    if not candidates:
+        click.echo("⚠️  No unlinked active students found.", err=True)
+        raise SystemExit(0)
+
+    # Pick one student per instrument (shuffle for randomness), up to `count`
+    by_instrument: dict = {}
+    random.shuffle(candidates)
+    for s in candidates:
+        key = s.instrument_id or 0
+        if key not in by_instrument:
+            by_instrument[key] = s
+        if len(by_instrument) >= count:
+            break
+
+    selected = list(by_instrument.values())
+
+    created = []
+    for student in selected:
+        oid = f"{TEST_OID_PREFIX}{student.id}"
+        email = student.email or f"test.student.{student.id}@dev.local"
+
+        # Skip if a user with this oid or email already exists
+        if User.query.filter((User.oid == oid) | (User.email == email)).first():
+            click.echo(f"⏭️  Skipping {student.full_name} — account already exists.")
+            continue
+
+        user = User(
+            oid=oid,
+            tid="dev-tenant",
+            display_name=student.full_name,
+            email=email,
+            upn=email,
+            provider="dev",
+            student_id=student.id,
+            role_id=student_role.id,
+        )
+        db.session.add(user)
+        created.append((student, email))
+
+    db.session.commit()
+
+    click.echo(f"\n✅ Created {len(created)} test student account(s):\n")
+    for student, email in created:
+        instr = student.instrument.name if student.instrument else "—"
+        click.echo(f"   {student.full_name:<30}  instrument: {instr:<20}  email: {email}")
+
+    click.echo("\nLog in via /auth/dev-login and pick the account you want to test.")

@@ -54,10 +54,25 @@
                             </div>
                         </div>
 
-                        <div class="ms-3">
-                <span class="badge bg-warning text-dark">
-                    <i class="fas fa-triangle-exclamation me-1"></i> Pozor
-                </span>
+                        <div class="ms-3 d-flex flex-column align-items-end gap-2">
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-triangle-exclamation me-1"></i> Pozor
+                            </span>
+                            {% if current_user.has_permission('ens_deactivate') %}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-success"
+                                        title="Obnovit soubor"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#confirmActionModal"
+                                        data-action-url="{{ url_for('api.reactivate_ensemble', ensemble_id=ensemble.id) }}"
+                                        data-action-title="Obnovit soubor"
+                                        data-action-message="Opravdu chcete obnovit soubor <strong>{{ ensemble.name|e }}</strong>?"
+                                        data-action-btn-label="Obnovit"
+                                        data-action-btn-class="btn-success"
+                                        data-action-toast="Soubor byl obnoven.">
+                                    <i class="fas fa-rotate-left me-1"></i> Obnovit
+                                </button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -566,12 +581,16 @@
                         </button>
                         <button
                                 type="button"
-                                class="btn btn-outline-danger btn-sm js-deactivate-ensemble"
-                                data-ensemble-id="{{ ensemble.id }}"
-                                data-ensemble-name="{{ ensemble.name|e }}"
+                                class="btn btn-outline-danger btn-sm"
+                                title="Deaktivovat soubor"
                                 data-bs-toggle="modal"
-                                data-bs-target="#deactivateEnsembleModal"
-                                title="Deaktivovat soubor">
+                                data-bs-target="#confirmActionModal"
+                                data-action-url="{{ url_for('api.deactivate_ensemble', ensemble_id=ensemble.id) }}"
+                                data-action-title="Deaktivovat soubor"
+                                data-action-message="Opravdu chcete deaktivovat soubor <strong>{{ ensemble.name|e }}</strong>?"
+                                data-action-btn-label="Deaktivovat"
+                                data-action-btn-class="btn-danger"
+                                data-action-toast="Soubor byl deaktivován.">
                             <i class="fas fa-ban"></i><span class="ms-2 d-none d-md-inline">Deaktivovat soubor</span>
                         </button>
 
@@ -698,7 +717,6 @@
 
     </main>
     {% include "partials/_move_semester_modal.html" %}
-    {% include "partials/_deactivate_ensemble_modal.html" %}
     {% include "partials/modals/_add_note_modal.html" %}
     {% include "partials/modals/_delete_note_modal.html" %}
     {% include "partials/modals/_add_empty_player.html" %}
@@ -710,7 +728,6 @@
 {% block extra_scripts %}
     <script src="{{ url_for('static', filename='js/modals/takeover-teacher.js') }}"></script>
     <script src="{{ url_for('static', filename='js/move_semester_modal.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/deactivate_ensemble_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modals/select-teacher.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modals/delete-note.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modals/ensemble-edit-modal.js') }}"></script>

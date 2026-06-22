@@ -3,6 +3,7 @@ from sqlalchemy import func
 from flask_login import login_user, logout_user, login_required
 from datetime import datetime
 from models import db, User, Student, Teacher, PasskeyCredential
+from models.auth import Role
 from app import oauth
 import os
 import base64
@@ -21,16 +22,124 @@ from urllib.parse import urlparse, urljoin
 TENANT = os.environ.get("OAUTH_TENANT_ID")
 AUTH_BASE = f"https://login.microsoftonline.com/{TENANT}/oauth2/v2.0"
 
+# Roles that only grant portal access — not management-app access
+PORTAL_ONLY_ROLES = {"viewer", "student", "teacher"}
+
+
+def _auto_link_portal(user, email: str) -> bool:
+    """
+    On every login:
+    1. Try to link the user to a student/teacher record if not already linked.
+    2. If the user is currently viewer (or has no role), upgrade to the matching
+       portal role ("student" / "teacher").  Management roles are never touched.
+    Returns True if anything was changed (so the caller knows to commit).
+    """
+    if not email:
+        return False
+
+    changed = False
+    current_role = user.role.name if user.role else None
+
+    if not user.student_id:
+        student = Student.query.filter_by(email=email).first()
+        if student and not User.query.filter(User.student_id == student.id, User.id != user.id).first():
+            user.student_id = student.id
+            changed = True
+
+    if not user.teacher_id:
+        teacher = _find_teacher_by_email(email)
+        if teacher and not User.query.filter(User.teacher_id == teacher.id, User.id != user.id).first():
+            user.teacher_id = teacher.id
+            changed = True
+
+    # Role upgrade runs on every login — not just when a link was just found.
+    # This catches users who were linked before the portal roles were seeded.
+    # Management roles (creator, reviewer, admin, …) are never downgraded.
+    if current_role in (None, "viewer"):
+        target_name = "teacher" if user.teacher_id else ("student" if user.student_id else None)
+        if target_name:
+            role = Role.query.filter_by(name=target_name).first()
+            if role and user.role_id != role.id:
+                user.role_id = role.id
+                changed = True
+
+    return changed
+
 
 def _find_teacher_by_email(email: str):
-    """Match a Teacher whose constructed email (first.last@hamu.cz) equals the given address."""
+    """
+    Match a Teacher whose email equals the given address.
+    Checks the manual Teacher.email override first, then falls back to the
+    constructed formula (unaccent strips diacritics so e.g. 'Štěpán JEŽEK'
+    → 'stepan.jezek@hamu.cz').
+    """
     if not email:
         return None
+    email_lower = email.lower()
+
+    # Manual override takes priority (handles edge cases like name collisions)
+    teacher = Teacher.query.filter(
+        func.lower(Teacher.email) == email_lower
+    ).first()
+    if teacher:
+        return teacher
+
+    # Constructed formula: firstname.lastname@hamu.cz with diacritics stripped
     email_expr = (
-        func.lower(Teacher.first_name) + "." +
-        func.lower(Teacher.last_name) + "@hamu.cz"
+        func.unaccent(func.lower(Teacher.first_name)) + "." +
+        func.unaccent(func.lower(Teacher.last_name)) + "@hamu.cz"
     )
-    return Teacher.query.filter(email_expr == email.lower()).first()
+    return Teacher.query.filter(email_expr == email_lower).first()
+
+
+def _post_login_url(user):
+    """
+    Return the URL the user should be sent to after login, or None if access is denied.
+
+    Role logic:
+      "student"           → student portal (denied if no active student link)
+      "teacher"           → teacher portal (denied if no teacher link)
+      management role     → landing if they also have a portal, otherwise index
+      "viewer" / no role  → portal if one exists, otherwise denied
+    """
+    role_name = user.role.name if user.role else None
+    student_active = bool(user.student_id and user.student and user.student.active)
+    teacher_linked = bool(user.teacher_id and user.teacher)
+
+    if role_name == "student":
+        return url_for("student_portal.dashboard") if student_active else None
+
+    if role_name == "teacher":
+        return url_for("teacher_portal.dashboard") if teacher_linked else None
+
+    has_mgmt_role = bool(role_name and role_name not in PORTAL_ONLY_ROLES)
+    if has_mgmt_role:
+        if teacher_linked or student_active:
+            return url_for("auth.landing")
+        return url_for("index")
+
+    # viewer / no role — route to portal if one exists
+    if student_active:
+        return url_for("student_portal.dashboard")
+    if teacher_linked:
+        return url_for("teacher_portal.dashboard")
+
+    # viewer with no portal link = administration worker, let them into the app
+    if role_name == "viewer":
+        return url_for("index")
+
+    return None  # no role at all → deny
+
+
+def _redirect_after_login(user):
+    """Redirect the user to the right destination, or deny and log them out."""
+    destination = _post_login_url(user)
+    if destination:
+        return redirect(destination)
+
+    flash("Přístup zamítnut: Váš účet není aktivní nebo nebyl nalezen v systému.", "danger")
+    logout_user()
+    return redirect(url_for("auth.login"))
 
 
 @auth_bp.route("/login")
@@ -52,17 +161,15 @@ def dev_login():
     if request.method == "POST":
         user_id = request.form.get("user_id")
         user = User.query.get_or_404(user_id)
+        if _auto_link_portal(user, user.email):
+            db.session.commit()
         login_user(user, remember=True)
         session["user"] = {
             "name": user.display_name,
             "oid": user.oid,
             "preferred_username": user.upn,
         }
-        if user.portal_type == "student":
-            return redirect(url_for("student_portal.dashboard"))
-        if user.portal_type == "teacher":
-            return redirect(url_for("teacher_portal.dashboard"))
-        return redirect(url_for("index"))
+        return _redirect_after_login(user)
 
     return render_template("dev_login.html", users=users)
 
@@ -101,32 +208,11 @@ def auth_callback():
         user.email = email or user.email
         user.upn = upn or user.upn
         user.last_login_at = datetime.utcnow()
+        if _auto_link_portal(user, email):
+            pass  # changes will be committed below
         db.session.commit()
-
-        # Try to auto-link if not yet linked to any portal
-        if not user.student_id and not user.teacher_id and email:
-            student = Student.query.filter_by(email=email).first()
-            if student and not User.query.filter(User.student_id == student.id, User.id != user.id).first():
-                user.student_id = student.id
-                db.session.commit()
-            else:
-                teacher = _find_teacher_by_email(email)
-                if teacher and not User.query.filter(User.teacher_id == teacher.id, User.id != user.id).first():
-                    user.teacher_id = teacher.id
-                    db.session.commit()
     else:
         # New user — must match a student or teacher, otherwise deny access
-        matched_student = None
-        matched_teacher = None
-        if email:
-            matched_student = Student.query.filter_by(email=email).first()
-            if not matched_student:
-                matched_teacher = _find_teacher_by_email(email)
-
-        if not matched_student and not matched_teacher:
-            flash("Přístup zamítnut: Váš účet nebyl nalezen v systému.", "danger")
-            return redirect(url_for("auth.login"))
-
         user = User(
             oid=oid,
             tid=tid,
@@ -135,11 +221,14 @@ def auth_callback():
             upn=upn,
             last_login_at=datetime.utcnow(),
         )
-        if matched_student:
-            user.student_id = matched_student.id
-        else:
-            user.teacher_id = matched_teacher.id
         db.session.add(user)
+        _auto_link_portal(user, email)
+
+        if not user.student_id and not user.teacher_id:
+            db.session.rollback()
+            flash("Přístup zamítnut: Váš účet nebyl nalezen v systému.", "danger")
+            return redirect(url_for("auth.login"))
+
         db.session.commit()
 
     login_user(user, remember=True)
@@ -151,11 +240,16 @@ def auth_callback():
     }
 
     flash("Úspěšně přihlášený.", "success")
-    if user.portal_type == "student":
-        return redirect(url_for("student_portal.dashboard"))
-    if user.portal_type == "teacher":
-        return redirect(url_for("teacher_portal.dashboard"))
-    return redirect(url_for("index"))
+    return _redirect_after_login(user)
+
+
+@auth_bp.route("/landing")
+@login_required
+def landing():
+    role_name = current_user.role.name if current_user.role else None
+    if not role_name or role_name in PORTAL_ONLY_ROLES:
+        return _redirect_after_login(current_user)
+    return render_template("landing.html")
 
 
 @auth_bp.route("/logout")
@@ -223,17 +317,19 @@ def passkey_login_complete():
     except Exception as e:
         return jsonify({"ok": False, "error": f"Verification failed: {e}"}), 403
 
+    user = stored.user
     stored.sign_count = verification.new_sign_count
-    stored.user.last_login_at = datetime.utcnow()
+    user.last_login_at = datetime.utcnow()
+    _auto_link_portal(user, user.email)
     db.session.commit()
 
-    login_user(stored.user, remember=True)
+    login_user(user, remember=True)
     session["user"] = {
-        "name": stored.user.display_name,
-        "oid": stored.user.oid,
-        "preferred_username": stored.user.upn,
+        "name": user.display_name,
+        "oid": user.oid,
+        "preferred_username": user.upn,
     }
-    return jsonify({"ok": True, "redirect": url_for("index")})
+    return jsonify({"ok": True, "redirect": _post_login_url(user) or url_for("auth.login")})
 
 
 # ---------------------------------------------------------------------------

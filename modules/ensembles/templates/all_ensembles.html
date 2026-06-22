@@ -191,8 +191,37 @@
                                                 {% call if_perm('ens_edit', current_user) %}
                                                     {{ action_modal_button(title='Převést do dalšího semestru', modal_target='moveSemesterModal', ensemble=ensemble, color='outline-warning', icon="file-export") }}
                                                 {% endcall %}
-                                                {% call if_perm('ens_edit', current_user) %}
-                                                    {{ action_modal_button(title='Deaktivovat souboru', modal_target='deactivateEnsembleModal', ensemble=ensemble, color='outline-danger', icon="ban") }}
+                                                {% call if_perm('ens_deactivate', current_user) %}
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            title="Deaktivovat soubor"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#confirmActionModal"
+                                                            data-action-url="{{ url_for('api.deactivate_ensemble', ensemble_id=ensemble.id) }}"
+                                                            data-action-title="Deaktivovat soubor"
+                                                            data-action-message="Opravdu chcete deaktivovat soubor <strong>{{ ensemble.name|e }}</strong>?"
+                                                            data-action-btn-label="Deaktivovat"
+                                                            data-action-btn-class="btn-danger"
+                                                            data-action-toast="Soubor byl deaktivován.">
+                                                        <i class="fas fa-ban"></i>
+                                                    </button>
+                                                {% endcall %}
+                                            {% endif %}
+                                            {% if not ensemble.active %}
+                                                {% call if_perm('ens_deactivate', current_user) %}
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-success"
+                                                            title="Obnovit soubor"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#confirmActionModal"
+                                                            data-action-url="{{ url_for('api.reactivate_ensemble', ensemble_id=ensemble.id) }}"
+                                                            data-action-title="Obnovit soubor"
+                                                            data-action-message="Opravdu chcete obnovit soubor <strong>{{ ensemble.name|e }}</strong>?"
+                                                            data-action-btn-label="Obnovit"
+                                                            data-action-btn-class="btn-success"
+                                                            data-action-toast="Soubor byl obnoven.">
+                                                        <i class="fas fa-rotate-left"></i>
+                                                    </button>
                                                 {% endcall %}
                                             {% endif %}
                                             {% call if_perm('ens_delete', current_user) %}
@@ -323,14 +352,12 @@
     {% endfor %}
     {% include "partials/_move_semester_modal.html" %}
     {% include "partials/modals/_ensemble_add_modal.html" %}
-    {% include "partials/_deactivate_ensemble_modal.html" %}
 {% endblock %}
 
 {% block extra_scripts %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/move_semester_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/modals/ensemble-add-modal.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/deactivate_ensemble_modal.js') }}"></script>
 {% endblock %}
 
 

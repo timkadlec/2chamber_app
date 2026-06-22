@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}{% endblock %} | HAMU Sekce komorní hry</title>
 
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
@@ -40,6 +41,7 @@
 
 {% include 'partials/nav.html' %}
 {% include 'partials/flash_messages.html' %}
+{% include 'partials/_confirm_action_modal.html' %}
 
 <main class="container-fluid mt-4">
     {% block content %}{% endblock %}
@@ -69,6 +71,7 @@
 
 <!-- Your custom scripts -->
 <script defer src="{{ url_for('static', filename='js/menu.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/confirm-action-modal.js') }}"></script>
 {% block extra_scripts %}{% endblock %}
 
 </body>

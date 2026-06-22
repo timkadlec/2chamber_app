@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+{% block title %}Přihláška KH č. {{ req.id }}{% endblock %}
+{% block content %}
+<main class="py-4">
+    <div class="container-xl">
+
+        {% from "macros/_back_button.html" import back_link %}
+        {{ back_link("chamber_enrollment_requests.index", "Zpět na přihlášky", request.args) }}
+
+        <div class="card shadow-lg border border-2">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 text-uppercase fw-bold">Přihláška do komorní hry</h4>
+                <small class="text-muted">č. {{ req.id }}</small>
+            </div>
+
+            <div class="card-body">
+
+                <!-- Student -->
+                <section class="mb-4">
+                    <h5 class="fw-bold">Student</h5>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small">Jméno</label>
+                            <div class="fw-semibold">
+                                <a href="{{ url_for('students.student_detail', student_id=req.student.id) }}">
+                                    {{ req.student.full_name }}
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small">Nástroj</label>
+                            <div>{{ req.student.instrument.name if req.student.instrument else "—" }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small">Telefon</label>
+                            <div>{{ req.student.phone_number or "—" }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small">Budoucí ročník</label>
+                            <div>{{ req.future_year or "—" }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small">Semestr podání</label>
+                            <div>
+                                {% if req.semester %}
+                                    {{ req.semester.name }} {{ req.semester.academic_year.name if req.semester.academic_year else "" }}
+                                {% else %}—{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small">Datum podání</label>
+                            <div>{{ req.submission_date.strftime("%d.%m.%Y") if req.submission_date else "—" }}</div>
+                        </div>
+                    </div>
+                </section>
+
+                <hr>
+
+                <!-- Preference -->
+                <section class="mb-4">
+                    <h5 class="fw-bold">Preference obsazení</h5>
+
+                    {% if req.wants_to_stay %}
+                        <div class="alert alert-info d-flex align-items-center gap-2 mb-3">
+                            <i class="fas fa-redo"></i>
+                            <div>
+                                Student si přeje setrvat ve stávajícím souboru.
+                                {% if req.stay_ensemble %}
+                                    <strong>
+                                        <a href="{{ url_for('ensemble.ensemble_detail', ensemble_id=req.stay_ensemble.id) }}">
+                                            {{ req.stay_ensemble.name }}
+                                        </a>
+                                    </strong>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if req.players %}
+                        <h6 class="text-muted small text-uppercase mb-2">Navržení spoluhráči</h6>
+                        <ul class="list-group list-group-flush mb-3">
+                            {% for entry in req.players %}
+                                <li class="list-group-item">
+                                    {% if entry.player.student %}
+                                        {{ entry.player.student.full_name }}
+                                    {% else %}
+                                        {{ entry.player.full_name }} <span class="text-muted small">(j.h.)</span>
+                                    {% endif %}
+                                    <span class="text-muted ms-1">({{ entry.player.instrument.name if entry.player.instrument else "—" }})</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% elif not req.wants_to_stay %}
+                        <p class="text-muted">Žádní spoluhráči nebyli uvedeni (nezařazen/a).</p>
+                    {% endif %}
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small">Preferovaný pedagog KH</label>
+                            <div>{{ req.teacher.full_name if req.teacher else "—" }}</div>
+                        </div>
+                    </div>
+
+                    {% if req.notes %}
+                        <div class="mt-3">
+                            <label class="form-label text-muted small">Poznámka studenta</label>
+                            <div class="border rounded p-3 bg-light small">{{ req.notes }}</div>
+                        </div>
+                    {% endif %}
+                </section>
+
+                <hr>
+
+                <!-- Status -->
+                <section class="mb-3">
+                    <h5 class="fw-bold">Stav přihlášky</h5>
+                    {% if req.status == "approved" %}
+                        <span class="badge bg-success fs-6"><i class="fas fa-check-circle me-1"></i>Schváleno</span>
+                    {% elif req.status == "rejected" %}
+                        <span class="badge bg-danger fs-6"><i class="fas fa-times-circle me-1"></i>Zamítnuto</span>
+                    {% else %}
+                        <span class="badge bg-secondary fs-6"><i class="fas fa-hourglass-half me-1"></i>Čeká na zpracování</span>
+                    {% endif %}
+                </section>
+
+                <!-- Review info (shown after decision) -->
+                {% if req.reviewed_at %}
+                <section class="mb-3">
+                    <div class="row g-3 small text-muted">
+                        <div class="col-md-3">
+                            <label class="form-label text-muted small">Rozhodl/a</label>
+                            <div>{{ req.reviewed_by.display_name if req.reviewed_by else "—" }}</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label text-muted small">Datum rozhodnutí</label>
+                            <div>{{ req.reviewed_at.strftime("%d.%m.%Y %H:%M") }}</div>
+                        </div>
+                        {% if req.target_semester %}
+                        <div class="col-md-3">
+                            <label class="form-label text-muted small">Cílový semestr</label>
+                            <div>{{ req.target_semester.name }} {{ req.target_semester.academic_year.name if req.target_semester.academic_year else "" }}</div>
+                        </div>
+                        {% endif %}
+                        {% if req.result_ensemble %}
+                        <div class="col-md-3">
+                            <label class="form-label text-muted small">Výsledný soubor</label>
+                            <div>
+                                <a href="{{ url_for('ensemble.ensemble_detail', ensemble_id=req.result_ensemble.id) }}">
+                                    {{ req.result_ensemble.name }}
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if req.review_comment %}
+                        <div class="col-12">
+                            <label class="form-label text-muted small">Stanovisko</label>
+                            <div class="border rounded p-2 bg-light">{{ req.review_comment }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </section>
+                {% endif %}
+
+                <!-- Metadata -->
+                <section class="border-top pt-3">
+                    <p class="small text-muted mb-1">
+                        Podáno: {{ req.created_at.strftime("%d.%m.%Y %H:%M") if req.created_at else "—" }}
+                    </p>
+                </section>
+
+            </div>
+
+            <!-- Actions -->
+            {% if current_user.has_permission('cer_can_edit') and req.status == 'pending' %}
+                <div class="card-footer d-flex gap-2">
+                    <button type="button" class="btn btn-success btn-sm"
+                            data-bs-toggle="modal" data-bs-target="#approveCerModal{{ req.id }}">
+                        <i class="fas fa-check me-1"></i> Schválit
+                    </button>
+                    <button type="button" class="btn btn-warning btn-sm"
+                            data-bs-toggle="modal" data-bs-target="#rejectCerModal{{ req.id }}">
+                        <i class="fas fa-times me-1"></i> Zamítnout
+                    </button>
+                </div>
+            {% endif %}
+
+            <!-- Approve Modal -->
+            {% if current_user.has_permission('cer_can_edit') and req.status == 'pending' %}
+            <div class="modal fade" id="approveCerModal{{ req.id }}" tabindex="-1"
+                 aria-labelledby="approveCerLabel{{ req.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title" id="approveCerLabel{{ req.id }}">
+                                <i class="fas fa-check me-2"></i> Schválit přihlášku č. {{ req.id }}
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="POST" action="{{ url_for('chamber_enrollment_requests.approve', request_id=req.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="modal-body">
+
+                                <!-- Target semester -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Cílový semestr</label>
+                                    <select name="target_semester_id" class="form-select" required>
+                                        <option value="">— Vyberte semestr —</option>
+                                        {% for s in future_semesters %}
+                                            <option value="{{ s.id }}">
+                                                {{ s.name }}{% if s.academic_year %} {{ s.academic_year.name }}{% endif %}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text text-muted">Semestr, do kterého bude soubor zapsán.</div>
+                                </div>
+
+                                <!-- Ensemble mode -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Soubor</label>
+                                    <div class="d-flex flex-column gap-2">
+
+                                        {% if req.wants_to_stay and req.stay_ensemble %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio"
+                                                   name="ensemble_mode" id="modeStay{{ req.id }}"
+                                                   value="stay" checked
+                                                   onchange="toggleCerEnsembleMode('{{ req.id }}')">
+                                            <label class="form-check-label" for="modeStay{{ req.id }}">
+                                                <i class="fas fa-redo me-1 text-info"></i>
+                                                Ponechat v souboru <strong>{{ req.stay_ensemble.name }}</strong>
+                                                — přidat zápis semestru
+                                            </label>
+                                        </div>
+                                        {% endif %}
+
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio"
+                                                   name="ensemble_mode" id="modeNew{{ req.id }}"
+                                                   value="new"
+                                                   {% if not (req.wants_to_stay and req.stay_ensemble) %}checked{% endif %}
+                                                   onchange="toggleCerEnsembleMode('{{ req.id }}')">
+                                            <label class="form-check-label" for="modeNew{{ req.id }}">
+                                                <i class="fas fa-plus-circle me-1 text-success"></i>
+                                                Vytvořit nový soubor z navržených hráčů
+                                            </label>
+                                        </div>
+
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio"
+                                                   name="ensemble_mode" id="modeExisting{{ req.id }}"
+                                                   value="existing"
+                                                   onchange="toggleCerEnsembleMode('{{ req.id }}')">
+                                            <label class="form-check-label" for="modeExisting{{ req.id }}">
+                                                <i class="fas fa-link me-1 text-primary"></i>
+                                                Připojit k existujícímu souboru
+                                            </label>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <!-- Existing ensemble select (hidden by default) -->
+                                <div id="cerExistingWrapper{{ req.id }}" class="mb-3" style="display:none;">
+                                    <label class="form-label">Vyberte soubor</label>
+                                    <select name="existing_ensemble_id" class="form-select">
+                                        <option value="">— Vyberte soubor —</option>
+                                        {% for e in ensembles %}
+                                            <option value="{{ e.id }}">{{ e.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Comment -->
+                                <div class="mb-1">
+                                    <label class="form-label fw-semibold">Stanovisko / poznámka (volitelně)</label>
+                                    <textarea class="form-control" name="comment" rows="2"></textarea>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit</button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check me-1"></i> Schválit
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reject Modal -->
+            <div class="modal fade" id="rejectCerModal{{ req.id }}" tabindex="-1"
+                 aria-labelledby="rejectCerLabel{{ req.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning">
+                            <h5 class="modal-title" id="rejectCerLabel{{ req.id }}">
+                                <i class="fas fa-times me-2"></i> Zamítnout přihlášku č. {{ req.id }}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="POST" action="{{ url_for('chamber_enrollment_requests.reject', request_id=req.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="modal-body">
+                                Opravdu chcete <strong>zamítnout</strong> přihlášku č. {{ req.id }}
+                                ({{ req.student.full_name }})?
+                                <div class="mt-3">
+                                    <label class="form-label">Důvod zamítnutí (volitelně)</label>
+                                    <textarea class="form-control" name="reason" rows="3"></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit</button>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fas fa-times me-1"></i> Zamítnout
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</main>
+
+<script>
+function toggleCerEnsembleMode(reqId) {
+    const existing = document.getElementById('modeExisting' + reqId).checked;
+    document.getElementById('cerExistingWrapper' + reqId).style.display = existing ? 'block' : 'none';
+}
+</script>
+{% endblock %}

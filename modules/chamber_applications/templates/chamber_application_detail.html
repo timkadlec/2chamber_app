@@ -339,7 +339,7 @@
                     <!-- Approve Modal -->
                     <div class="modal fade" id="approveAppModal{{ application.id }}" tabindex="-1"
                          aria-labelledby="approveAppLabel{{ application.id }}" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
                             <div class="modal-content">
                                 <div class="modal-header bg-success text-white">
                                     <h5 class="modal-title" id="approveAppLabel{{ application.id }}">
@@ -348,36 +348,75 @@
                                     <button type="button" class="btn-close btn-close-white"
                                             data-bs-dismiss="modal"></button>
                                 </div>
-                                <div class="modal-body">
-                                    Opravdu chcete <strong>schválit</strong> tuto žádost (č. {{ application.id }})?
+                                <form method="POST"
+                                      action="{{ url_for('chamber_applications.approve', application_id=application.id) }}"
+                                      id="approveForm{{ application.id }}">
+                                    {{ form.hidden_tag() }}
+                                    <div class="modal-body">
 
-                                    {% if application.related_applications %}
-                                        <div class="alert alert-warning mt-3 mb-0 small">
-                                            <i class="fas fa-exclamation-triangle me-1"></i>
-                                            Existují také <strong>související žádosti</strong>
-                                            ({{ application.related_applications|length }}), které budou schváleny
-                                            zároveň:
-                                            <ul class="mb-0">
-                                                {% for rel in application.related_applications %}
-                                                    <li>
-                                                        č. {{ rel.id }} – {{ rel.student.full_name }}
-                                                    </li>
-                                                {% endfor %}
-                                            </ul>
+                                        {% if application.related_applications %}
+                                            <div class="alert alert-warning mb-3 small">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                                <strong>Související žádosti</strong> ({{ application.related_applications|length }}) budou schváleny zároveň:
+                                                <ul class="mb-0 mt-1">
+                                                    {% for rel in application.related_applications %}
+                                                        <li>č. {{ rel.id }} – {{ rel.student.full_name }}</li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        {% endif %}
+
+                                        <!-- Ensemble mode toggle -->
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold">Soubor</label>
+                                            <div class="d-flex gap-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio"
+                                                           name="ensemble_mode"
+                                                           id="modeNew{{ application.id }}"
+                                                           value="new" checked
+                                                           onchange="toggleEnsembleMode('{{ application.id }}')">
+                                                    <label class="form-check-label" for="modeNew{{ application.id }}">
+                                                        <i class="fas fa-plus-circle me-1 text-success"></i> Vytvořit nový soubor
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio"
+                                                           name="ensemble_mode"
+                                                           id="modeExisting{{ application.id }}"
+                                                           value="existing"
+                                                           onchange="toggleEnsembleMode('{{ application.id }}')">
+                                                    <label class="form-check-label" for="modeExisting{{ application.id }}">
+                                                        <i class="fas fa-link me-1 text-primary"></i> Připojit k existujícímu souboru
+                                                    </label>
+                                                </div>
+                                            </div>
                                         </div>
-                                    {% endif %}
-                                </div>
-                                <div class="modal-footer">
-                                    <form method="POST"
-                                          action="{{ url_for('chamber_applications.approve', application_id=application.id) }}">
-                                        {{ form.hidden_tag() }}
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit
-                                        </button>
+
+                                        <!-- Existing ensemble select (hidden by default) -->
+                                        <div id="existingEnsembleWrapper{{ application.id }}" class="mb-3" style="display:none;">
+                                            <label class="form-label">Vyberte soubor</label>
+                                            <select name="existing_ensemble_id"
+                                                    id="existingEnsembleSelect{{ application.id }}"
+                                                    class="form-select">
+                                                <option value="">— Vyberte soubor —</option>
+                                                {% for e in ensembles %}
+                                                    <option value="{{ e.id }}">{{ e.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-text text-muted">
+                                                Přidá semestrální záznam k souboru. Hráče přiřaďte ručně v detailu souboru.
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit</button>
                                         <button type="submit" class="btn btn-success">
                                             <i class="fas fa-check"></i> Schválit
                                         </button>
-                                    </form>
-                                </div>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -493,4 +532,10 @@
             </div>
         </div>
     </main>
+    <script>
+    function toggleEnsembleMode(appId) {
+        const existing = document.getElementById('modeExisting' + appId).checked;
+        document.getElementById('existingEnsembleWrapper' + appId).style.display = existing ? 'block' : 'none';
+    }
+    </script>
 {% endblock %}

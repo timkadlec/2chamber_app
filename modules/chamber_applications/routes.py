@@ -2,9 +2,9 @@ from flask import render_template, request, flash, redirect, url_for, session
 from utils.nav import navlink
 from utils.decorators import permission_required
 from modules.chamber_applications import chamber_applications_bp
-from models import db, Ensemble, EnsembleSemester, EnsemblePlayer, EnsembleInstrumentation, Semester, \
-    StudentChamberApplication, StudentChamberApplicationPlayers, StudentChamberApplicationStatus, Student, Instrument, \
-    ChamberException, Player, StudentChamberApplicationTeacher
+from models import db, Ensemble, EnsembleSemester, EnsemblePlayer, EnsembleInstrumentation, EnsembleApplication, \
+    Semester, StudentChamberApplication, StudentChamberApplicationPlayers, StudentChamberApplicationStatus, Student, \
+    Instrument, ChamberException, Player, StudentChamberApplicationTeacher
 from .forms import StudentChamberApplicationForm, EmptyForm, ExceptionRequestForm
 from flask_login import current_user
 from sqlalchemy.exc import IntegrityError
@@ -112,9 +112,14 @@ def detail(application_id):
     application = StudentChamberApplication.query.get_or_404(application_id)
     form = EmptyForm()
     exception_form = ExceptionRequestForm()
-    return render_template("chamber_application_detail.html", application=application,
-                           form=form,
-                           exception_form=exception_form, )
+    ensembles = Ensemble.query.filter_by(active=True).order_by(Ensemble.name).all()
+    return render_template(
+        "chamber_application_detail.html",
+        application=application,
+        form=form,
+        exception_form=exception_form,
+        ensembles=ensembles,
+    )
 
 
 @chamber_applications_bp.route("/new", methods=["GET", "POST"])
@@ -189,14 +194,15 @@ def get_status_by_code(code: str):
 
 def create_ensemble_from_application(application):
     """
-    Create an Ensemble based on a StudentChamberApplication.
-    Includes both the applicant and the co-players.
+    Create a new Ensemble from a StudentChamberApplication.
+    Sets semester_id on EnsemblePlayer and creates EnsembleApplication links.
     """
-
     if not application.semester:
         raise ValueError("Application has no semester assigned.")
 
-    # Build ensemble name: applicant + instruments
+    semester_id = application.semester_id
+
+    # Build ensemble name
     base_name = application.student.full_name
     instrumentation_str = ", ".join(
         [p.player.instrument.abbreviation or p.player.instrument.name for p in application.players]
@@ -206,11 +212,11 @@ def create_ensemble_from_application(application):
     name = f"{base_name} ({instrumentation_str})"
 
     ensemble = Ensemble(name=name, active=True)
+    db.session.add(ensemble)
 
-    # Link to semester
     db.session.add(EnsembleSemester(ensemble=ensemble, semester=application.semester))
 
-    # --- Add applicant ---
+    # --- Applicant ---
     applicant_instrument = application.student.instrument
     if not applicant_instrument:
         raise ValueError(f"Applicant {application.student.full_name} has no instrument assigned.")
@@ -221,40 +227,31 @@ def create_ensemble_from_application(application):
         position=1,
     )
     db.session.add(applicant_inst_entry)
-
     db.session.add(EnsemblePlayer(
         ensemble=ensemble,
         player=application.student.player,
         ensemble_instrumentation=applicant_inst_entry,
+        semester_id=semester_id,
     ))
 
-    # --- Add co-players ---
+    # --- Co-players ---
     for idx, app_player in enumerate(application.players, start=2):
         instrument = app_player.player.instrument
-
         inst_entry = EnsembleInstrumentation(
             ensemble=ensemble,
             instrument=instrument,
             position=idx,
         )
         db.session.add(inst_entry)
-
         db.session.add(EnsemblePlayer(
             ensemble=ensemble,
             player=app_player.player,
             ensemble_instrumentation=inst_entry,
+            semester_id=semester_id,
         ))
 
-    # Update application status → approved
-    approved_status = StudentChamberApplicationStatus.query.filter_by(code="approved").first()
-    if approved_status:
-        application.status = approved_status
-
-    db.session.add(ensemble)
-    db.session.add(application)
-
     try:
-        db.session.commit()
+        db.session.flush()  # get ensemble.id before creating links
     except IntegrityError:
         db.session.rollback()
         raise
@@ -262,39 +259,60 @@ def create_ensemble_from_application(application):
     return ensemble
 
 
-def approve_applications(application, reviewer, comment=None):
+def _link_applications_to_ensemble(applications, ensemble):
+    """Create EnsembleApplication records for each application → ensemble."""
+    for app in applications:
+        if not app.ensemble_link:
+            db.session.add(EnsembleApplication(
+                ensemble=ensemble,
+                application=app,
+                created_by=current_user,
+            ))
+
+
+def add_semester_to_existing_ensemble(ensemble, semester):
+    """Add a semester link to an existing ensemble if not already present."""
+    already = EnsembleSemester.query.filter_by(
+        ensemble_id=ensemble.id,
+        semester_id=semester.id,
+    ).first()
+    if not already:
+        db.session.add(EnsembleSemester(ensemble=ensemble, semester=semester))
+
+
+def approve_applications(application, reviewer, comment=None, existing_ensemble=None):
     """
     Approve a StudentChamberApplication and its related applications.
-    Creates an Ensemble from the main application.
-
-    Args:
-        application: StudentChamberApplication (the main one)
-        reviewer: User who approves
-        comment: Optional reviewer comment
+    If existing_ensemble is given, links all apps to it and adds semester link.
+    Otherwise creates a new Ensemble from the main application.
     """
     approved_status = get_status_by_code("approved")
     if not approved_status:
         raise ValueError("Status 'approved' missing in database")
 
-    # Collect main + related
     related_apps = application.related_applications
     all_apps = [application] + related_apps
 
-    # Update all statuses
     for a in all_apps:
         a.status = approved_status
         a.reviewed_at = datetime.now()
         a.reviewed_by = reviewer
         a.review_comment = comment
 
-    # Create the ensemble (only from the main application)
-    new_ensemble = create_ensemble_from_application(application)
+    if existing_ensemble:
+        if not application.semester:
+            raise ValueError("Application has no semester assigned.")
+        add_semester_to_existing_ensemble(existing_ensemble, application.semester)
+        _link_applications_to_ensemble(all_apps, existing_ensemble)
+        target_ensemble = existing_ensemble
+    else:
+        target_ensemble = create_ensemble_from_application(application)
+        _link_applications_to_ensemble(all_apps, target_ensemble)
 
-    # Save changes
     db.session.add_all(all_apps)
     db.session.commit()
 
-    return new_ensemble, all_apps
+    return target_ensemble, all_apps
 
 
 @chamber_applications_bp.route("/<int:application_id>/approve", methods=["POST"])
@@ -302,17 +320,28 @@ def approve_applications(application, reviewer, comment=None):
 def approve(application_id):
     app = StudentChamberApplication.query.get_or_404(application_id)
     comment = request.form.get("comment")
+    existing_ensemble_id = request.form.get("existing_ensemble_id", type=int)
+
+    existing_ensemble = None
+    if existing_ensemble_id:
+        existing_ensemble = Ensemble.query.get_or_404(existing_ensemble_id)
 
     try:
-        new_ensemble, all_apps = approve_applications(app, current_user, comment)
+        new_ensemble, all_apps = approve_applications(app, current_user, comment, existing_ensemble)
     except ValueError as e:
         flash(str(e), "danger")
         return redirect(url_for("chamber_applications.detail", application_id=application_id))
 
-    flash(
-        f"Žádosti {[a.id for a in all_apps]} byly schváleny a vytvořen soubor č. {new_ensemble.id}.",
-        "success"
-    )
+    if existing_ensemble:
+        flash(
+            f"Žádosti {[a.id for a in all_apps]} byly schváleny a připojeny k souboru č. {new_ensemble.id}.",
+            "success"
+        )
+    else:
+        flash(
+            f"Žádosti {[a.id for a in all_apps]} byly schváleny a vytvořen soubor č. {new_ensemble.id}.",
+            "success"
+        )
     return redirect(url_for("ensemble.ensemble_detail", ensemble_id=new_ensemble.id))
 
 

@@ -58,6 +58,13 @@ class Student(db.Model):
         order_by="desc(StudentRequest.request_date)",
     )
 
+    enrollment_requests = relationship(
+        "ChamberEnrollmentRequest",
+        back_populates="student",
+        cascade="all, delete-orphan",
+        order_by="desc(ChamberEnrollmentRequest.created_at)",
+    )
+
     @property
     def current_semester_id(self):
         # keep your existing fallback if you want
@@ -329,6 +336,72 @@ class StudentChamberApplication(db.Model):
             return "OK"
         else:
             return "Soubor obsahuje vysoké procento hostů."
+
+class ChamberEnrollmentRequest(db.Model):
+    __tablename__ = 'chamber_enrollment_requests'
+    id = db.Column(db.Integer, primary_key=True)
+
+    student_id = db.Column(db.Integer, db.ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
+    student = relationship('Student', back_populates='enrollment_requests')
+
+    semester_id = db.Column(db.Integer, db.ForeignKey('semesters.id', ondelete='SET NULL'), nullable=True)
+    semester = relationship('Semester', foreign_keys='ChamberEnrollmentRequest.semester_id')
+
+    future_year = db.Column(db.Integer, nullable=True)
+
+    teacher_id = db.Column(db.Integer, db.ForeignKey('teachers.id', ondelete='SET NULL'), nullable=True)
+    teacher = relationship('Teacher')
+
+    wants_to_stay = db.Column(db.Boolean, default=False, nullable=False)
+    stay_ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete='SET NULL'), nullable=True)
+    stay_ensemble = relationship('Ensemble', foreign_keys='ChamberEnrollmentRequest.stay_ensemble_id')
+
+    notes = db.Column(db.Text, nullable=True)
+    submission_date = db.Column(db.Date, nullable=True)
+
+    status = db.Column(db.String(32), default='pending', nullable=False)
+
+    reviewed_by_id = db.Column(db.String, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    reviewed_by = relationship('User', foreign_keys='ChamberEnrollmentRequest.reviewed_by_id')
+    reviewed_at = db.Column(db.DateTime, nullable=True)
+    review_comment = db.Column(db.Text, nullable=True)
+
+    target_semester_id = db.Column(db.Integer, db.ForeignKey('semesters.id', ondelete='SET NULL'), nullable=True)
+    target_semester = relationship('Semester', foreign_keys='ChamberEnrollmentRequest.target_semester_id')
+
+    result_ensemble_id = db.Column(db.Integer, db.ForeignKey('ensembles.id', ondelete='SET NULL'), nullable=True)
+    result_ensemble = relationship('Ensemble', foreign_keys='ChamberEnrollmentRequest.result_ensemble_id')
+
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    created_by_id = db.Column(db.String, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    created_by = relationship('User', foreign_keys='ChamberEnrollmentRequest.created_by_id')
+
+    players = relationship(
+        'ChamberEnrollmentRequestPlayer',
+        back_populates='request',
+        cascade='all, delete-orphan',
+    )
+
+    __table_args__ = (
+        CheckConstraint("status IN ('pending','approved','rejected')", name='ck_cer_status'),
+        Index('ix_cer_student_semester', 'student_id', 'semester_id'),
+    )
+
+
+class ChamberEnrollmentRequestPlayer(db.Model):
+    __tablename__ = 'chamber_enrollment_request_players'
+    id = db.Column(db.Integer, primary_key=True)
+
+    request_id = db.Column(db.Integer, db.ForeignKey('chamber_enrollment_requests.id', ondelete='CASCADE'), nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey('players.id', ondelete='CASCADE'), nullable=False)
+
+    request = relationship('ChamberEnrollmentRequest', back_populates='players')
+    player = relationship('Player')
+
+    __table_args__ = (
+        UniqueConstraint('request_id', 'player_id', name='uq_cer_player'),
+    )
+
 
 class StudentRequest(db.Model):
     __tablename__ = 'student_requests'

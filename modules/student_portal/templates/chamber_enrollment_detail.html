@@ -1,0 +1,117 @@
+{% extends "student_base.html" %}
+{% block title %}Detail přihlášky do komorní hry{% endblock %}
+{% block content %}
+
+<div class="mb-4">
+    <a href="{{ url_for('student_portal.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-2"></i> Zpět na dashboard
+    </a>
+</div>
+
+<h2 class="text-secondary mb-1">Přihláška do komorní hry</h2>
+<p class="text-muted mb-4">Podána {{ enrollment_request.submission_date.strftime("%d.%m.%Y") if enrollment_request.submission_date else "—" }}</p>
+
+<div class="card shadow-sm">
+    <div class="card-body p-4">
+
+        <!-- Status banner -->
+        {% set status = enrollment_request.status %}
+        {% if status == "approved" %}
+            <div class="alert alert-success d-flex align-items-center gap-2 mb-4">
+                <i class="fas fa-check-circle fa-lg"></i>
+                <div><strong>Přihláška byla schválena.</strong>
+                    {% if enrollment_request.result_ensemble %}
+                        Zařazen/a do souboru: <strong>{{ enrollment_request.result_ensemble.name }}</strong>.
+                    {% endif %}
+                </div>
+            </div>
+        {% elif status == "rejected" %}
+            <div class="alert alert-danger d-flex align-items-center gap-2 mb-4">
+                <i class="fas fa-times-circle fa-lg"></i>
+                <div><strong>Přihláška byla zamítnuta.</strong>
+                    {% if enrollment_request.review_comment %}
+                        Vyjádření: {{ enrollment_request.review_comment }}
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-info d-flex align-items-center gap-2 mb-4">
+                <i class="fas fa-hourglass-half fa-lg"></i>
+                <div><strong>Přihláška čeká na zpracování.</strong> Budeme vás informovat o výsledku.</div>
+            </div>
+        {% endif %}
+
+        <!-- Student info -->
+        <div class="row g-3 mb-4 pb-3 border-bottom">
+            <div class="col-md-4">
+                <label class="form-label text-muted small">Jméno a příjmení</label>
+                <div class="fw-semibold">{{ student.full_name }}</div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted small">Nástroj / obor</label>
+                <div>{{ student.instrument.name if student.instrument else "—" }}</div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted small">Datum podání</label>
+                <div>{{ enrollment_request.submission_date.strftime("%d.%m.%Y") if enrollment_request.submission_date else "—" }}</div>
+            </div>
+        </div>
+
+        <!-- Application details -->
+        <dl class="row mb-4">
+            {% if enrollment_request.future_year %}
+            <dt class="col-sm-4 text-muted">Budoucí ročník</dt>
+            <dd class="col-sm-8">{{ enrollment_request.future_year }}</dd>
+            {% endif %}
+
+            <dt class="col-sm-4 text-muted">Preferovaný pedagog</dt>
+            <dd class="col-sm-8">{{ enrollment_request.teacher.full_name if enrollment_request.teacher else "— Není domluveno —" }}</dd>
+
+            <dt class="col-sm-4 text-muted">Přeji si setrvat ve stávajícím souboru</dt>
+            <dd class="col-sm-8">
+                {% if enrollment_request.wants_to_stay %}
+                    <i class="fas fa-check text-success me-1"></i> Ano
+                    {% if enrollment_request.stay_ensemble %}
+                        — <em>{{ enrollment_request.stay_ensemble.name }}</em>
+                    {% endif %}
+                {% else %}
+                    Ne
+                {% endif %}
+            </dd>
+        </dl>
+
+        <!-- Players -->
+        <div class="mb-4">
+            <h6 class="fw-semibold text-muted mb-2">Navržení spoluhráči</h6>
+            {% if enrollment_request.players %}
+                <ul class="list-group list-group-flush">
+                    {% for entry in enrollment_request.players %}
+                        <li class="list-group-item px-0">
+                            {% if entry.player.student %}
+                                {{ entry.player.student.full_name }}
+                            {% else %}
+                                {{ entry.player.full_name }} <span class="text-muted small">(host)</span>
+                            {% endif %}
+                            {% if entry.player.instrument %}
+                                <span class="text-muted"> – {{ entry.player.instrument.name }}</span>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted fst-italic mb-0">Žádní spoluhráči nebyli uvedeni.</p>
+            {% endif %}
+        </div>
+
+        <!-- Notes -->
+        {% if enrollment_request.notes %}
+        <div class="mb-4">
+            <h6 class="fw-semibold text-muted mb-2">Poznámka</h6>
+            <p class="mb-0">{{ enrollment_request.notes }}</p>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+{% endblock %}

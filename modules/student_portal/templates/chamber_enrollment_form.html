@@ -1,0 +1,145 @@
+{% extends "student_base.html" %}
+{% block title %}Přihláška do komorní hry{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/tom-select/tom-select.bootstrap5.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="mb-4">
+    <a href="{{ url_for('student_portal.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-2"></i> Zpět na dashboard
+    </a>
+</div>
+
+<h2 class="text-secondary mb-1">Přihláška do komorní hry</h2>
+<p class="text-muted mb-4">
+    Přihláška do povinného předmětu Komorní hra na příští akademický rok.
+    {% if upcoming_semester %}
+        Platí pro semestr: <strong>{{ upcoming_semester.name }} {{ upcoming_semester.academic_year.name }}</strong>.
+    {% endif %}
+</p>
+
+<div class="card shadow-sm">
+    <div class="card-body p-4">
+
+        <!-- Read-only student info -->
+        <div class="row g-3 mb-4 pb-3 border-bottom">
+            <div class="col-md-4">
+                <label class="form-label text-muted small">Jméno a příjmení</label>
+                <div class="fw-semibold">{{ student.full_name }}</div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted small">Nástroj / obor</label>
+                <div>{{ student.instrument.name if student.instrument else "—" }}</div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted small">Telefon</label>
+                <div>{{ student.phone_number or "—" }}</div>
+            </div>
+        </div>
+
+        <form method="POST" novalidate>
+            {{ form.hidden_tag() }}
+
+            <!-- Future year -->
+            <div class="mb-4">
+                {{ form.future_year.label(class="form-label") }}
+                {{ form.future_year() }}
+                {% if form.future_year.errors %}
+                    <div class="text-danger small mt-1">{{ form.future_year.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Teacher -->
+            <div class="mb-4">
+                {{ form.teacher.label(class="form-label") }}
+                <div class="text-muted small mb-1">Vyplňte pouze v případě, že jste s pedagogem již domluveni.</div>
+                {{ form.teacher(class="form-select", id="teacher-select") }}
+                {% if form.teacher.errors %}
+                    <div class="text-danger small mt-1">{{ form.teacher.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Wants to stay -->
+            <div class="mb-3">
+                <div class="form-check">
+                    {{ form.wants_to_stay(class="form-check-input", id="wants_to_stay") }}
+                    {{ form.wants_to_stay.label(class="form-check-label") }}
+                </div>
+            </div>
+
+            <!-- Stay ensemble (shown only when wants_to_stay checked) -->
+            <div class="mb-4" id="stay-ensemble-wrapper" style="display:none;">
+                {{ form.stay_ensemble.label(class="form-label") }}
+                {% if current_ensembles %}
+                    {{ form.stay_ensemble(class="form-select") }}
+                {% else %}
+                    <div class="alert alert-warning small mb-0">
+                        V tomto semestru nejste zařazen/a do žádného souboru.
+                    </div>
+                {% endif %}
+                {% if form.stay_ensemble.errors %}
+                    <div class="text-danger small mt-1">{{ form.stay_ensemble.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Players -->
+            <div class="mb-4">
+                {{ form.players.label(class="form-label") }}
+                <div class="text-muted small mb-1">
+                    Vyberte spoluhráče ze systému. Pokud si přejete být zařazen/a bez konkrétních spoluhráčů,
+                    uveďte nástrojové složení v poznámce.
+                </div>
+                {{ form.players(class="form-select", id="players-select", multiple=True) }}
+                {% if form.players.errors %}
+                    <div class="text-danger small mt-1">{{ form.players.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Notes -->
+            <div class="mb-4">
+                {{ form.notes.label(class="form-label") }}
+                {{ form.notes() }}
+                {% if form.notes.errors %}
+                    <div class="text-danger small mt-1">{{ form.notes.errors[0] }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Legal note -->
+            <div class="alert alert-light border small text-muted mb-4">
+                V souladu s platnými pravidly výuky komorní hry bude Vaše žádost o zařazení do konkrétního souboru
+                posouzena individuálně. Snahou školy je žádostem maximálně vyhovět a podpořit již vzniklé soubory.
+                V odůvodněných případech, zejména z organizačních či kapacitních důvodů, si však škola vyhrazuje
+                právo zařadit studenta do jiného komorního souboru.
+            </div>
+
+            <div class="d-flex gap-2">
+                {{ form.submit(class="btn btn-primary") }}
+                <a href="{{ url_for('student_portal.dashboard') }}" class="btn btn-outline-secondary">Zrušit</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='vendor/tom-select/tom-select.complete.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    new TomSelect('#teacher-select', { allowEmptyOption: true });
+    new TomSelect('#players-select', { plugins: ['remove_button'], placeholder: 'Vyberte spoluhráče...' });
+
+    const wantsToStay = document.getElementById('wants_to_stay');
+    const wrapper = document.getElementById('stay-ensemble-wrapper');
+
+    function toggleStay() {
+        wrapper.style.display = wantsToStay.checked ? 'block' : 'none';
+    }
+    wantsToStay.addEventListener('change', toggleStay);
+    toggleStay();
+});
+</script>
+{% endblock %}
